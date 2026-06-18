@@ -8,6 +8,33 @@ A retrieval-augmented generation system for analysing F1 qualifying sessions. As
 
 ---
 
+## Design Decisions & Contributions
+
+This project started with raw telemetry data and no framework for what "context" means for an F1 question. The core intellectual work was defining that — what information an LLM actually needs to reason about a qualifying lap, and how to structure it so retrieval surfaces the right things.
+
+**Defining the unit of analysis: the track section**
+The first non-obvious decision was that a lap should be broken into spatial sections — not by time, not by sector, but by what happens on track. Corners were identified not as individual turns but as sequences (T1–T6 at Barcelona is one continuous complex with shared entry, multiple apices, and a single exit) because that's how drivers and engineers actually think about them. Straights are the recovery zones between them. This framing — derived from domain knowledge of how lap time is built — determined the entire chunk structure.
+
+**Using braking and throttle as the structural signals**
+Rather than hardcoding section boundaries by circuit, the system detects them from curvature geometry and validates them against braking and acceleration data in the telemetry. The LLM receives braking point (distance and entry speed), throttle pickup distance, and per-apex minimum speeds for every section. This gives it the information a race engineer would use to identify where time was gained or lost — not just that one driver was faster, but whether they carried more speed into the apex, braked later, or got on the throttle earlier on exit.
+
+**Curating what data matters**
+Every field in every chunk was a deliberate choice about what an LLM needs to reason about lap time: entry speed tells you how much energy a driver carried from the previous section, apex speed tells you how much they scrubbed off, exit speed tells you how well they converted that into acceleration. DRS status, gear range, and braking distance are included because they explain the *why* behind the numbers. Fields that don't change the answer were left out.
+
+**Catching the overlap bug through domain knowledge**
+During development, the section breakdown showed a 0.4s advantage for one driver on a single straight — but their overall lap gap was only 0.064s. That number was immediately suspicious: no driver gains four tenths on one straight against someone they only beat by six hundredths total. Investigation confirmed that the raw geometry detection was producing overlapping 80-metre zones at every corner-to-straight boundary, so each boundary region was being counted twice. The fix required normalising every boundary to a shared midpoint, interpolating times at the exact boundary distance rather than snapping to the nearest telemetry sample, and adding synthetic sections for the uncovered start and end of the lap. After the fix, section times sum to within 1ms of the actual lap time gap for every driver pair — the numbers close.
+
+**Retrieval shaped by intent, not just keywords**
+A question like "Why was Bottas slow?" names one driver. The system detects that the question is about pace relative to someone, infers a comparison driver from session standings (teammate, pole-sitter, or Q3 boundary depending on question type), and expands the retrieval filter to include that driver before the vector search runs. For two-driver questions, the filter restricts results to chunks where exactly those two drivers are compared head-to-head — preventing chunks about unrelated driver pairs from filling the context window.
+
+**Time delta as a ranking signal**
+Chunks where two drivers differ most in section time are promoted in ranking above chunks where they are nearly equal. A chunk showing a 0.3s difference through a corner complex is more likely to explain lap time than one showing 0.01s — so it surfaces first. This was the insight that moved the system from retrieving *related* content to retrieving *diagnostic* content.
+
+**The result**
+The project moved from a state where the vector database had no principled structure and retrieval returned whatever was semantically closest, to one where every retrieved chunk contains quantitatively precise, engineer-readable information, section sums match actual lap times, and the system can answer questions like "where exactly did Russell beat his teammate" with specific distances, speeds, and time deltas — derived entirely from stored telemetry with no external lookups.
+
+---
+
 ## Quickstart
 
 ```bash
