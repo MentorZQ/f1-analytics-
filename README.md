@@ -16,7 +16,6 @@ This project started with raw telemetry data and no framework for what "context"
 The first non-obvious decision was that a lap should be broken into spatial sections — not by time, not by sector, but by what happens on track. Corners were identified not as individual turns but as sequences (T1–T6 at Barcelona is one continuous complex with shared entry, multiple apices, and a single exit) because that's how drivers and engineers actually think about them. Straights are the recovery zones between them. This framing — derived from domain knowledge of how lap time is built — determined the entire chunk structure.
 
 **Using braking and throttle as the structural signals**:
-
 Rather than hardcoding section boundaries by circuit, the system detects them from curvature geometry and validates them against braking and acceleration data in the telemetry. The LLM receives braking point (distance and entry speed), throttle pickup distance, and per-apex minimum speeds for every section. This gives it the information a race engineer would use to identify where time was gained or lost — not just that one driver was faster, but whether they carried more speed into the apex, braked later, or got on the throttle earlier on exit.
 
 **Curating what data matters**:
