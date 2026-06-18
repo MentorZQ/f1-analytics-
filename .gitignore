@@ -217,8 +217,14 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-cache/
 venv/
 .ipynb_checkpoints/
 __pycache__/
+.env
+
+# FastF1 cache — large binary files, not needed to run query.py
+cache/
+RAG_data_layers/cache/
+
+.DS_Store
 
