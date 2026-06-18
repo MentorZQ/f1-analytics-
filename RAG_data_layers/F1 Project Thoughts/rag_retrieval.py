@@ -240,7 +240,7 @@ def _event_significance(chunk: dict) -> float:
 
 def rerank_by_significance(
     chunks: list[dict],
-    delta_weight: float = 0.5,
+    delta_weight: float = 3.0,
 ) -> list[dict]:
     """
     Re-sort chunks so that high-delta head_to_head_event chunks rise above
@@ -248,14 +248,11 @@ def rerank_by_significance(
 
     adjusted_score = cosine_distance − delta_weight × significance_s
 
-    significance_s is in seconds (time_delta_s when available, speed-based
-    proxy otherwise). delta_weight=0.5 means a 0.1s section gap causes a
-    0.05 downward adjustment in cosine distance — meaningful but not
-    enough to override a strongly relevant chunk.
-
-    A chunk at cosine 0.47 with a 0.15s section gap (adjusted → 0.395)
-    beats a chunk at cosine 0.46 with no gap — the big time loss makes it
-    more evidentially useful for answering a lap-speed question.
+    delta_weight=3.0 means a 0.1s section gap causes a 0.3 downward
+    adjustment in cosine distance — strongly promoting high time-delta
+    sections regardless of their cosine rank. Designed to work with
+    over-fetching (3× n_results from ChromaDB) so high-delta sections
+    that fall outside the raw cosine top-N can still surface.
     """
     def adjusted(chunk: dict) -> float:
         return chunk["distance"] - delta_weight * _event_significance(chunk)
@@ -307,35 +304,56 @@ def smart_retrieve(
     else:
         all_codes = named_codes
 
-    where  = build_driver_where(all_codes) if all_codes else None
-    chunks = retrieve_chunks(
-        collection, question, embed_fn,
-        n_results=n_results, where=where,
-        normalize=normalize, auto_filter=False,
-    )
+    where = build_driver_where(all_codes) if all_codes else None
+
+    # When comparing two drivers, prioritise head_to_head_event chunks so all
+    # section comparisons for that pair enter the candidate pool before the
+    # general fetch consumes slots with per-driver telemetry chunks.
+    if len(all_codes) >= 2:
+        codes_list = sorted(all_codes)
+        pair_conditions = []
+        for i, a in enumerate(codes_list):
+            for b in codes_list[i + 1:]:
+                pair_conditions.append({"$and": [{"driver_a": a}, {"driver_b": b}]})
+                pair_conditions.append({"$and": [{"driver_a": b}, {"driver_b": a}]})
+        pair_filter = pair_conditions[0] if len(pair_conditions) == 1 else {"$or": pair_conditions}
+        h2h_where = {"$and": [{"chunk_type": "head_to_head_event"}, pair_filter]}
+
+        chunks   = retrieve_chunks(collection, question, embed_fn,
+                                   n_results=n_results * 3, where=h2h_where,
+                                   normalize=normalize, auto_filter=False)
+        seen_ids = {c["chunk_id"] for c in chunks}
+
+        # Fill remaining slots with other chunk types (lap summaries, sectors, etc.)
+        for c in retrieve_chunks(collection, question, embed_fn,
+                                 n_results=n_results, where=where,
+                                 normalize=normalize, auto_filter=False):
+            if c["chunk_id"] not in seen_ids:
+                chunks.append(c)
+                seen_ids.add(c["chunk_id"])
+    else:
+        chunks   = retrieve_chunks(collection, question, embed_fn,
+                                   n_results=n_results * 3, where=where,
+                                   normalize=normalize, auto_filter=False)
+        seen_ids = {c["chunk_id"] for c in chunks}
 
     # Guarantee at least one chunk for each context-inferred (non-named) driver.
-    # Named-driver chunks dominate by cosine similarity; inferred ones would
-    # otherwise be squeezed out of the top-N even though they're in the filter.
     inferred = all_codes - named_codes
     if inferred:
-        found    = _chunks_driver_set(chunks)
-        seen_ids = {c["chunk_id"] for c in chunks}
+        found = _chunks_driver_set(chunks)
         for driver in inferred - found:
             driver_where = {"$or": [
                 {"driver_a": driver}, {"driver_b": driver}, {"driver": driver},
             ]}
-            for chunk in retrieve_chunks(
-                collection, question, embed_fn,
-                n_results=3, where=driver_where,
-                normalize=normalize, auto_filter=False,
-            ):
+            for chunk in retrieve_chunks(collection, question, embed_fn,
+                                         n_results=3, where=driver_where,
+                                         normalize=normalize, auto_filter=False):
                 if chunk["chunk_id"] not in seen_ids:
                     chunks.append(chunk)
                     seen_ids.add(chunk["chunk_id"])
                     break
 
-    return rerank_by_significance(chunks)
+    return rerank_by_significance(chunks)[:n_results]
 
 
 def retrieve_chunks(
