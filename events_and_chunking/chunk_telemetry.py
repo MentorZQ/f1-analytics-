@@ -41,6 +41,7 @@ import pandas as pd
 from typing import Optional
 from .chunk_types import Chunk, make_chunk_id, CHUNK_TYPES
 from .detect_events import get_event_telemetry, normalize_event_boundaries
+from .circuit_labels import relabel_events
 
 
 # ---------------------------------------------------------------------------
@@ -311,8 +312,9 @@ def chunk_corner_event(
     driver  = driver_row["Driver"]
     team    = driver_row.get("Team", "")
     pos     = int(driver_row["QualifyingPosition"])
-    eid     = event["id"]
-    etype   = event["type"]
+    eid      = event["id"]
+    deid     = event.get("display_id", eid)
+    etype    = event["type"]
 
     entry_spd      = _entry_speed(tel)
     exit_spd       = _exit_speed(tel)
@@ -326,7 +328,7 @@ def chunk_corner_event(
     event_label = "corner sequence" if etype == "corner_sequence" else "corner"
 
     lines = [
-        f"Corner Event: {eid} ({event_label}) — {driver} ({team})",
+        f"Corner Event: {deid} ({event_label}) — {driver} ({team})",
         f"Event: {circuit} {year} Qualifying | Qualifying position: P{pos}",
         f"Distance window: {event['dist_start']:.0f}m – {event['dist_end']:.0f}m "
         f"({event['length_m']:.0f}m window)",
@@ -398,7 +400,7 @@ def chunk_corner_event(
             "year":                year,
             "driver":              driver,
             "team":                team,
-            "event_id":            eid,
+            "event_id":            deid,
             "event_type":          etype,
             "qualifying_position": pos,
             "entry_speed_kmh":     round(entry_spd, 1) if entry_spd else None,
@@ -439,6 +441,7 @@ def chunk_straight_event(
     team    = driver_row.get("Team", "")
     pos     = int(driver_row["QualifyingPosition"])
     eid     = event["id"]
+    deid    = event.get("display_id", eid)
 
     entry_spd          = _entry_speed(tel)
     exit_spd           = _exit_speed(tel)
@@ -449,7 +452,7 @@ def chunk_straight_event(
     gears              = _gear_analysis(tel)
 
     lines = [
-        f"Straight Event: {eid} — {driver} ({team})",
+        f"Straight Event: {deid} — {driver} ({team})",
         f"Event: {circuit} {year} Qualifying | Qualifying position: P{pos}",
         f"Distance window: {event['dist_start']:.0f}m – {event['dist_end']:.0f}m "
         f"({event['length_m']:.0f}m straight)",
@@ -507,7 +510,7 @@ def chunk_straight_event(
             "year":                year,
             "driver":              driver,
             "team":                team,
-            "event_id":            eid,
+            "event_id":            deid,
             "qualifying_position": pos,
             "entry_speed_kmh":     round(entry_spd, 1) if entry_spd else None,
             "max_speed_kmh":       round(max_spd, 1) if max_spd else None,
@@ -554,6 +557,7 @@ def chunk_head_to_head_event(
     pos_a   = int(driver_a_row["QualifyingPosition"])
     pos_b   = int(driver_b_row["QualifyingPosition"])
     eid     = event["id"]
+    deid    = event.get("display_id", eid)
     etype   = event["type"]
     is_corner = etype in ("corner", "corner_sequence")
 
@@ -584,7 +588,7 @@ def chunk_head_to_head_event(
     event_label = "corner sequence" if etype == "corner_sequence" else etype
 
     lines = [
-        f"Head-to-Head at {eid} ({event_label}): {drv_a} vs {drv_b}",
+        f"Head-to-Head at {deid} ({event_label}): {drv_a} vs {drv_b}",
         f"Event: {circuit} {year} Qualifying",
         f"{drv_a} P{pos_a} ({team_a}) | {drv_b} P{pos_b} ({team_b})",
         f"Distance window: {event['dist_start']:.0f}m – {event['dist_end']:.0f}m",
@@ -715,7 +719,7 @@ def chunk_head_to_head_event(
             "year":         year,
             "driver_a":     drv_a,
             "driver_b":     drv_b,
-            "event_id":     eid,
+            "event_id":     deid,
             "event_type":   etype,
             "pos_a":        pos_a,
             "pos_b":        pos_b,
@@ -860,6 +864,9 @@ def build_telemetry_chunks(
     lap_length = max(tel_maxes) if tel_maxes else None
     if lap_length is not None:
         events = normalize_event_boundaries(events, lap_length)
+
+    circuit = session_info.get("circuit", "")
+    events = relabel_events(events, circuit)
 
     # --- Per-driver event chunks ---
     for _, row in fastest.iterrows():
