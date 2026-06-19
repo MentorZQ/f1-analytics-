@@ -58,6 +58,7 @@ def clean_metadata(metadata: dict) -> dict:
 SESSIONS = [
     {"year": 2024, "circuit": "Monza",     "short": "monza"},
     {"year": 2026, "circuit": "Barcelona", "short": "Catalunya"},
+    {"year": 2026, "circuit": "Melbourne", "short": "Melbourne"},
 ]
 
 CHROMA_PATH = ROOT / "RAG_data_layers/chroma_store"

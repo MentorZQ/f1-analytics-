@@ -35,12 +35,14 @@ from rag_retrieval import smart_retrieve, make_embed_fn, format_prompt
 
 SESSIONS = {
     "barcelona": "f1_qualifying_2026_barcelona",
+    "melbourne": "f1_qualifying_2026_melbourne",
     "monza":     "f1_qualifying_2024_monza",
 }
 
 # Keywords used to auto-detect session from the question
 _SESSION_KEYWORDS = {
-    "barcelona": ["barcelona", "spain", "spanish", "catalunya", "catalan", "2026"],
+    "barcelona": ["barcelona", "spain", "spanish", "catalunya", "catalan"],
+    "melbourne": ["melbourne", "australia", "australian", "albert park"],
     "monza":     ["monza", "italy", "italian", "2024"],
 }
 
@@ -64,6 +66,8 @@ def load_session_context(collection) -> dict:
     )
     drivers = {}
     for m in results["metadatas"]:
+        if "driver" not in m:
+            continue
         drivers[m["driver"]] = {
             "lap_time_seconds":    m.get("lap_time_seconds"),
             "qualifying_position": m.get("qualifying_position"),
