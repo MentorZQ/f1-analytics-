@@ -9,10 +9,14 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 ### MRR@6
 *Mean Reciprocal Rank of first expected chunk in top-6 results. Run: `python tests/run_mrr.py`*
 
-| Version | MRR@6 | Notes |
+| Variant | MRR@6 | Delta vs baseline |
 |---|---|---|
-| Baseline (raw cosine, no h2h fetch, no delta weight) | 0.486 | Pre-fix system |
-| Current (h2h-first fetch + delta_weight=3.0) | 0.972 | +100% relative lift |
+| Baseline (raw cosine, no h2h fetch, no delta weight) | 0.486 | — |
+| + h2h-first fetch only (no delta reranking) | 0.468 | -0.019 |
+| + delta reranking only (no h2h fetch) | 1.000 | +0.514 |
+| Full system (h2h fetch + delta_weight=3.0) | 0.972 | +0.486 |
+
+**Key finding:** Delta reranking drives the lift. H2h-first fetch alone slightly hurts MRR (it changes the candidate pool order without the ranking signal to compensate), but is still necessary — it's what guarantees mid-grid pairs (e.g. BOR vs LAW) enter the pool at all. The one regression (Q17, HUL Q-miss question) pulls full system below delta-only.
 
 ### Corner Retrieval Recall
 *Whether the most diagnostic section for a driver pair surfaces in top-6. Observed on Barcelona RUS vs HAM.*

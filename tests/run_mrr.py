@@ -96,25 +96,64 @@ def reciprocal_rank(chunks: list[dict], expected: list[tuple]) -> float:
                 return 1.0 / rank
     return 0.0
 
-# ── Baseline retrieval ────────────────────────────────────────────────────────
+# ── Retrieval variants ────────────────────────────────────────────────────────
 
 def baseline_retrieve(col, question: str, n: int = 6) -> list[dict]:
-    """
-    Raw cosine search with driver filter but no h2h-first fetch and no
-    significance reranking. Mirrors the original system before the fixes.
-    """
+    """Raw cosine, no h2h fetch, no delta reranking."""
     codes = extract_driver_codes(question)
     where = build_driver_where(codes) if codes else None
     return retrieve_chunks(col, question, embed_fn, n_results=n, where=where,
                            normalize=True, auto_filter=False)
 
+
+def h2h_only_retrieve(col, question: str, ctx: dict, n: int = 6) -> list[dict]:
+    """H2h-first fetch with NO significance reranking (delta_weight=0)."""
+    from rag_retrieval import extract_driver_codes, resolve_context_drivers, build_driver_where
+    named = extract_driver_codes(question)
+    all_codes = resolve_context_drivers(question, named, ctx)
+    where = build_driver_where(all_codes) if all_codes else None
+
+    if len(all_codes) >= 2:
+        codes_list = sorted(all_codes)
+        pair_conds = []
+        for i, a in enumerate(codes_list):
+            for b in codes_list[i+1:]:
+                pair_conds.append({"$and": [{"driver_a": a}, {"driver_b": b}]})
+                pair_conds.append({"$and": [{"driver_a": b}, {"driver_b": a}]})
+        pair_filter = pair_conds[0] if len(pair_conds) == 1 else {"$or": pair_conds}
+        h2h_where = {"$and": [{"chunk_type": "head_to_head_event"}, pair_filter]}
+        chunks = retrieve_chunks(col, question, embed_fn, n_results=n * 3,
+                                 where=h2h_where, normalize=True, auto_filter=False)
+        seen = {c["chunk_id"] for c in chunks}
+        for c in retrieve_chunks(col, question, embed_fn, n_results=n, where=where,
+                                 normalize=True, auto_filter=False):
+            if c["chunk_id"] not in seen:
+                chunks.append(c); seen.add(c["chunk_id"])
+    else:
+        chunks = retrieve_chunks(col, question, embed_fn, n_results=n * 3,
+                                 where=where, normalize=True, auto_filter=False)
+    # No reranking — return by raw cosine order
+    return sorted(chunks, key=lambda c: c["distance"])[:n]
+
+
+def delta_only_retrieve(col, question: str, ctx: dict, n: int = 6) -> list[dict]:
+    """Delta reranking (weight=3.0) but NO h2h-first fetch — standard cosine pool."""
+    from rag_retrieval import extract_driver_codes, resolve_context_drivers, build_driver_where
+    named = extract_driver_codes(question)
+    all_codes = resolve_context_drivers(question, named, ctx)
+    where = build_driver_where(all_codes) if all_codes else None
+    chunks = retrieve_chunks(col, question, embed_fn, n_results=n * 3,
+                             where=where, normalize=True, auto_filter=False)
+    return rerank_by_significance(chunks)[:n]
+
+
 # ── Run eval ──────────────────────────────────────────────────────────────────
 
 N = 6
-print(f"{'#':<4} {'Q':<52} {'BASE':>6} {'CURR':>6}  {'DELTA':>6}  first-expected-in")
-print("-" * 95)
+print(f"{'#':<4} {'Q':<44} {'BASE':>6} {'H2H':>6} {'DELT':>6} {'CURR':>6}")
+print("-" * 74)
 
-base_scores, curr_scores = [], []
+base_scores, h2h_scores, delt_scores, curr_scores = [], [], [], []
 
 for i, item in enumerate(EVAL_SET, 1):
     col = cols[item["session"]]
@@ -123,13 +162,20 @@ for i, item in enumerate(EVAL_SET, 1):
     exp = item["expected_chunks"]
 
     base_chunks = baseline_retrieve(col, q, n=N)
+    h2h_chunks  = h2h_only_retrieve(col, q, ctx, n=N)
+    delt_chunks  = delta_only_retrieve(col, q, ctx, n=N)
     curr_chunks = smart_retrieve(col, q, embed_fn, n_results=N, session_ctx=ctx)
 
     base_rr = reciprocal_rank(base_chunks, exp)
+    h2h_rr  = reciprocal_rank(h2h_chunks,  exp)
+    delt_rr = reciprocal_rank(delt_chunks,  exp)
     curr_rr = reciprocal_rank(curr_chunks, exp)
 
-    base_scores.append(base_rr)
-    curr_scores.append(curr_rr)
+    base_scores.append(base_rr); h2h_scores.append(h2h_rr)
+    delt_scores.append(delt_rr); curr_scores.append(curr_rr)
+
+    q_short = q[:43]
+    print(f"{i:<4} {q_short:<44} {base_rr:>6.3f} {h2h_rr:>6.3f} {delt_rr:>6.3f} {curr_rr:>6.3f}")
 
     # Show which chunk first matched (or miss)
     match_label = "MISS"
@@ -143,18 +189,16 @@ for i, item in enumerate(EVAL_SET, 1):
             continue
         break
 
-    delta = curr_rr - base_rr
-    delta_str = f"+{delta:.3f}" if delta > 0 else f"{delta:.3f}"
-    q_short = q[:51]
-    print(f"{i:<4} {q_short:<52} {base_rr:>6.3f} {curr_rr:>6.3f}  {delta_str:>6}  {match_label}")
-
-base_mrr = sum(base_scores) / len(base_scores)
+base_mrr = sum(base_scores)  / len(base_scores)
+h2h_mrr  = sum(h2h_scores)  / len(h2h_scores)
+delt_mrr = sum(delt_scores) / len(delt_scores)
 curr_mrr = sum(curr_scores) / len(curr_scores)
-lift     = curr_mrr - base_mrr
 
-print("-" * 95)
-print(f"{'MRR@6':<57} {base_mrr:>6.3f} {curr_mrr:>6.3f}  {lift:>+6.3f}")
+print("-" * 74)
+print(f"{'MRR@6':<48} {base_mrr:>6.3f} {h2h_mrr:>6.3f} {delt_mrr:>6.3f} {curr_mrr:>6.3f}")
 print()
-print(f"Baseline MRR@6 : {base_mrr:.3f}")
-print(f"Current  MRR@6 : {curr_mrr:.3f}")
-print(f"Absolute lift  : {lift:+.3f}  ({lift/base_mrr*100:+.1f}% relative)" if base_mrr > 0 else "")
+print("Ablation summary:")
+print(f"  Baseline (raw cosine)             : {base_mrr:.3f}")
+print(f"  + h2h-first fetch only            : {h2h_mrr:.3f}  ({h2h_mrr-base_mrr:+.3f})")
+print(f"  + delta reranking only            : {delt_mrr:.3f}  ({delt_mrr-base_mrr:+.3f})")
+print(f"  Full system (h2h fetch + delta)   : {curr_mrr:.3f}  ({curr_mrr-base_mrr:+.3f})")
