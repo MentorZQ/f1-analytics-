@@ -3,6 +3,7 @@
 A retrieval-augmented generation system for analysing F1 qualifying sessions. Ask natural language questions about lap times, sector performance, braking points, and head-to-head driver comparisons — answers are grounded entirely in telemetry data from FastF1, with no hallucinated facts.
 
 **Sessions included (pre-built, no re-ingestion needed):**
+- Melbourne 2026 Qualifying — 1249 chunks
 - Barcelona 2026 Qualifying — 703 chunks
 - Monza 2024 Qualifying — 933 chunks
 
@@ -30,8 +31,14 @@ A question like "Why was Bottas slow?" names one driver. The system detects that
 **Time delta as a ranking signal**:
 Chunks where two drivers differ most in section time are promoted in ranking above chunks where they are nearly equal. A chunk showing a 0.3s difference through a corner complex is more likely to explain lap time than one showing 0.01s — so it surfaces first. This was the insight that moved the system from retrieving *related* content to retrieving *diagnostic* content.
 
+**Fixing retrieval bias against corner sections**:
+Vector similarity search for questions like "Why did Russell take pole?" systematically ranked straight sections above corner sections — because the embedding model associates pole position with top speed and DRS language. Corner chunks, which use braking/apex/throttle vocabulary, ranked lower even when they explained more of the lap time. The fix was two-part: for driver pair queries, the initial fetch is restricted to `head_to_head_event` chunks only (preventing per-driver telemetry chunks from consuming the candidate pool), and the time-delta reranking weight was raised from 0.5 to 3.0 so sections with large time gaps are strongly promoted regardless of their cosine rank. The most diagnostic section for the Russell–Hamilton Barcelona lap (T6-T7-T8, where Russell gained 0.327s) went from never retrieved to rank 2.
+
+**Aligning internal section IDs with official FIA turn numbers**:
+The geometry detector assigns sequential IDs to curvature peaks (T1 through T24 at Melbourne) which do not match the 14 official numbered corners on the FIA track map. Cross-referencing detected peak distances against FastF1's `get_circuit_info()` corner positions revealed the mismatch: our "T8-T9-T10-T11" at Melbourne contains official T6, T7, and T8; our "T3" at Melbourne is an unnamed curve that precedes official T3 by 85m. A per-circuit label mapping translates every internal ID to its official display name — including "Curve before T3", "Sweepers before T9", and "Sweeper between T7-T8" for sections with no official number. Chunk IDs remain based on the internal ID so uniqueness is preserved; all user-facing text and metadata uses the official name.
+
 **The result**:
-The project moved from a state where the vector database had no principled structure and retrieval returned whatever was semantically closest, to one where every retrieved chunk contains quantitatively precise, engineer-readable information, section sums match actual lap times, and the system can answer questions like "where exactly did Russell beat his teammate" with specific distances, speeds, and time deltas — derived entirely from stored telemetry with no external lookups.
+The project moved from a state where the vector database had no principled structure and retrieval returned whatever was semantically closest, to one where every retrieved chunk contains quantitatively precise, engineer-readable information, section sums match actual lap times, corner sections surface correctly alongside straights, and the system can answer questions like "where exactly did Russell beat his teammate" with official turn numbers, specific distances, speeds, and time deltas — derived entirely from stored telemetry with no external lookups.
 
 ---
 
@@ -73,7 +80,7 @@ python query.py --verbose "Who just missed Q3 at the 2026 Spanish Grand Prix?"
 python query.py
 ```
 
-Session is auto-detected from the question text. Mentions of "Barcelona", "Spain", "2026" route to the Barcelona collection; "Monza", "Italy", "2024" route to Monza.
+Session is auto-detected from the question text. Mentions of "Melbourne", "Australia" route to the Melbourne collection; "Barcelona", "Spain", "Catalunya" route to Barcelona; "Monza", "Italy", "2024" route to Monza.
 
 ---
 
@@ -136,6 +143,8 @@ The lap is divided into non-overlapping sections that tile the full track distan
 - **Intent detection** — single-driver questions ("Why was Bottas slow?") detect whether the question is about pole, Q3 cutoff, or general pace, then infer a comparison driver from session standings
 - **Guaranteed slot injection** — if an inferred comparison driver is missing from the top-N results, one targeted chunk is injected
 - **Significance reranking** — chunks where drivers differ most in section time are promoted, so the most diagnostic sections surface first
+- **Head-to-head priority fetching** — for driver pair questions, the candidate pool is filled with `head_to_head_event` chunks before any other type, preventing per-driver telemetry chunks from crowding out corner sections that rank lower in cosine space
+- **Official turn labels** — section IDs are mapped to official FIA corner numbers per circuit; unnamed curvy sections are labelled relative to the nearest official turns (e.g. "Sweeper between T7-T8")
 
 ---
 
@@ -143,18 +152,27 @@ The lap is divided into non-overlapping sections that tile the full track distan
 
 ```bash
 # 1. Edit reingest.py — add your session to the SESSIONS list:
-{"year": 2025, "circuit": "Silverstone", "short": "silverstone"}
+{"year": 2025, "circuit": "Silverstone", "short": "Silverstone"}
 
 # 2. Run re-ingestion (downloads FastF1 data, builds chunks, embeds, stores)
 python reingest.py
 
-# 3. Commit the updated chroma store
-git add RAG_data_layers/chroma_store/
+# 3. Add official corner labels in events_and_chunking/circuit_labels.py
+#    Run FastF1 circuit_info to get official corner distances, cross-reference
+#    with detected section spans, add a mapping entry for the circuit name.
+
+# 4. Re-run reingest.py to apply the new labels, then commit
+git add RAG_data_layers/chroma_store/ events_and_chunking/circuit_labels.py
 git commit -m "Add Silverstone 2025 qualifying"
 ```
 
 Circuits with high-resolution track geometry (required for section detection):
 Monza, Silverstone, Spa, Suzuka, Barcelona, Zandvoort, Austin, Melbourne
+
+The `short` name must match the OpenF1 API `circuit_short_name` field. To find it:
+```bash
+curl "https://api.openf1.org/v1/sessions?year=2025&session_name=Qualifying"
+```
 
 ---
 
@@ -178,6 +196,7 @@ f1-analytics-/
 ├── events_and_chunking/
 │   ├── pipeline.py                   # Top-level: runs all chunkers for a session
 │   ├── detect_events.py              # Geometry-based track section detection
+│   ├── circuit_labels.py             # Official FIA corner name mappings per circuit
 │   ├── chunk_telemetry.py            # Head-to-head + per-driver event chunks
 │   ├── chunk_driver.py               # Lap summary, sector, telemetry zone chunks
 │   ├── chunk_session.py              # Weather + race control chunks
