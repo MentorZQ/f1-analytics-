@@ -36,7 +36,8 @@ _DRIVER_NAMES: dict[str, str] = {
     "stroll": "STR", "lance": "STR",
     "bottas": "BOT", "valtteri": "BOT",
     "zhou": "ZHO", "guanyu": "ZHO",
-    "hulkenberg": "HUL", "hülkenberg": "HUL",
+    "bortoleto": "BOR", "gabriel": "BOR",
+    "hulkenberg": "HUL", "hülkenberg": "HUL", "nico": "HUL",
     "magnussen": "MAG", "kevin": "MAG",
     "gasly": "GAS", "pierre": "GAS",
     "ocon": "OCO", "esteban": "OCO",
@@ -128,23 +129,23 @@ def build_driver_where(codes: set[str]) -> dict | None:
     return {"$or": conditions}
 
 
-_POLE_KW    = {"pole", "fastest lap", "quickest", "p1 ", "first place"}
-_Q3_KW      = {"q3", "q2", "make it", "miss", "cut", "through", "eliminated",
-               "qualify for", "missed out", "make q3"}
-_SLOW_KW    = {"slow", "off the pace", "off ", "struggle", "behind", "gap",
-               "went wrong", "pace", "lost", "weak", "worst"}
+_POLE_KW = {"pole", "fastest lap", "quickest", "p1 ", "first place"}
+_SLOW_KW = {"slow", "off the pace", "off ", "struggle", "behind", "gap",
+            "went wrong", "pace", "lost", "weak", "worst"}
 
 
 def detect_query_intent(question: str) -> str:
     """
-    Classify a question into one of four intent buckets used for context
-    expansion. Returns: "pole" | "q3_cutoff" | "slowness" | "general"
+    Classify a question into an intent bucket used for context expansion.
+    Returns: "pole" | "slowness" | "general"
+
+    Q3 cutoff questions ("who missed Q3?") are handled by the chunk data
+    — driver_lap_summary chunks contain qualifying session progression —
+    so no keyword-based intent expansion is needed for that case.
     """
     q = question.lower()
     if any(kw in q for kw in _POLE_KW):
         return "pole"
-    if any(kw in q for kw in _Q3_KW):
-        return "q3_cutoff"
     if any(kw in q for kw in _SLOW_KW):
         return "slowness"
     return "general"
@@ -159,17 +160,11 @@ def resolve_context_drivers(
     """
     Expand named_codes with positionally-inferred comparison partners.
 
-    session_ctx shape (from load_session_context):
-        drivers:     {code: {position, lap_time_s, team, gap_to_pole_s}}
-        teammate_of: {code: code}
-        pole, p2, q3_last, q3_miss: driver codes
-
     Rules by intent:
       - 2+ named drivers → no expansion needed, return as-is
       - pole intent      → add pole sitter (or P2 if driver IS pole)
-      - q3_cutoff intent → add P10 (q3_last) and P11 (q3_miss)
       - slowness intent  → add teammate if driver is slower by > threshold, else pole
-      - 0 named + q3    → return {q3_last, q3_miss} (boundary question)
+      - general / no match → add pole as default comparison anchor
     """
     if len(named_codes) >= 2:
         return named_codes
@@ -178,12 +173,8 @@ def resolve_context_drivers(
     drivers_info = session_ctx.get("drivers", {})
     pole         = session_ctx.get("pole")
     p2           = session_ctx.get("p2")
-    q3_last      = session_ctx.get("q3_last")
-    q3_miss      = session_ctx.get("q3_miss")
 
     if not named_codes:
-        if intent == "q3_cutoff":
-            return {c for c in (q3_last, q3_miss) if c}
         return named_codes
 
     driver   = next(iter(named_codes))
@@ -194,14 +185,6 @@ def resolve_context_drivers(
     if intent == "pole":
         cmp = p2 if driver == pole else pole
         return {driver, cmp} if cmp else {driver}
-
-    if intent == "q3_cutoff":
-        result = {driver}
-        if q3_last:
-            result.add(q3_last)
-        if q3_miss:
-            result.add(q3_miss)
-        return result
 
     if intent == "slowness" and teammate:
         tm_info = drivers_info.get(teammate, {})

@@ -73,6 +73,15 @@ def load_qualifying_session(year: int, circuit: str) -> dict:
     driver_fastest = driver_fastest[keep_cols].sort_values("LapTime").reset_index(drop=True)
     driver_fastest["QualifyingPosition"] = driver_fastest.index + 1
 
+    # Determine which Q session each driver reached (Q1/Q2/Q3)
+    # Standard format: top 10 → Q3, P11-15 → Q2 eliminated, P16+ → Q1 eliminated
+    def _q_session(pos: int) -> str:
+        if pos <= 10:   return "Q3"
+        elif pos <= 15: return "Q2"
+        else:           return "Q1"
+
+    driver_fastest["QSessionReached"] = driver_fastest["QualifyingPosition"].apply(_q_session)
+
     # --- Weather ---
     weather = session.weather_data.copy() if session.weather_data is not None else pd.DataFrame()
 

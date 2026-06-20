@@ -95,8 +95,6 @@ def load_session_context(collection) -> dict:
         "teammate_of":  teammate_of,
         "pole":         standings[0][0] if standings else None,
         "p2":           standings[1][0] if len(standings) > 1 else None,
-        "q3_last":      standings[9][0] if len(standings) > 9 else None,
-        "q3_miss":      standings[10][0] if len(standings) > 10 else None,
     }
 
 

@@ -56,9 +56,9 @@ def clean_metadata(metadata: dict) -> dict:
 # ── Sessions to rebuild ───────────────────────────────────────────────────────
 
 SESSIONS = [
-    {"year": 2024, "circuit": "Monza",     "short": "monza"},
-    {"year": 2026, "circuit": "Barcelona", "short": "Catalunya"},
-    {"year": 2026, "circuit": "Melbourne", "short": "Melbourne"},
+    {"year": 2024, "circuit": "Monza",     "short": "monza",     "h2h_top_n": 5},
+    {"year": 2026, "circuit": "Barcelona", "short": "Catalunya", "h2h_top_n": 10},
+    {"year": 2026, "circuit": "Melbourne", "short": "Melbourne", "h2h_top_n": 10},
 ]
 
 CHROMA_PATH = ROOT / "RAG_data_layers/chroma_store"
@@ -85,7 +85,7 @@ def ingest_session(client: chromadb.PersistentClient, cfg: dict) -> None:
         openf1_data=openf1_ctx,
         track_data=track,
         session_info=session_data["session_info"],
-        head_to_head_top_n=5,
+        head_to_head_top_n=cfg.get("h2h_top_n", 5),
         verbose=True,
     )
 

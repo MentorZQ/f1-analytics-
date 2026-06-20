@@ -99,10 +99,24 @@ def chunk_driver_lap_summary(
         if col in driver_row.index and not pd.isna(driver_row[col]):
             sectors[s] = driver_row[col]
 
+    q_session = driver_row.get("QSessionReached", None)
+    if q_session == "Q3":
+        q_status = "Qualified for Q3"
+    elif q_session == "Q2":
+        q_status = "Eliminated at end of Q2 — did not qualify for Q3"
+    elif q_session == "Q1":
+        q_status = "Eliminated at end of Q1 — did not reach Q2 or Q3"
+    else:
+        q_status = None
+
     lines = [
         f"Qualifying Lap Summary: {driver} ({team})",
         f"Event: {circuit} {year} Qualifying",
         f"Qualifying position: P{pos}",
+    ]
+    if q_status:
+        lines.append(f"Qualifying progression: {q_status}")
+    lines += [
         f"Best lap time: {format_timedelta(lap_time)}",
         f"Gap to pole: {format_delta(gap) if pos > 1 else 'POLE POSITION'}",
     ]
