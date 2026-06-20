@@ -215,16 +215,22 @@ def resolve_context_drivers(
 
 def _event_significance(chunk: dict) -> float:
     """
-    For head_to_head_event chunks, return a significance score in seconds.
+    Significance score used to boost chunks during reranking.
 
-    Prefers time_delta_s (actual lap-time contribution of the section gap)
-    when available — added to chunks from the updated chunker. Falls back
-    to a speed-delta proxy for older chunks without the field.
+    driver_dnq_status chunks get the highest boost (10.0) so they always
+    surface first when a driver who didn't set a lap time is named.
 
-    Non-h2h-event chunks return 0 (no adjustment).
+    head_to_head_event chunks are boosted by their time_delta_s value.
+
+    All other chunk types return 0 (no adjustment).
     """
     meta = chunk.get("metadata", {})
-    if meta.get("chunk_type") != "head_to_head_event":
+    chunk_type = meta.get("chunk_type")
+
+    if chunk_type == "driver_dnq_status":
+        return 10.0  # always surfaces first
+
+    if chunk_type != "head_to_head_event":
         return 0.0
 
     time_delta = meta.get("time_delta_s")
@@ -352,6 +358,17 @@ def smart_retrieve(
                     chunks.append(chunk)
                     seen_ids.add(chunk["chunk_id"])
                     break
+
+    # For any named driver who has a dnq_status chunk, inject it unconditionally.
+    # These have significance=10.0 so they will rank first after reranking.
+    for driver in named_codes:
+        dnq_where = {"$and": [{"chunk_type": "driver_dnq_status"}, {"driver": driver}]}
+        for chunk in retrieve_chunks(collection, question, embed_fn,
+                                     n_results=1, where=dnq_where,
+                                     normalize=False, auto_filter=False):
+            if chunk["chunk_id"] not in seen_ids:
+                chunks.append(chunk)
+                seen_ids.add(chunk["chunk_id"])
 
     return rerank_by_significance(chunks)[:n_results]
 

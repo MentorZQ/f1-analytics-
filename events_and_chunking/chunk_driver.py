@@ -23,6 +23,49 @@ from .chunk_types import Chunk, make_chunk_id, format_timedelta, format_delta
 
 
 # ---------------------------------------------------------------------------
+# DNQ / did-not-set-time status chunk
+# ---------------------------------------------------------------------------
+
+def chunk_driver_dnq_status(dnq_info: dict, session_info: dict) -> Chunk:
+    """
+    One chunk per driver who participated in qualifying but set no valid lap time.
+
+    This chunk surfaces first in context when the driver is named in a question,
+    so the LLM explains what happened rather than saying 'no data found'.
+    """
+    year    = session_info["year"]
+    circuit = session_info["circuit"]
+    driver  = dnq_info["driver"]
+    name    = dnq_info.get("full_name", driver)
+    team    = dnq_info.get("team", "Unknown")
+    reason  = dnq_info.get("reason", "did not complete a timed lap")
+
+    lines = [
+        f"QUALIFYING STATUS — {driver} ({name}, {team})",
+        f"Event: {circuit} {year} Qualifying",
+        f"Outcome: DID NOT SET A LAP TIME — eliminated in Q1",
+        f"Reason: {reason.capitalize()}.",
+        f"{driver} did not advance beyond Q1 and has no lap time, sector splits, or telemetry "
+        f"available in this session. Head-to-head comparisons with {driver} are not possible.",
+    ]
+
+    return Chunk(
+        chunk_id=make_chunk_id("driver_dnq_status", circuit, year, driver),
+        chunk_type="driver_dnq_status",
+        text="\n".join(lines),
+        metadata={
+            "circuit":  circuit,
+            "year":     year,
+            "driver":   driver,
+            "team":     team,
+            "outcome":  "dnq",
+            "reason":   reason,
+            "source":   "fastf1",
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Driver lap summary
 # ---------------------------------------------------------------------------
 
@@ -486,12 +529,17 @@ def build_driver_chunks(
     session_info = fastf1_data["session_info"]
     fastest      = fastf1_data["driver_fastest_laps"]
     telemetry    = fastf1_data.get("telemetry", {})
+    dnq_drivers  = fastf1_data.get("dnq_drivers", [])
 
     if fastest.empty:
         return []
 
     pole_time = fastest.iloc[0]["LapTime"]
     chunks    = []
+
+    # 0. DNQ status chunks — first in list so they surface first in context
+    for dnq in dnq_drivers:
+        chunks.append(chunk_driver_dnq_status(dnq, session_info))
 
     # 1. Lap summary — one per driver
     for _, row in fastest.iterrows():

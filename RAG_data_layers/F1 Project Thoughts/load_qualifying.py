@@ -92,12 +92,41 @@ def load_qualifying_session(year: int, circuit: str) -> dict:
     print(f"  Loaded {len(driver_fastest)} drivers, {len(laps)} total laps")
     print(f"  Telemetry loaded for: {list(telemetry.keys())}")
 
+    # --- Drivers who participated but set no valid lap time ---
+    # These are excluded from driver_fastest_laps but need a status chunk
+    # so the LLM can explain what happened when they are named in a question.
+    all_session_drivers = session.drivers  # all driver numbers in the session
+    drivers_with_laps   = set(driver_fastest["Driver"].tolist())
+    dnq_drivers = []
+    for num in all_session_drivers:
+        info     = session.get_driver(num)
+        abbr     = info.get("Abbreviation", num)
+        if abbr in drivers_with_laps:
+            continue
+        full_name = info.get("FullName", abbr)
+        team      = info.get("TeamName", "Unknown")
+        # Determine what happened: check their raw laps (including aborted)
+        raw_laps  = session.laps[session.laps["DriverNumber"] == num]
+        last_status = None
+        if not raw_laps.empty:
+            last_status = int(raw_laps.iloc[-1]["TrackStatus"]) if not pd.isna(raw_laps.iloc[-1]["TrackStatus"]) else None
+        reason = "flying lap interrupted by red flag" if last_status == 125 else "did not complete a timed lap"
+        dnq_drivers.append({
+            "driver":    abbr,
+            "full_name": full_name,
+            "team":      team,
+            "reason":    reason,
+            "lap_count": len(raw_laps),
+        })
+        print(f"  DNQ driver: {abbr} ({full_name}) — {reason}")
+
     return {
-        "session_info": session_info,
+        "session_info":       session_info,
         "driver_fastest_laps": driver_fastest,
-        "all_laps": laps,
-        "weather": weather,
-        "telemetry": telemetry,
+        "all_laps":           laps,
+        "weather":            weather,
+        "telemetry":          telemetry,
+        "dnq_drivers":        dnq_drivers,
     }
 
 

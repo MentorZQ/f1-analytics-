@@ -23,6 +23,7 @@ import json
 # All valid chunk types in the pipeline
 CHUNK_TYPES = {
     "circuit_overview",           # Static circuit facts (length, altitude, corners)
+    "driver_dnq_status",          # Driver who set no lap time — crash/red flag/mechanical
     "driver_lap_summary",         # One driver's full qualifying lap summary
     "driver_sector",              # One driver, one sector (times + telemetry summary)
     "driver_telemetry_zone",      # One driver, one track zone (braking/acceleration detail)
