@@ -195,7 +195,7 @@ def answer(
             print(f"  {c['rank']}. [{meta.get('chunk_type')}] {drv} {eid} dist={round(c['distance'],4)}")
         print()
 
-    prompt    = format_prompt(question, chunks, max_chunks=n_chunks)
+    prompt    = format_prompt(question, chunks, max_chunks=n_chunks, session_ctx=session_ctx)
     response  = call_llm(prompt, model=model)
     return response
 
@@ -240,7 +240,7 @@ def main() -> None:
         return
 
     # Interactive mode
-    print("F1 RAG — ask questions about Barcelona 2026 or Monza 2024 qualifying.")
+    print("F1 RAG — ask questions about Melbourne 2026, Barcelona 2026, or Monza 2024 qualifying.")
     print("Type 'exit' or Ctrl+C to quit.\n")
     while True:
         try:

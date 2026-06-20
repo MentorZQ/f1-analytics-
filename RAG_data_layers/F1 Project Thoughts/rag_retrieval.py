@@ -405,7 +405,12 @@ def retrieve_chunks(
     return chunks
 
 
-def format_prompt(question: str, retrieved_chunks: list[dict], max_chunks: int = 5) -> str:
+def format_prompt(
+    question: str,
+    retrieved_chunks: list[dict],
+    max_chunks: int = 5,
+    session_ctx: dict | None = None,
+) -> str:
     """Format retrieved chunks into a prompt the LLM can answer from."""
     context_blocks = []
 
@@ -420,6 +425,19 @@ def format_prompt(question: str, retrieved_chunks: list[dict], max_chunks: int =
         ]
         header = " | ".join(str(bit) for bit in header_bits if bit not in (None, ""))
         context_blocks.append(f"[{chunk['rank']}] {header}\n{chunk['text'].strip()}")
+
+    # Detect drivers named in the question who have no data in the collection
+    named_codes = extract_driver_codes(question)
+    if named_codes and session_ctx:
+        known_drivers = set(session_ctx.get("drivers", {}).keys())
+        missing = named_codes - known_drivers
+        if missing:
+            missing_names = ", ".join(sorted(missing))
+            context_blocks.append(
+                f"[NOTE] The following driver(s) have no qualifying data in this session "
+                f"and cannot be compared: {missing_names}. "
+                f"They may not have set a lap time (e.g. due to a red flag, mechanical issue, or DNS)."
+            )
 
     context = "\n\n".join(context_blocks) if context_blocks else "No context retrieved."
 
