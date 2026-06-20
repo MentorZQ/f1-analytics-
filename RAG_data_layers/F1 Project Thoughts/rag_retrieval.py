@@ -36,7 +36,7 @@ _DRIVER_NAMES: dict[str, str] = {
     "stroll": "STR", "lance": "STR",
     "bottas": "BOT", "valtteri": "BOT",
     "zhou": "ZHO", "guanyu": "ZHO",
-    "bortoleto": "BOR", "gabriel": "BOR",
+    "bortoleto": "BOR", "gabriel": "BOR", "gabi": "BOR",
     "hulkenberg": "HUL", "hülkenberg": "HUL", "nico": "HUL",
     "magnussen": "MAG", "kevin": "MAG",
     "gasly": "GAS", "pierre": "GAS",
