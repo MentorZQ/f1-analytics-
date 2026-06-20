@@ -79,14 +79,14 @@ EVAL_SET = [
         "notes": "Single-driver pole question; comparison auto-expands to HAM (P2)",
     },
     {
-        "question": "How did Norris qualify at Barcelona 2026?",
+        "question": "Why was Norris slow at Barcelona 2026?",
         "session":  "barcelona",
         "expected_chunks": [
             ("head_to_head_event", "T1-T2-T3-T4-T5"),  # biggest delta vs pole
             ("head_to_head_event", "T10-T11-T12"),
             ("head_to_head_event", "Main straight"),
         ],
-        "notes": "NOR P4; single-driver question expands to pole sitter RUS",
+        "notes": "NOR P4; slowness intent expands to pole sitter RUS",
     },
     {
         "question": "Where did Leclerc struggle compared to pole at Barcelona?",
