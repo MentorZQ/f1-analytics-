@@ -51,11 +51,22 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 
 ---
 
+## Answer Quality
+
+### RAGAS Faithfulness
+*Fraction of claims in the LLM answer that are directly supported by retrieved context. Run: `python tests/run_ragas.py`*
+*Answers cached in `tests/ragas_cache.json` — use `--regen` to refresh.*
+
+| Version | Faithfulness | Notes |
+|---|---|---|
+| Current (claude-sonnet-4-6, n=6 chunks) | 0.872 | ~1 in 8 claims not directly verifiable from context |
+
+---
+
 ## Pending Metrics
 
 | Metric | Why | How to measure |
 |---|---|---|
 | NDCG@6 | Weighted recall — rewards surfacing highest time-delta sections at higher ranks | Add to `tests/run_mrr.py` alongside MRR |
-| RAGAS faithfulness | Does the LLM hallucinate facts outside the retrieved context? | `pip install ragas`, run eval question set through it |
 | Ablation table | Empirically justify each design decision (h2h fetch, delta weight, etc.) | Run MRR@6 with one component removed at a time |
 | Latency p50/p95 | Deployability signal for applied AI roles | Time retrieval + LLM call across 20 questions, report percentiles |

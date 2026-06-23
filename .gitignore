@@ -228,3 +228,4 @@ RAG_data_layers/cache/
 
 .DS_Store
 
+tests/ragas_cache.json
