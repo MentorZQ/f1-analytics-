@@ -41,7 +41,7 @@ _MELBOURNE = {
     "T22":            "T12",
     "T23-T24":        "T13-T14",
     # straights
-    "S_main":  "Main straight",
+    "S_main":  "Main straight (start, before T1)",
     "S1":      "Between T2-T3",
     "S2":      "Before T3-T4",
     "S3":      "Between T4-T5",
@@ -54,7 +54,7 @@ _MELBOURNE = {
     "S10":     "Before T11",
     "S11":     "Between T11-T12",
     "S12":     "Between T12-T13",
-    "S_finish": "Main straight",
+    "S_finish": "Main straight (finish, after final corner)",
 }
 
 _BARCELONA = {
@@ -65,12 +65,12 @@ _BARCELONA = {
     "T11-T12-T13-T14":     "T10-T11-T12",
     "T15-T16-T17-T18":     "T13-T14",
     # straights
-    "S_main":  "Main straight",
+    "S_main":  "Main straight (start, before T1)",
     "S1":      "Between T5-T6",
     "S2":      "Between T8-T9",
     "S3":      "Between T9-T10",
     "S4":      "Between T12-T13",
-    "S_finish": "Main straight",
+    "S_finish": "Main straight (finish, after final corner)",
 }
 
 _MONZA = {
@@ -85,7 +85,7 @@ _MONZA = {
     "T9-T10":  "T8-T9-T10",
     "T11-T12": "T11",
     # straights
-    "S_main":  "Main straight",
+    "S_main":  "Main straight (start, before T1)",
     "S1":      "Between T2-T3",
     "S2":      "Before T3",
     "S3":      "Before T4-T5",
@@ -94,7 +94,7 @@ _MONZA = {
     "S6":      "After T7",
     "S7":      "Before T8-T9-T10",
     "S8":      "Before T11",
-    "S_finish": "Main straight",
+    "S_finish": "Main straight (finish, after final corner)",
 }
 
 CIRCUIT_LABELS: dict[str, dict[str, str]] = {
