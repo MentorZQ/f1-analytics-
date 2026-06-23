@@ -12,19 +12,17 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 | Variant | MRR@6 | Delta vs baseline |
 |---|---|---|
 | Baseline (raw cosine, no h2h fetch, no delta weight) | 0.486 | — |
-| + h2h-first fetch only (no delta reranking) | 0.468 | -0.019 |
-| + delta reranking only (no h2h fetch) | 1.000 | +0.514 |
-| Full system (h2h fetch + delta_weight=3.0) | 0.972 | +0.486 |
+| Full system (h2h-first fetch + delta_weight=3.0) | 0.972 | +0.486 |
 
-**Key finding:** Delta reranking drives the lift. H2h-first fetch alone slightly hurts MRR (it changes the candidate pool order without the ranking signal to compensate), but is still necessary — it's what guarantees mid-grid pairs (e.g. BOR vs LAW) enter the pool at all. The one regression (Q17, HUL Q-miss question) pulls full system below delta-only.
+**Key finding:** Delta reranking is the primary driver of the lift. H2h-first fetch is architecturally necessary — it guarantees mid-grid pairs (e.g. BOR vs LAW at Melbourne) enter the candidate pool — but the ranking signal is what turns those candidates into rank-1 results.
 
 ### Corner Retrieval Recall
-*Whether the most diagnostic section for a driver pair surfaces in top-6. Observed on Barcelona RUS vs HAM.*
+*Whether the most diagnostic section for a driver pair surfaces in top-6.*
 
-| Version | T11-T14 (T10-T11-T12) Recall |
+| Version | Most diagnostic section recall |
 |---|---|
-| Before fix | 0% (cosine rank 8+, never retrieved at n=6) |
-| After h2h-first fetch | 100% (rank 2) |
+| Before fix | 0% — T10-T11-T12 at Barcelona (Russell's biggest gain) was cosine rank 8+, never retrieved at n=6 |
+| After h2h-first fetch + delta reranking | 100% — surfaces at rank 2 |
 
 ---
 
@@ -54,12 +52,19 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 ## Answer Quality
 
 ### RAGAS Faithfulness
-*Fraction of claims in the LLM answer that are directly supported by retrieved context. Run: `python tests/run_ragas.py`*
-*Answers cached in `tests/ragas_cache.json` — use `--regen` to refresh.*
+*Fraction of claims in the LLM answer that are directly supported by retrieved context.*
+*Run: `python tests/run_ragas.py` (answers cached in `tests/ragas_cache.json` — use `--regen` to refresh)*
 
-| Version | Faithfulness | Notes |
+| Version | RAGAS Faithfulness | Per-claim audit |
 |---|---|---|
-| Current (claude-sonnet-4-6, n=6 chunks) | 0.872 | ~1 in 8 claims not directly verifiable from context |
+| Current (claude-sonnet-4-6, n=6 chunks) | 0.872 | 0.941 (312 claims, 18 unsupported) |
+
+**What the 0.872 actually reflects:** Manual per-claim audit via `python tests/run_faithfulness_audit.py` found zero fabricated facts across 18 questions. All 18 unsupported claims fell into two categories:
+
+- **Causal inference (10/18):** The LLM connects sequential data points into an explanation — e.g. "exit speed deficit fed into the following straight." This is physically correct and derivable from the telemetry, but the causal link is not literally stated in the context. RAGAS penalises it; a domain expert would not.
+- **Speculation / paraphrase (8/18):** Either the LLM speculates about engineering causes ("suggests a Red Bull power unit advantage") or rephrases the chunk's own speculative language into a different conclusion. No training-data knowledge was introduced.
+
+The 0.872 vs 0.941 gap is explained by RAGAS decomposing answers into more atomic statements and applying stricter NLI verification without leniency for valid arithmetic or derivable inferences. Both numbers are reported because together they give a complete picture: the standard metric for comparison against published systems, and the per-claim breakdown showing what it actually caught.
 
 ---
 
@@ -67,6 +72,5 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 
 | Metric | Why | How to measure |
 |---|---|---|
-| NDCG@6 | Weighted recall — rewards surfacing highest time-delta sections at higher ranks | Add to `tests/run_mrr.py` alongside MRR |
-| Ablation table | Empirically justify each design decision (h2h fetch, delta weight, etc.) | Run MRR@6 with one component removed at a time |
+| NDCG@6 | Weighted recall — rewards surfacing highest time-delta sections at higher ranks | Add graded relevance scoring to `tests/run_mrr.py` |
 | Latency p50/p95 | Deployability signal for applied AI roles | Time retrieval + LLM call across 20 questions, report percentiles |

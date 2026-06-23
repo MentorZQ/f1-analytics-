@@ -148,6 +148,34 @@ The lap is divided into non-overlapping sections that tile the full track distan
 
 ---
 
+## Evaluation
+
+All metrics are tracked in [METRICS.md](METRICS.md). Runners live in `tests/`.
+
+### Retrieval — MRR@6
+
+Evaluated on an 18-question labeled set covering head-to-head comparisons, single-driver pole questions, and DNQ/Q-miss questions across Barcelona and Melbourne 2026. Expected chunks are the top-3 highest |time_delta_s| sections for each driver pair, derived directly from the stored data.
+
+| System | MRR@6 |
+|---|---|
+| Baseline (raw cosine, no h2h fetch, no delta weight) | 0.486 |
+| Full system | **0.972** |
+
+The baseline completely missed every mid-grid pair (BOR vs LAW, PIA vs NOR) and every single-driver pole question. The h2h-first fetch guarantees those pairs enter the candidate pool; the delta reranking ensures the most diagnostic sections surface first.
+
+### Answer quality — RAGAS Faithfulness
+
+Evaluated on the same 18 questions using RAGAS with Claude Haiku as the evaluator.
+
+| Metric | Score |
+|---|---|
+| RAGAS faithfulness | **0.872** |
+| Per-claim audit (manual) | 0.941 (312 claims, 18 unsupported) |
+
+The gap between the two numbers is explained by RAGAS being stricter on causal inferences. Manual audit of all 18 unsupported claims found **zero fabricated facts** — no invented lap times, positions, or driver history. All failures were either correct causal reasoning not literally stated in the retrieved text, or arithmetic derivations (e.g. 211m − 203m = 8m earlier throttle). Run `python tests/run_faithfulness_audit.py --fails` to see each flagged claim with the evaluator's reasoning.
+
+---
+
 ## Adding a new session
 
 ```bash
