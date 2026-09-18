@@ -48,6 +48,8 @@ def clean_metadata(metadata: dict) -> dict:
             continue
         if isinstance(value, np.generic):
             value = value.item()
+        if isinstance(value, float) and value != value:  # NaN
+            continue
         if isinstance(value, (list, tuple, set, dict)):
             value = json.dumps(value)
         cleaned[key] = value
