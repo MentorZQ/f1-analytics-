@@ -165,7 +165,11 @@ def answer(
     if collection_name is None:
         return f"Unknown session '{session_key}'. Available: {list(SESSIONS)}"
 
-    client = chromadb.PersistentClient(path=str(ROOT / "RAG_data_layers/chroma_store"))
+    chroma_host = os.environ.get("CHROMA_HOST")
+    if chroma_host:
+        client = chromadb.HttpClient(host=chroma_host, port=int(os.environ.get("CHROMA_PORT", "8000")))
+    else:
+        client = chromadb.PersistentClient(path=str(ROOT / "RAG_data_layers/chroma_store"))
 
     try:
         collection = client.get_collection(collection_name)

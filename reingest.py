@@ -15,6 +15,7 @@ Both sessions use the updated pipeline with:
   - _time_at_distance          : interpolated section times at exact boundaries
 """
 
+import os
 import sys
 import json
 from pathlib import Path
@@ -133,8 +134,12 @@ def ingest_session(client: chromadb.PersistentClient, cfg: dict) -> None:
 
 
 def main() -> None:
-    CHROMA_PATH.mkdir(parents=True, exist_ok=True)
-    client = chromadb.PersistentClient(path=str(CHROMA_PATH))
+    chroma_host = os.environ.get("CHROMA_HOST")
+    if chroma_host:
+        client = chromadb.HttpClient(host=chroma_host, port=int(os.environ.get("CHROMA_PORT", "8000")))
+    else:
+        CHROMA_PATH.mkdir(parents=True, exist_ok=True)
+        client = chromadb.PersistentClient(path=str(CHROMA_PATH))
 
     for cfg in SESSIONS:
         ingest_session(client, cfg)

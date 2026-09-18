@@ -133,6 +133,42 @@ _POLE_KW = {"pole", "fastest lap", "quickest", "p1 ", "first place"}
 _SLOW_KW = {"slow", "off the pace", "off ", "struggle", "behind", "gap",
             "went wrong", "pace", "lost", "weak", "worst"}
 
+# Ordered (keywords, standings index) pairs for nameless positional questions
+# ("who took pole?", "who was second?", "who finished last?"). Checked in
+# order so "first" is matched before "last" etc. Index is 0-based into
+# session_ctx["standings"]; the sentinel "last" means the final entry.
+_POSITION_KW: list[tuple[set[str], int | str]] = [
+    ({"pole", "first place", "1st", "p1 ", "fastest"}, 0),
+    ({"second", "2nd", "p2 ", "runner up", "runner-up", "runnerup"}, 1),
+    ({"third", "3rd", "p3 "}, 2),
+    ({"last", "slowest", "bottom of"}, "last"),
+]
+
+# Q-session cutoffs are fixed by F1 rules regardless of grid size: Q3 = top
+# 10, Q2 = top 15. "Last in Q3"/"Q3 cutoff" means the last driver who made
+# that stage (standings index), not last overall — checked before the
+# generic "last" match in _POSITION_KW.
+_STAGE_LAST_KW: list[tuple[set[str], int]] = [
+    ({"last in q3", "q3 cutoff", "bumped from q3", "bottom of q3"}, 9),
+    ({"last in q2", "q2 cutoff", "bumped from q2", "bottom of q2"}, 14),
+]
+
+
+def detect_position_index(question: str) -> int | str | None:
+    """
+    Match a nameless question to a standings index ("pole"/"first" -> 0,
+    "second" -> 1, "last"/"slowest" -> "last", "last in q3" -> 9, ...).
+    Returns None if no positional keyword is found.
+    """
+    q = " " + question.lower() + " "
+    for keywords, index in _STAGE_LAST_KW:
+        if any(kw in q for kw in keywords):
+            return index
+    for keywords, index in _POSITION_KW:
+        if any(kw in q for kw in keywords):
+            return index
+    return None
+
 
 def detect_query_intent(question: str) -> str:
     """
@@ -162,6 +198,9 @@ def resolve_context_drivers(
 
     Rules by intent:
       - 2+ named drivers → no expansion needed, return as-is
+      - no named driver, positional question → resolve directly against
+        session_ctx["standings"] ("who took pole?" -> P1, "who was second?"
+        -> P2, "who finished last?" -> last in standings)
       - pole intent      → add pole sitter (or P2 if driver IS pole)
       - slowness intent  → add teammate if driver is slower by > threshold, else pole
       - general / no match → add pole as default comparison anchor
@@ -175,6 +214,12 @@ def resolve_context_drivers(
     p2           = session_ctx.get("p2")
 
     if not named_codes:
+        standings = session_ctx.get("standings", [])
+        pos_index = detect_position_index(question)
+        if pos_index is not None and standings:
+            idx = len(standings) - 1 if pos_index == "last" else pos_index
+            if 0 <= idx < len(standings):
+                return {standings[idx]}
         return named_codes
 
     driver   = next(iter(named_codes))

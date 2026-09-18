@@ -1,0 +1,14 @@
+venv/
+.git/
+.ipynb_checkpoints/
+notebooks/
+tests/
+cache/
+RAG_data_layers/cache/
+RAG_data_layers/chroma_store/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+*.md
+LICENSE
