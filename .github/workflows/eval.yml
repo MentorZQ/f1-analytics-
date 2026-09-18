@@ -1,0 +1,55 @@
+name: Eval
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_ragas:
+        description: "Also run RAGAS faithfulness eval (costs Anthropic API credits)"
+        type: boolean
+        default: false
+
+jobs:
+  mrr-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements_core.txt
+
+      - name: Run MRR@6 retrieval eval
+        run: python tests/run_mrr.py
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t f1-analytics-app .
+
+  ragas-eval:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_ragas == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements_core.txt
+          pip install ragas langchain-anthropic
+
+      - name: Run RAGAS faithfulness eval
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python tests/run_ragas.py
