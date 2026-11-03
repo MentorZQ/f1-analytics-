@@ -117,6 +117,9 @@ def relabel_events(events: list[dict], circuit: str) -> list[dict]:
     relabelled = []
     for ev in events:
         ev = dict(ev)
+        if ev.get("display_id"):          # already named (official-corner detector)
+            relabelled.append(ev)
+            continue
         official = mapping.get(ev.get("id", "")) if mapping else None
         ev["display_id"] = official if official else ev.get("id", "")
         relabelled.append(ev)

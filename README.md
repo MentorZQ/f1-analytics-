@@ -1,11 +1,11 @@
 # F1 Qualifying RAG
 
-A retrieval-augmented generation system for analysing F1 qualifying sessions. Ask natural language questions about lap times, sector performance, braking points, and head-to-head driver comparisons — answers are grounded entirely in telemetry data from FastF1, with no hallucinated facts.
+A retrieval-augmented generation system for analysing F1 qualifying sessions. Ask natural language questions about lap times, sector performance, braking points, and head-to-head driver comparisons — answers are grounded in telemetry data from OpenF1, and where the car data has a gap the system says so instead of guessing.
 
 **Sessions included (pre-built, no re-ingestion needed):**
-- Melbourne 2026 Qualifying — 1249 chunks
-- Barcelona 2026 Qualifying — 703 chunks
-- Monza 2024 Qualifying — 933 chunks
+- Melbourne 2026 Qualifying — 1402 chunks
+- Barcelona 2026 Qualifying — 1460 chunks
+- Monza 2024 Qualifying — 781 chunks
 
 ---
 
@@ -14,10 +14,10 @@ A retrieval-augmented generation system for analysing F1 qualifying sessions. As
 This project started with raw telemetry data and no framework for what "context" means for an F1 question. The core intellectual work was defining that — what information an LLM actually needs to reason about a qualifying lap, and how to structure it so retrieval surfaces the right things.
 
 **Defining the unit of analysis: the track section**:
-The first non-obvious decision was that a lap should be broken into spatial sections — not by time, not by sector, but by what happens on track. Corners were identified not as individual turns but as sequences (T1–T6 at Barcelona is one continuous complex with shared entry, multiple apices, and a single exit) because that's how drivers and engineers actually think about them. Straights are the recovery zones between them. This framing — derived from domain knowledge of how lap time is built — determined the entire chunk structure.
+The first non-obvious decision was that a lap should be broken into spatial sections — not by time, not by sector, but by what happens on track. Corners that run into each other are grouped as sequences (T1–T2 at Barcelona has shared entry, two apices and one exit) because that's how drivers and engineers think about them. A sequence longer than 450 m is cut between two of its corners, at a point where no driver is braking. Straights are the recovery zones between them. This framing — derived from domain knowledge of how lap time is built — determined the entire chunk structure.
 
 **Using braking and throttle as the structural signals**:
-Rather than hardcoding section boundaries by circuit, the system detects them from curvature geometry and validates them against braking and acceleration data in the telemetry. The LLM receives braking point (distance and entry speed), throttle pickup distance, and per-apex minimum speeds for every section. This gives it the information a race engineer would use to identify where time was gained or lost — not just that one driver was faster, but whether they carried more speed into the apex, braked later, or got on the throttle earlier on exit.
+The official corner list gives where each corner is. Where it starts and ends comes from the drivers: a corner begins before the earliest driver lifts or brakes, and ends after the last driver is back on full throttle, so every driver's braking and throttle application sit inside the section. Curvature of the track outline is only a fallback for corners nobody brakes for. The LLM receives braking point (distance and entry speed), throttle pickup distance, and per-apex minimum speeds for every section. This gives it the information a race engineer would use to identify where time was gained or lost — not just that one driver was faster, but whether they carried more speed into the apex, braked later, or got on the throttle earlier on exit.
 
 **Curating what data matters**:
 Every field in every chunk was a deliberate choice about what an LLM needs to reason about lap time: entry speed tells you how much energy a driver carried from the previous section, apex speed tells you how much they scrubbed off, exit speed tells you how well they converted that into acceleration. DRS status, gear range, and braking distance are included because they explain the *why* behind the numbers. Fields that don't change the answer were left out.
@@ -32,13 +32,16 @@ A question like "Why was Bottas slow?" names one driver. The system detects that
 Chunks where two drivers differ most in section time are promoted in ranking above chunks where they are nearly equal. A chunk showing a 0.3s difference through a corner complex is more likely to explain lap time than one showing 0.01s — so it surfaces first. This was the insight that moved the system from retrieving *related* content to retrieving *diagnostic* content.
 
 **Fixing retrieval bias against corner sections**:
-Vector similarity search for questions like "Why did Russell take pole?" systematically ranked straight sections above corner sections — because the embedding model associates pole position with top speed and DRS language. Corner chunks, which use braking/apex/throttle vocabulary, ranked lower even when they explained more of the lap time. The fix was two-part: for driver pair queries, the initial fetch is restricted to `head_to_head_event` chunks only (preventing per-driver telemetry chunks from consuming the candidate pool), and the time-delta reranking weight was raised from 0.5 to 3.0 so sections with large time gaps are strongly promoted regardless of their cosine rank. The most diagnostic section for the Russell–Hamilton Barcelona lap (T6-T7-T8, where Russell gained 0.327s) went from never retrieved to rank 2.
+Vector similarity search for questions like "Why did Russell take pole?" systematically ranked straight sections above corner sections — because the embedding model associates pole position with top speed and DRS language. Corner chunks, which use braking/apex/throttle vocabulary, ranked lower even when they explained more of the lap time. The fix was two-part: for driver pair queries, the initial fetch is restricted to `head_to_head_event` chunks only (preventing per-driver telemetry chunks from consuming the candidate pool), and the time-delta reranking weight was raised from 0.5 to 3.0 so sections with large time gaps are strongly promoted regardless of their cosine rank. The same change surfaces the sections that explain the Russell–Hamilton Barcelona lap (T12, where Russell gained 0.125s, and T4 and T10–T11 where Hamilton did) in the top six.
 
-**Aligning internal section IDs with official FIA turn numbers**:
-The geometry detector assigns sequential IDs to curvature peaks (T1 through T24 at Melbourne) which do not match the 14 official numbered corners on the FIA track map. Cross-referencing detected peak distances against FastF1's `get_circuit_info()` corner positions revealed the mismatch: our "T8-T9-T10-T11" at Melbourne contains official T6, T7, and T8; our "T3" at Melbourne is an unnamed curve that precedes official T3 by 85m. A per-circuit label mapping translates every internal ID to its official display name — including "Curve before T3", "Sweepers before T9", and "Sweeper between T7-T8" for sections with no official number. Chunk IDs remain based on the internal ID so uniqueness is preserved; all user-facing text and metadata uses the official name.
+**Sections that follow the official turn numbers and the drivers**:
+The first detector found corners from the shape of an old track outline, which produced 24 "corners" at Melbourne against 14 official ones, put boundaries in the middle of braking zones (about 20% of drivers were mid-brake at a boundary), and was out of date for rebuilt layouts (Barcelona, Melbourne). Sections now come from the MultiViewer official corner list and outline for the right year, registered onto the car positions (median error 0.6 m), with each corner's entry and exit set from the drivers' own brake and throttle data. Result: 0% of drivers mid-brake at any boundary on all three circuits, and section names are the official turn numbers with no label mapping.
+
+**Being honest about gaps in the car data**:
+OpenF1 car data is about 3.7 Hz and has holes. In 21–39% of corner comparisons the exact brake-on point of at least one driver falls inside a hole. The chunk then reports a range ("first brakes between 1551m and 1616m, gap in the car data"), only claims who braked later when the ranges are clearly separate, and otherwise says it cannot tell. The answering prompt tells the model to say so in one clause and keep explaining from entry, apex, exit speed and time delta.
 
 **The result**:
-The project moved from a state where the vector database had no principled structure and retrieval returned whatever was semantically closest, to one where every retrieved chunk contains quantitatively precise, engineer-readable information, section sums match actual lap times, corner sections surface correctly alongside straights, and the system can answer questions like "where exactly did Russell beat his teammate" with official turn numbers, specific distances, speeds, and time deltas — derived entirely from stored telemetry with no external lookups.
+The project moved from a state where the vector database had no principled structure and retrieval returned whatever was semantically closest, to one where every retrieved chunk contains quantitatively precise, engineer-readable information, section sums match actual lap times, corner sections surface correctly alongside straights, and the system can answer questions like "where exactly did Russell beat his teammate" with official turn numbers, specific distances, speeds, and time deltas — derived from stored telemetry.
 
 ---
 
@@ -152,14 +155,16 @@ The lap is divided into non-overlapping sections that tile the full track distan
 
 All metrics are tracked in [METRICS.md](METRICS.md). Runners live in `tests/`.
 
+> **Note:** the retrieval and faithfulness numbers below were measured on the previous data build. The MRR labels are regenerated from the current store with the same rule the reranker uses (top-3 time deltas), so MRR is partly circular. An independent evaluation with traced runs is the next step.
+
 ### Retrieval — MRR@6
 
 Evaluated on an 18-question labeled set covering head-to-head comparisons, single-driver pole questions, and DNQ/Q-miss questions across Barcelona and Melbourne 2026. Expected chunks are the top-3 highest |time_delta_s| sections for each driver pair, derived directly from the stored data.
 
 | System | MRR@6 |
 |---|---|
-| Baseline (raw cosine, no h2h fetch, no delta weight) | 0.486 |
-| Full system | **0.972** |
+| Baseline (raw cosine, no h2h fetch, no delta weight) | 0.377 |
+| Full system | **0.935** |
 
 The baseline completely missed every mid-grid pair (BOR vs LAW, PIA vs NOR) and every single-driver pole question. The h2h-first fetch guarantees those pairs enter the candidate pool; the delta reranking ensures the most diagnostic sections surface first.
 
@@ -182,20 +187,16 @@ The gap between the two numbers is explained by RAGAS being stricter on causal i
 # 1. Edit reingest.py — add your session to the SESSIONS list:
 {"year": 2025, "circuit": "Silverstone", "short": "Silverstone"}
 
-# 2. Run re-ingestion (downloads FastF1 data, builds chunks, embeds, stores)
-python reingest.py
+# 2. Run re-ingestion (OpenF1 car data + MultiViewer official corners, no login needed;
+#    use --source fastf1 for the old FastF1 path, which needs an F1 TV subscription)
+python reingest.py --chroma-path /tmp/new_store --only Silverstone
 
-# 3. Add official corner labels in events_and_chunking/circuit_labels.py
-#    Run FastF1 circuit_info to get official corner distances, cross-reference
-#    with detected section spans, add a mapping entry for the circuit name.
-
-# 4. Re-run reingest.py to apply the new labels, then commit
-git add RAG_data_layers/chroma_store/ events_and_chunking/circuit_labels.py
+# 3. Check the store, then copy it over RAG_data_layers/chroma_store and commit
+git add RAG_data_layers/chroma_store/
 git commit -m "Add Silverstone 2025 qualifying"
 ```
 
-Circuits with high-resolution track geometry (required for section detection):
-Monza, Silverstone, Spa, Suzuka, Barcelona, Zandvoort, Austin, Melbourne
+Any circuit with an OpenF1 qualifying session (2023+) and a MultiViewer circuit entry works. Official corner data is cached under `RAG_data_layers/circuit_data/` so ingestion does not depend on the live service.
 
 The `short` name must match the OpenF1 API `circuit_short_name` field. To find it:
 ```bash
@@ -213,17 +214,22 @@ f1-analytics-/
 ├── requirements_core.txt             # Minimal dependencies
 ├── .env.example                      # API key template
 │
+├── server.py, web/                   # FastAPI app + website
 ├── RAG_data_layers/
+│   ├── circuit_data/                 # Cached official corner data
 │   ├── chroma_store/                 # Pre-built vector database (committed)
 │   └── F1 Project Thoughts/
 │       ├── rag_retrieval.py          # Retrieval logic (smart_retrieve, reranking)
-│       ├── load_qualifying.py        # FastF1 session loader
+│       ├── load_qualifying_openf1.py # OpenF1 session loader (default)
+│       ├── load_circuit_official.py  # Official corners + outline (MultiViewer)
+│       ├── load_qualifying.py        # FastF1 session loader (alternative)
 │       ├── load_openf1.py            # OpenF1 weather + race control loader
 │       └── load_track_data.py        # Track geometry loader
 │
 ├── events_and_chunking/
 │   ├── pipeline.py                   # Top-level: runs all chunkers for a session
-│   ├── detect_events.py              # Geometry-based track section detection
+│   ├── detect_events_official.py     # Sections from official corners + driver brake/throttle
+│   ├── detect_events.py              # Geometry-only detection (fallback)
 │   ├── circuit_labels.py             # Official FIA corner name mappings per circuit
 │   ├── chunk_telemetry.py            # Head-to-head + per-driver event chunks
 │   ├── chunk_driver.py               # Lap summary, sector, telemetry zone chunks
@@ -231,8 +237,7 @@ f1-analytics-/
 │   ├── chunk_circuit.py              # Circuit overview chunks
 │   └── chunk_types.py                # Chunk dataclass and ID helpers
 │
-└── tests/
-    └── test_retrieval.py             # 24 retrieval test cases (24/24 passing)
+└── tests/                            # retrieval, server, loader, detector and braking-text tests
 ```
 
 ---
@@ -244,7 +249,7 @@ f1-analytics-/
 | `anthropic` | LLM API calls (Claude) |
 | `chromadb` | Local vector store |
 | `fastembed` | Embedding model (all-MiniLM-L6-v2, ONNX, no PyTorch) |
-| `fastf1` | F1 telemetry and lap data |
+| `fastf1` | Optional alternative data source |
 | `pandas` / `numpy` | Data processing |
 | `requests` | OpenF1 API calls |
 
@@ -254,7 +259,8 @@ The embedding model (~40MB ONNX) downloads automatically on first run and is cac
 
 ## Data sources
 
-- **[FastF1](https://github.com/theOehrly/Fast-F1)** — official F1 timing feed, car telemetry at ~18Hz
-- **[OpenF1](https://openf1.org)** — free REST API for weather, race control, stint data (2023+)
+- **[OpenF1](https://openf1.org)** — free REST API: laps, car data (~3.7 Hz), positions, results, weather, race control (2023+)
+- **[MultiViewer circuit API](https://multiviewer.app)** — official corner numbers and track outline per year (community service, cached locally)
+- **[FastF1](https://github.com/theOehrly/Fast-F1)** — optional alternative source (needs an F1 TV subscription)
 - **[bacinger circuit data](https://github.com/bacinger/f1-circuits)** — GPS circuit outlines and metadata
 - **[TUMFTM track geometry](https://github.com/TUMFTM/racetrack-database)** — high-resolution x/y coordinates with track width for 8 circuits

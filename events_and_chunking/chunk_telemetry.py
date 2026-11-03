@@ -121,20 +121,38 @@ def _max_speed(tel: pd.DataFrame) -> tuple[Optional[float], Optional[float]]:
     return speed, dist
 
 
-def _braking_analysis(tel: pd.DataFrame) -> dict:
+# If the last sample before the first braking sample is further back than this, the car data
+# has a hole where braking began and the brake-on point is only known as a range.
+BRAKE_GAP_UNCERTAIN_M = 30.0
+
+
+def _braking_analysis(tel: pd.DataFrame, first_apex: Optional[float] = None) -> dict:
     """
     Analyse braking on corner entry.
 
+    Only MEASURED samples decide when braking starts: rows inserted to fill gaps
+    in the data copy brake state from a neighbour and must not set the brake-on
+    point.
+
+    Braking distance runs from the first brake application to the speed minimum
+    of the FIRST corner: its apex when `first_apex` is given, otherwise the end
+    of the first braking phase. It never looks past that, so in a window holding
+    several corners it is not stretched to a later, slower apex.
+
     Returns:
         brake_applied       : bool — was brake ever applied in this window?
-        brake_start_dist_m  : distance at which braking starts (first Brake=True)
-        brake_distance_m    : distance over which brake is applied on entry
-                              (from first application to speed minimum)
+        brake_start_dist_m  : distance of the first measured braking sample
+        brake_start_lo_m    : distance of the last measured sample BEFORE it (braking began
+                              somewhere between the two)
+        brake_gap_m         : the width of that range; large when the car data has a hole
+        brake_distance_m    : first brake application -> first corner's speed minimum
         entry_speed_at_brake: speed when braking first begins
     """
     result = {
         "brake_applied":        False,
         "brake_start_dist_m":   None,
+        "brake_start_lo_m":     None,
+        "brake_gap_m":          None,
         "brake_distance_m":     None,
         "entry_speed_at_brake": None,
     }
@@ -142,31 +160,59 @@ def _braking_analysis(tel: pd.DataFrame) -> dict:
     if tel.empty or "Brake" not in tel.columns or "Distance" not in tel.columns:
         return result
 
-    brake = tel["Brake"].astype(bool)
+    measured = tel[~tel["Interpolated"]] if "Interpolated" in tel.columns else tel
+    if measured.empty:
+        return result
+    brake = measured["Brake"].astype(bool)
     if not brake.any():
         return result
 
-    # First brake application
-    first_brake_idx  = brake.idxmax()
-    brake_start_dist = float(tel.loc[first_brake_idx, "Distance"])
-    brake_start_speed = float(tel.loc[first_brake_idx, "Speed"]) if "Speed" in tel.columns else None
+    first_idx         = brake.idxmax()
+    brake_start_dist  = float(measured.loc[first_idx, "Distance"])
+    brake_start_speed = float(measured.loc[first_idx, "Speed"]) if "Speed" in measured.columns else None
 
-    # Speed minimum after braking starts
-    tel_after_brake = tel[tel.index >= first_brake_idx]
-    if tel_after_brake.empty or "Speed" not in tel_after_brake.columns:
+    if "Speed" not in tel.columns:
         return result
 
-    min_idx      = tel_after_brake["Speed"].idxmin()
-    min_dist     = float(tel_after_brake.loc[min_idx, "Distance"])
-    brake_dist   = max(0.0, min_dist - brake_start_dist)
+    # End of the first braking phase: consecutive brake samples less than 20 m apart.
+    dist, on = measured["Distance"].to_numpy(float), brake.to_numpy()
+    i0 = int(np.flatnonzero(on)[0])
+    brake_lo = float(dist[i0 - 1]) if i0 > 0 else brake_start_dist
+    phase_end = dist[i0]
+    for i in range(i0 + 1, len(dist)):
+        if on[i]:
+            if dist[i] - phase_end > 20.0:
+                break
+            phase_end = dist[i]
+
+    limit = first_apex + 30.0 if first_apex is not None and first_apex > brake_start_dist else phase_end
+    window = tel[(tel["Distance"] >= brake_start_dist) & (tel["Distance"] <= max(limit, brake_start_dist))]
+    if window.empty:
+        return result
+
+    min_dist   = float(window.loc[window["Speed"].idxmin(), "Distance"])
+    brake_dist = max(0.0, min_dist - brake_start_dist)
 
     result.update({
         "brake_applied":        True,
         "brake_start_dist_m":   round(brake_start_dist, 1),
+        "brake_start_lo_m":     round(brake_lo, 1),
+        "brake_gap_m":          round(brake_start_dist - brake_lo, 1),
         "brake_distance_m":     round(brake_dist, 1),
         "entry_speed_at_brake": round(brake_start_speed, 1) if brake_start_speed else None,
     })
     return result
+
+
+def _brake_onset_text(brake: dict) -> str:
+    """'first brakes at 1593m from 260.0 km/h | braking distance to first apex 113m', or a range when
+    the car data has a hole where braking began (the first measured braking sample is then not the onset)."""
+    if (brake.get("brake_gap_m") or 0) > BRAKE_GAP_UNCERTAIN_M:
+        lo, hi, bd = brake["brake_start_lo_m"], brake["brake_start_dist_m"], brake["brake_distance_m"]
+        return (f"first brakes between {lo:.0f}m and {hi:.0f}m (gap in the car data) | "
+                f"braking distance to first apex {bd:.0f}–{bd + (hi - lo):.0f}m")
+    return (f"first brakes at {brake['brake_start_dist_m']:.0f}m from {brake['entry_speed_at_brake']:.1f} km/h | "
+            f"braking distance to first apex {brake['brake_distance_m']:.0f}m")
 
 
 def _throttle_analysis(tel: pd.DataFrame) -> dict:
@@ -319,7 +365,7 @@ def chunk_corner_event(
     entry_spd      = _entry_speed(tel)
     exit_spd       = _exit_speed(tel)
     min_spd, _     = _min_speed(tel)
-    braking        = _braking_analysis(tel)
+    braking        = _braking_analysis(tel, (event.get("peak_dists") or [None])[0])
     throttle       = _throttle_analysis(tel)
     drs            = _drs_analysis(tel)
     gears          = _gear_analysis(tel)
@@ -360,11 +406,7 @@ def chunk_corner_event(
 
     # Braking
     if braking["brake_applied"]:
-        lines.append(
-            f"Braking: starts at {braking['brake_start_dist_m']:.0f}m "
-            f"({braking['entry_speed_at_brake']:.1f} km/h) | "
-            f"braking distance to apex: {braking['brake_distance_m']:.0f}m"
-        )
+        lines.append("Braking: " + _brake_onset_text(braking))
     else:
         lines.append("Braking: no braking detected in this window (flat or lift-only)")
 
@@ -571,8 +613,9 @@ def chunk_head_to_head_event(
     if is_corner:
         min_a, _  = _min_speed(tel_a)
         min_b, _  = _min_speed(tel_b)
-        brake_a   = _braking_analysis(tel_a)
-        brake_b   = _braking_analysis(tel_b)
+        first_apex = (event.get("peak_dists") or [None])[0]
+        brake_a   = _braking_analysis(tel_a, first_apex)
+        brake_b   = _braking_analysis(tel_b, first_apex)
         throttle_a = _throttle_analysis(tel_a)
         throttle_b = _throttle_analysis(tel_b)
         apex_a    = _apex_speeds(tel_a, event.get("peak_dists", []))
@@ -643,35 +686,43 @@ def chunk_head_to_head_event(
         lines.append("Braking (corner entry):")
         for driver, brake in [(drv_a, brake_a), (drv_b, brake_b)]:
             if brake["brake_applied"]:
-                lines.append(
-                    f"  {driver}: brakes at {brake['brake_start_dist_m']:.0f}m "
-                    f"from {brake['entry_speed_at_brake']:.1f} km/h | "
-                    f"braking distance {brake['brake_distance_m']:.0f}m"
-                )
+                lines.append(f"  {driver}: {_brake_onset_text(brake)}")
             else:
                 lines.append(f"  {driver}: no braking detected")
 
-        # Braking distance delta
-        bd_a = brake_a["brake_distance_m"]; bd_b = brake_b["brake_distance_m"]
-        if bd_a and bd_b:
-            delta_bd = bd_a - bd_b
-            if abs(delta_bd) > 2:
-                later = drv_a if delta_bd < 0 else drv_b
+        # Who brakes later: decided by where braking STARTS, never by braking distance (a shorter
+        # distance does not mean a later brake). Where the car data has a hole at the onset the start
+        # is only a range, and "later" is claimed only if the two ranges do not overlap.
+        if brake_a["brake_applied"] and brake_b["brake_applied"]:
+            uncertain = (brake_a["brake_gap_m"] > BRAKE_GAP_UNCERTAIN_M or brake_b["brake_gap_m"] > BRAKE_GAP_UNCERTAIN_M)
+            bp_a, bp_b = brake_a["brake_start_dist_m"], brake_b["brake_start_dist_m"]
+            lo_a, lo_b = brake_a["brake_start_lo_m"], brake_b["brake_start_lo_m"]
+            if not uncertain:
+                delta_bp = bp_a - bp_b
+                separated = abs(delta_bp) > 2
+                later_is_a = delta_bp > 0
+            else:
+                separated = lo_a > bp_b or lo_b > bp_a
+                later_is_a = lo_a > bp_b
+            if separated:
+                later   = drv_a if later_is_a else drv_b
+                earlier = drv_b if later_is_a else drv_a
+                gap     = abs(bp_a - bp_b) if not uncertain else (lo_a - bp_b if later_is_a else lo_b - bp_a)
                 lines.append(
-                    f"  → {later} braked {abs(delta_bd):.0f}m later "
-                    f"({'more aggressive' if abs(delta_bd) > 10 else 'slightly later'})"
-                )
-
-        # Braking point delta (where they first applied brakes)
-        bp_a = brake_a["brake_start_dist_m"]; bp_b = brake_b["brake_start_dist_m"]
-        if bp_a and bp_b:
-            delta_bp = bp_a - bp_b
-            if abs(delta_bp) > 2:
-                later  = drv_a if delta_bp > 0 else drv_b
-                earlier = drv_b if delta_bp > 0 else drv_a
-                lines.append(
-                    f"  → {later} brakes {abs(delta_bp):.0f}m later than {earlier} "
+                    f"  → {later} brakes {'at least ' if uncertain else ''}{gap:.0f}m later than {earlier} "
                     f"(later braking point = more aggressive entry)"
+                )
+            elif uncertain:
+                lines.append("  → Brake-on points overlap within a gap in the car data: cannot tell who brakes later")
+            else:
+                lines.append("  → Both drivers start braking at about the same point")
+
+            bd_a = brake_a["brake_distance_m"]; bd_b = brake_b["brake_distance_m"]
+            if not uncertain and abs(bd_a - bd_b) > 2:
+                shorter = drv_a if bd_a < bd_b else drv_b
+                lines.append(
+                    f"  → Braking distance to first apex: {drv_a} {bd_a:.0f}m | {drv_b} {bd_b:.0f}m "
+                    f"({shorter} shorter)"
                 )
 
         # Throttle pickup

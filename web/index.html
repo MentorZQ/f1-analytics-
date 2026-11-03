@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>F1 Qualifying RAG</title>
+  <meta name="description" content="Ask why one F1 driver out-qualified another, answered from real telemetry.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <h1>F1 Qualifying RAG</h1>
+      <p>Ask where a qualifying lap was won or lost. Answers come from FastF1 telemetry, with the evidence shown underneath.</p>
+    </header>
+
+    <section class="examples" aria-label="Example questions">
+      <h2>Try an example <span class="muted">(instant and free)</span></h2>
+      <div id="example-list" class="example-list"></div>
+    </section>
+
+    <div id="thread" class="thread" aria-live="polite"></div>
+
+    <section id="key-panel" class="key-panel" hidden aria-labelledby="key-title">
+      <h2 id="key-title">Use your own Anthropic key</h2>
+      <p>Your key goes to this site's server with each question, is used for that call only, and is never stored or logged there. Your browser keeps it until you close this tab.</p>
+      <form id="key-form" class="key-form" autocomplete="off">
+        <label for="key-input" class="visually-hidden">Anthropic API key</label>
+        <input id="key-input" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+        <button type="submit">Save and retry</button>
+      </form>
+    </section>
+
+    <form id="ask-form" class="ask-form">
+      <label for="session-select" class="visually-hidden">Session</label>
+      <select id="session-select">
+        <option value="">Detect session</option>
+      </select>
+      <label for="question-input" class="visually-hidden">Your question</label>
+      <input id="question-input" type="text" maxlength="500" required placeholder="Where did Norris lose time to Russell at Barcelona?" autocomplete="off">
+      <button id="ask-button" type="submit">Ask</button>
+    </form>
+    <p id="key-status" class="key-status" hidden>
+      Using your own key. <button id="forget-key" type="button" class="link-button">Forget key</button>
+    </p>
+
+    <footer class="footer">
+      Sessions: <span id="session-names"></span>. Answers are written by Claude from retrieved telemetry and can still contain mistakes, so check them against the sources.
+      <a href="https://github.com/MentorZQ/f1-analytics-">Source code</a>
+    </footer>
+  </main>
+  <div id="tooltip" class="tooltip" role="status" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>

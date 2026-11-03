@@ -66,9 +66,15 @@ def build_all_chunks(
 
     # --- 2. Detect track events for telemetry windowing ---
     geometry = track_data.get("geometry")
-    events   = None
+    events   = track_data.get("events")      # precomputed (e.g. official-corner detector)
 
-    if geometry is not None and not geometry.empty:
+    if events is not None:
+        if verbose:
+            n_corners   = sum(1 for e in events if e["type"] in ("corner", "corner_sequence"))
+            n_straights = sum(1 for e in events if e["type"] == "straight")
+            print(f"  track events (provided) : {len(events)} "
+                  f"({n_corners} corner groups, {n_straights} straights)")
+    elif geometry is not None and not geometry.empty:
         try:
             events = detect_circuit_events(geometry, circuit_name=circuit, verbose=False)
             if verbose:

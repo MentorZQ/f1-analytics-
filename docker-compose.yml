@@ -1,21 +1,9 @@
+# The image ships with the prebuilt Chroma store (RAG_data_layers/chroma_store),
+# so no separate database service is needed.
 services:
-  chroma:
-    image: chromadb/chroma:latest
-    volumes:
-      - chroma_data:/chroma/chroma
-    ports:
-      - "8000:8000"
-
   app:
     build: .
-    depends_on:
-      - chroma
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - CHROMA_HOST=chroma
-      - CHROMA_PORT=8000
     ports:
       - "8080:8080"
-
-volumes:
-  chroma_data:

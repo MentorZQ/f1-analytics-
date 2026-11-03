@@ -13,7 +13,8 @@ Each entry has:
   - notes:            why these sections are expected (derived from data)
 
 Expected sections are the top-3 |time_delta_s| sections for that driver pair,
-fetched directly from the ChromaDB collections. DNQ/Q-miss questions expect
+fetched directly from the ChromaDB collections (rebuilt from OpenF1 data with official corner sections;
+labels are therefore derived from the store, not independent of it - see METRICS.md). DNQ/Q-miss questions expect
 the driver_dnq_status or driver_lap_summary chunk for the relevant driver.
 
 Pole positions (from stored data):
@@ -29,9 +30,9 @@ EVAL_SET = [
         "question": "How did Russell compare to Hamilton at Barcelona 2026?",
         "session":  "barcelona",
         "expected_chunks": [
-            ("head_to_head_event", "Between T9-T10"),   # 0.389s — biggest delta
-            ("head_to_head_event", "T10-T11-T12"),      # 0.327s
-            ("head_to_head_event", "T1-T2-T3-T4-T5"),  # 0.289s
+            ("head_to_head_event", "T12"),  # 0.125s
+            ("head_to_head_event", "T4"),  # 0.122s
+            ("head_to_head_event", "Main straight (finish, after final corner)"),  # 0.113s
         ],
         "notes": "RUS P1 vs HAM P2; top-3 absolute time deltas across all sections",
     },
@@ -39,9 +40,9 @@ EVAL_SET = [
         "question": "Where did Antonelli lose time to Russell at Barcelona?",
         "session":  "barcelona",
         "expected_chunks": [
-            ("head_to_head_event", "T1-T2-T3-T4-T5"),  # 0.296s
-            ("head_to_head_event", "T10-T11-T12"),      # 0.235s
-            ("head_to_head_event", "Main straight"),    # 0.209s
+            ("head_to_head_event", "T4"),  # 0.101s
+            ("head_to_head_event", "T12"),  # 0.084s
+            ("head_to_head_event", "Main straight (finish, after final corner)"),  # 0.069s
         ],
         "notes": "ANT P3 vs RUS P1",
     },
@@ -49,9 +50,9 @@ EVAL_SET = [
         "question": "How did Hamilton compare to Leclerc at Barcelona 2026?",
         "session":  "barcelona",
         "expected_chunks": [
-            ("head_to_head_event", "T1-T2-T3-T4-T5"),  # 0.302s
-            ("head_to_head_event", "T10-T11-T12"),      # 0.158s
-            ("head_to_head_event", "Main straight"),    # 0.138s
+            ("head_to_head_event", "T4"),  # 0.271s
+            ("head_to_head_event", "T7-T8"),  # 0.120s
+            ("head_to_head_event", "Between T9-T10"),  # 0.068s
         ],
         "notes": "HAM P2 vs LEC P8",
     },
@@ -59,9 +60,9 @@ EVAL_SET = [
         "question": "Compare Antonelli and Leclerc at the 2026 Spanish Grand Prix",
         "session":  "barcelona",
         "expected_chunks": [
-            ("head_to_head_event", "T1-T2-T3-T4-T5"),  # 0.310s
-            ("head_to_head_event", "Main straight"),    # 0.147s
-            ("head_to_head_event", "T6-T7-T8"),        # 0.112s
+            ("head_to_head_event", "T4"),  # 0.249s
+            ("head_to_head_event", "T5-T6"),  # 0.077s
+            ("head_to_head_event", "T1-T2"),  # 0.051s
         ],
         "notes": "ANT P3 vs LEC P8",
     },
@@ -72,9 +73,9 @@ EVAL_SET = [
         "question": "Why did Russell take pole at Barcelona 2026?",
         "session":  "barcelona",
         "expected_chunks": [
-            ("head_to_head_event", "Between T9-T10"),   # 0.389s
-            ("head_to_head_event", "T10-T11-T12"),      # 0.327s
-            ("head_to_head_event", "T1-T2-T3-T4-T5"),  # 0.289s
+            ("head_to_head_event", "T12"),  # 0.125s
+            ("head_to_head_event", "T4"),  # 0.122s
+            ("head_to_head_event", "Main straight (finish, after final corner)"),  # 0.113s
         ],
         "notes": "Single-driver pole question; comparison auto-expands to HAM (P2)",
     },
@@ -82,9 +83,9 @@ EVAL_SET = [
         "question": "Why was Norris slow at Barcelona 2026?",
         "session":  "barcelona",
         "expected_chunks": [
-            ("head_to_head_event", "T1-T2-T3-T4-T5"),  # biggest delta vs pole
-            ("head_to_head_event", "T10-T11-T12"),
-            ("head_to_head_event", "Main straight"),
+            ("head_to_head_event", "T12"),  # 0.147s
+            ("head_to_head_event", "Between T3-T4"),  # 0.109s
+            ("head_to_head_event", "T4"),  # 0.089s
         ],
         "notes": "NOR P4; slowness intent expands to pole sitter RUS",
     },
@@ -92,9 +93,9 @@ EVAL_SET = [
         "question": "Where did Leclerc struggle compared to pole at Barcelona?",
         "session":  "barcelona",
         "expected_chunks": [
-            ("head_to_head_event", "Main straight"),    # 0.138s — LEC vs RUS
-            ("head_to_head_event", "Between T9-T10"),
-            ("head_to_head_event", "T10-T11-T12"),
+            ("head_to_head_event", "T4"),  # 0.148s
+            ("head_to_head_event", "T5-T6"),  # 0.124s
+            ("head_to_head_event", "T1-T2"),  # 0.110s
         ],
         "notes": "LEC P8; single-driver question expands to pole sitter RUS",
     },
@@ -105,9 +106,9 @@ EVAL_SET = [
         "question": "How did Russell compare to Antonelli in Melbourne qualifying?",
         "session":  "melbourne",
         "expected_chunks": [
-            ("head_to_head_event", "Between T12-T13"),  # 0.382s
-            ("head_to_head_event", "T13-T14"),          # 0.195s
-            ("head_to_head_event", "Sweepers before T9"), # 0.145s
+            ("head_to_head_event", "T4-T5"),  # 0.253s
+            ("head_to_head_event", "Between T8-T9"),  # 0.214s
+            ("head_to_head_event", "T13"),  # 0.213s
         ],
         "notes": "RUS P1 vs ANT P2",
     },
@@ -115,9 +116,9 @@ EVAL_SET = [
         "question": "Where did Hadjar gain time on Russell at Melbourne?",
         "session":  "melbourne",
         "expected_chunks": [
-            ("head_to_head_event", "Between T12-T13"),  # 0.184s
-            ("head_to_head_event", "Sweepers before T9"), # 0.149s
-            ("head_to_head_event", "Main straight"),    # 0.102s
+            ("head_to_head_event", "T3"),  # 0.244s
+            ("head_to_head_event", "Between T8-T9"),  # 0.160s
+            ("head_to_head_event", "T13"),  # 0.139s
         ],
         "notes": "HAD P3 vs RUS P1",
     },
@@ -125,9 +126,9 @@ EVAL_SET = [
         "question": "How did Hadjar compare to Leclerc in Australia 2026?",
         "session":  "melbourne",
         "expected_chunks": [
-            ("head_to_head_event", "Between T12-T13"),  # 0.223s
-            ("head_to_head_event", "T13-T14"),          # 0.179s
-            ("head_to_head_event", "Main straight"),    # 0.135s
+            ("head_to_head_event", "T13"),  # 0.358s
+            ("head_to_head_event", "T14"),  # 0.279s
+            ("head_to_head_event", "Main straight (finish, after final corner)"),  # 0.213s
         ],
         "notes": "HAD P3 vs LEC P4",
     },
@@ -135,9 +136,9 @@ EVAL_SET = [
         "question": "Compare Piastri and Norris in Melbourne qualifying",
         "session":  "melbourne",
         "expected_chunks": [
-            ("head_to_head_event", "Before T3-T4"),     # 0.185s
-            ("head_to_head_event", "Sweepers before T9"), # 0.167s
-            ("head_to_head_event", "T6-T7-T8"),        # 0.158s
+            ("head_to_head_event", "Between T10-T11"),  # 0.456s
+            ("head_to_head_event", "T11"),  # 0.350s
+            ("head_to_head_event", "T3"),  # 0.282s
         ],
         "notes": "PIA P5 vs NOR P6",
     },
@@ -145,9 +146,9 @@ EVAL_SET = [
         "question": "Bortoleto versus Lawson in Melbourne 2026",
         "session":  "melbourne",
         "expected_chunks": [
-            ("head_to_head_event", "Main straight"),    # 0.233s
-            ("head_to_head_event", "T3-T4"),           # 0.144s
-            ("head_to_head_event", "Sweepers before T9"), # 0.116s
+            ("head_to_head_event", "T4-T5"),  # 0.265s
+            ("head_to_head_event", "Main straight (finish, after final corner)"),  # 0.170s
+            ("head_to_head_event", "Between T2-T3"),  # 0.139s
         ],
         "notes": "BOR P10 vs LAW P9",
     },
@@ -158,9 +159,9 @@ EVAL_SET = [
         "question": "Why did Russell take pole in Melbourne 2026?",
         "session":  "melbourne",
         "expected_chunks": [
-            ("head_to_head_event", "Between T12-T13"),  # vs ANT P2
-            ("head_to_head_event", "T13-T14"),
-            ("head_to_head_event", "Sweepers before T9"),
+            ("head_to_head_event", "T4-T5"),  # 0.253s
+            ("head_to_head_event", "Between T8-T9"),  # 0.214s
+            ("head_to_head_event", "T13"),  # 0.213s
         ],
         "notes": "Pole question; auto-expands to ANT (P2)",
     },
@@ -168,9 +169,9 @@ EVAL_SET = [
         "question": "How did Hamilton qualify in Australia?",
         "session":  "melbourne",
         "expected_chunks": [
-            ("head_to_head_event", "Between T12-T13"),  # HAM vs RUS: 0.382s... wait check
-            ("head_to_head_event", "Main straight"),
-            ("head_to_head_event", "T13-T14"),
+            ("head_to_head_event", "T13"),  # 0.361s
+            ("head_to_head_event", "Between T8-T9"),  # 0.279s
+            ("head_to_head_event", "T1-T2"),  # 0.190s
         ],
         "notes": "HAM P7; single-driver question expands to pole sitter RUS",
     },

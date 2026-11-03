@@ -1,0 +1,12 @@
+# Render blueprint: https://render.com/docs/blueprint-spec
+# Create a "Blueprint" service from this repo, then set ANTHROPIC_API_KEY in the dashboard
+# (leave it unset to serve only the saved examples and visitor-supplied keys).
+services:
+  - type: web
+    name: f1-qualifying-rag
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false

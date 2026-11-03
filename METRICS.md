@@ -11,8 +11,10 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 
 | Variant | MRR@6 | Delta vs baseline |
 |---|---|---|
-| Baseline (raw cosine, no h2h fetch, no delta weight) | 0.486 | — |
-| Full system (h2h-first fetch + delta_weight=3.0) | 0.972 | +0.486 |
+| Baseline (raw cosine, no h2h fetch, no delta weight) | 0.377 | — |
+| Full system (h2h-first fetch + delta_weight=3.0) | 0.935 | +0.558 |
+
+*Caveat: expected chunks are the top-3 |time delta| sections per pair read from the current store, the same signal the reranker uses, so this measures how well the pipeline finds its own largest deltas, not independent relevance. Labels were regenerated after the OpenF1 / official-corner rebuild.*
 
 **Key finding:** Delta reranking is the primary driver of the lift. H2h-first fetch is architecturally necessary — it guarantees mid-grid pairs (e.g. BOR vs LAW at Melbourne) enter the candidate pool — but the ranking signal is what turns those candidates into rank-1 results.
 
@@ -21,8 +23,8 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 
 | Version | Most diagnostic section recall |
 |---|---|
-| Before fix | 0% — T10-T11-T12 at Barcelona (Russell's biggest gain) was cosine rank 8+, never retrieved at n=6 |
-| After h2h-first fetch + delta reranking | 100% — surfaces at rank 2 |
+| Before fix (earlier data build) | 0% — the biggest-gain corner section at Barcelona was cosine rank 8+, never retrieved at n=6 |
+| After h2h-first fetch + delta reranking | Measured on the earlier data build only; re-measure on the current build |
 
 ---
 
@@ -39,19 +41,33 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 
 ---
 
+### Section boundaries (OpenF1 + official corners)
+*Run on the fastest laps of Barcelona 2026, Melbourne 2026 and Monza 2024.*
+
+| Check | Old geometry sections | Current |
+|---|---|---|
+| Drivers mid-brake at a boundary | ~20% mean, worst 100% | 0% on all three circuits |
+| Sections vs official turns | 24 detected at Melbourne vs 14 official | official turn numbers |
+| Implausible section timings (average speed above top speed) | 18% at Melbourne | 0.3–0.7% |
+| Barcelona lap gap RUS–HAM | n/a | 0.063 s (official 0.064 s) |
+| Corner comparisons with an unseen brake-on point (car-data gap) | not measured | 21–39%; reported as a range or "cannot tell" |
+
+---
+
 ## Test Suite
 
 ### Retrieval unit tests
 | Status | Count |
 |---|---|
-| Passing | 24 / 24 |
-| Run with | `python -m pytest tests/test_retrieval.py` |
+| Passing | 24 / 24 (`tests/test_retrieval.py`) |
+| Offline suite | 72 / 72 (`tests/test_server.py test_openf1_loader.py test_detect_events_official.py test_chunk_braking.py`) |
 
 ---
 
 ## Answer Quality
 
 ### RAGAS Faithfulness
+*Measured on the previous data build; not yet re-run on the current one.*
 *Fraction of claims in the LLM answer that are directly supported by retrieved context.*
 *Run: `python tests/run_ragas.py` (answers cached in `tests/ragas_cache.json` — use `--regen` to refresh)*
 

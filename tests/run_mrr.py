@@ -16,6 +16,7 @@ Run from the project root:
     python tests/run_mrr.py
 """
 
+import os
 import sys
 import warnings
 warnings.filterwarnings("ignore")
@@ -40,7 +41,7 @@ COLLECTIONS = {
     "melbourne": "f1_qualifying_2026_melbourne",
 }
 
-client   = chromadb.PersistentClient(path=str(ROOT / "RAG_data_layers/chroma_store"))
+client   = chromadb.PersistentClient(path=os.environ.get("CHROMA_PATH") or str(ROOT / "RAG_data_layers/chroma_store"))
 embed_fn = make_embed_fn()
 
 def get_session_ctx(col):

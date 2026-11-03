@@ -21,6 +21,8 @@ import argparse
 import os
 import re
 import sys
+from collections import Counter
+from functools import lru_cache
 from pathlib import Path
 
 import chromadb
@@ -100,8 +102,11 @@ def load_session_context(collection) -> dict:
 
 # ── LLM call ─────────────────────────────────────────────────────────────────
 
-def call_llm(prompt: str, model: str = "claude-sonnet-4-6") -> str:
-    """Send the prompt to the Anthropic API and return the response text."""
+def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None = None) -> str:
+    """Send the prompt to the Anthropic API and return the response text.
+
+    api_key overrides ANTHROPIC_API_KEY for this call only; it is never stored.
+    """
     try:
         import anthropic
     except ImportError:
@@ -110,7 +115,7 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6") -> str:
             "Prompt that would have been sent:\n\n" + prompt
         )
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return (
             "[ANTHROPIC_API_KEY not set — add it to .env or export it]\n\n"
@@ -127,7 +132,14 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6") -> str:
         "Answer questions using ONLY the retrieved telemetry and session data provided. "
         "Be precise with numbers — quote lap times, speeds, and deltas directly from the context. "
         "If the context does not contain enough information to answer fully, say so explicitly "
-        "rather than guessing."
+        "rather than guessing. "
+        "Some chunks say 'cannot tell', give a range, or note a gap in the car data: "
+        "state that uncertainty in one short clause and never turn it into a firm claim about who braked or lifted earlier. "
+        "Then keep explaining: build the answer from what the data does show (time deltas, entry, apex, "
+        "minimum and exit speeds, throttle application, top speed) and say what those measurements imply. "
+        "A missing detail is never a reason to skip the explanation of a section. "
+        "Do not add up sections or compute new totals unless the context gives the total; quote the figures as given. "
+        "Do not attribute differences to car or engine characteristics (power unit, aero, downforce): the data cannot show them."
     )
 
     message = client.messages.create(
@@ -136,54 +148,161 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6") -> str:
         system=system,
         messages=[{"role": "user", "content": prompt}],
     )
-    return message.content[0].text
+    return "".join(block.text for block in message.content if block.type == "text")
 
 
-# ── Main answer function ──────────────────────────────────────────────────────
+# ── Shared resources ──────────────────────────────────────────────────────────
+# Built once per process: loading the embedding model takes seconds, which a
+# long-running server should not repeat on every request.
 
-def answer(
+class SessionError(Exception):
+    """The requested session is unknown or its collection is missing."""
+
+
+@lru_cache(maxsize=1)
+def get_embed_fn():
+    return make_embed_fn()
+
+
+@lru_cache(maxsize=1)
+def _get_chroma_client():
+    chroma_host = os.environ.get("CHROMA_HOST")
+    if chroma_host:
+        return chromadb.HttpClient(host=chroma_host, port=int(os.environ.get("CHROMA_PORT", "8000")))
+    return chromadb.PersistentClient(
+        path=os.environ.get("CHROMA_PATH") or str(ROOT / "RAG_data_layers/chroma_store")
+    )
+
+
+def _get_collection(session_key: str):
+    collection_name = SESSIONS.get(session_key)
+    if collection_name is None:
+        raise SessionError(f"Unknown session '{session_key}'. Available: {list(SESSIONS)}")
+    try:
+        return _get_chroma_client().get_collection(collection_name)
+    except Exception as exc:
+        raise SessionError(
+            f"Collection '{collection_name}' not found in the chroma store. "
+            f"Run: python reingest.py"
+        ) from exc
+
+
+@lru_cache(maxsize=len(SESSIONS))
+def _get_session_context(session_key: str) -> dict:
+    return load_session_context(_get_collection(session_key))
+
+
+# ── Section-by-section lap comparison ─────────────────────────────────────────
+
+_DISTANCE_WINDOW = re.compile(r"Distance window:\s*([\d.]+)m\s*[–-]\s*([\d.]+)m")
+
+
+def section_deltas(collection, chunks: list[dict]) -> dict | None:
+    """Compare a whole lap for the driver pair most represented in `chunks`.
+
+    Fetches every section for the pair rather than only the retrieved ones, so
+    the result covers the full lap and lap_gap_s sums to the real lap gap.
+
+    gain_s is positive where driver_a was faster. Stored time_delta_s is the
+    opposite (driver_a's section time minus driver_b's).
+
+    Returns None when no retrieved chunk compares two drivers.
+    """
+    pairs = Counter(
+        frozenset((c["metadata"]["driver_a"], c["metadata"]["driver_b"]))
+        for c in chunks
+        if c["metadata"].get("chunk_type") == "head_to_head_event"
+    )
+    if not pairs:
+        return None
+    first, second = sorted(pairs.most_common(1)[0][0])
+
+    stored = collection.get(
+        where={"$and": [
+            {"chunk_type": "head_to_head_event"},
+            {"$or": [
+                {"$and": [{"driver_a": first}, {"driver_b": second}]},
+                {"$and": [{"driver_a": second}, {"driver_b": first}]},
+            ]},
+        ]},
+        include=["documents", "metadatas"],
+    )
+
+    # Present the higher-qualified driver first, whichever way the pair is stored.
+    meta0 = stored["metadatas"][0]
+    driver_a, driver_b = meta0["driver_a"], meta0["driver_b"]
+    if (meta0.get("pos_a") or 99) > (meta0.get("pos_b") or 99):
+        driver_a, driver_b = driver_b, driver_a
+
+    retrieved = {
+        c["metadata"].get("event_id")
+        for c in chunks
+        if c["metadata"].get("chunk_type") == "head_to_head_event"
+        and {c["metadata"].get("driver_a"), c["metadata"].get("driver_b")} == {driver_a, driver_b}
+    }
+
+    sections: dict[str, dict] = {}
+    for document, meta in zip(stored["documents"], stored["metadatas"]):
+        delta = meta.get("time_delta_s")
+        if delta is None or meta["event_id"] in sections:
+            continue
+        window = _DISTANCE_WINDOW.search(document)
+        sections[meta["event_id"]] = {
+            "section":   meta["event_id"],
+            "type":      meta.get("event_type"),
+            "gain_s":    round(-delta if meta["driver_a"] == driver_a else delta, 3),
+            "start_m":   float(window.group(1)) if window else None,
+            "end_m":     float(window.group(2)) if window else None,
+            "retrieved": meta["event_id"] in retrieved,
+        }
+
+    ordered = sorted(
+        sections.values(),
+        key=lambda s: (s["start_m"] is None, s["start_m"] or 0),
+    )
+    return {
+        "driver_a":  driver_a,
+        "driver_b":  driver_b,
+        "lap_gap_s": round(sum(s["gain_s"] for s in ordered), 3),
+        "sections":  ordered,
+    }
+
+
+# ── Main answer functions ─────────────────────────────────────────────────────
+
+def answer_with_sources(
     question: str,
     session_key: str | None = None,
     n_chunks: int = 6,
     model: str = "claude-sonnet-4-6",
+    api_key: str | None = None,
     verbose: bool = False,
-) -> str:
+) -> dict:
     """
-    Full RAG pipeline: retrieve → format → LLM → return answer string.
+    Full RAG pipeline, returning the answer and the evidence behind it.
 
     Args:
         question:    Natural language question about F1 qualifying.
-        session_key: "barcelona" or "monza". Auto-detected from question if None.
+        session_key: A key of SESSIONS. Auto-detected from question if None.
         n_chunks:    Number of chunks to retrieve and pass to the LLM.
         model:       Anthropic model ID.
+        api_key:     Overrides ANTHROPIC_API_KEY for this call only.
         verbose:     Print retrieved chunks before the answer.
+
+    Returns:
+        {"answer", "session", "sources", "deltas"}
+
+    Raises:
+        SessionError: the session is unknown or its collection is missing.
     """
     if session_key is None:
         session_key = detect_session(question)
 
-    collection_name = SESSIONS.get(session_key)
-    if collection_name is None:
-        return f"Unknown session '{session_key}'. Available: {list(SESSIONS)}"
-
-    chroma_host = os.environ.get("CHROMA_HOST")
-    if chroma_host:
-        client = chromadb.HttpClient(host=chroma_host, port=int(os.environ.get("CHROMA_PORT", "8000")))
-    else:
-        client = chromadb.PersistentClient(path=str(ROOT / "RAG_data_layers/chroma_store"))
-
-    try:
-        collection = client.get_collection(collection_name)
-    except Exception:
-        return (
-            f"Collection '{collection_name}' not found in the chroma store. "
-            f"Run: python reingest.py"
-        )
-
-    embed_fn    = make_embed_fn()
-    session_ctx = load_session_context(collection)
+    collection  = _get_collection(session_key)
+    session_ctx = _get_session_context(session_key)
 
     chunks = smart_retrieve(
-        collection, question, embed_fn,
+        collection, question, get_embed_fn(),
         n_results=n_chunks,
         session_ctx=session_ctx,
     )
@@ -197,9 +316,42 @@ def answer(
             print(f"  {c['rank']}. [{meta.get('chunk_type')}] {drv} {eid} dist={round(c['distance'],4)}")
         print()
 
-    prompt    = format_prompt(question, chunks, max_chunks=n_chunks, session_ctx=session_ctx)
-    response  = call_llm(prompt, model=model)
-    return response
+    prompt   = format_prompt(question, chunks, max_chunks=n_chunks, session_ctx=session_ctx)
+    response = call_llm(prompt, model=model, api_key=api_key)
+
+    return {
+        "answer":  response,
+        "session": session_key,
+        "sources": [
+            {
+                "chunk_type": c["metadata"].get("chunk_type"),
+                "section":    c["metadata"].get("event_id"),
+                "drivers":    [
+                    c["metadata"][k] for k in ("driver", "driver_a", "driver_b")
+                    if c["metadata"].get(k)
+                ],
+                "text":       c["text"],
+            }
+            for c in chunks
+        ],
+        "deltas":  section_deltas(collection, chunks),
+    }
+
+
+def answer(
+    question: str,
+    session_key: str | None = None,
+    n_chunks: int = 6,
+    model: str = "claude-sonnet-4-6",
+    verbose: bool = False,
+) -> str:
+    """Answer-text-only form of answer_with_sources(), used by the CLI."""
+    try:
+        return answer_with_sources(
+            question, session_key, n_chunks, model, verbose=verbose
+        )["answer"]
+    except SessionError as exc:
+        return str(exc)
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
