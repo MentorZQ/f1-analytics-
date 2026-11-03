@@ -104,8 +104,14 @@ def main() -> None:
 
     import os
     import sys
-    if args.chroma_path:
-        os.environ["CHROMA_PATH"] = args.chroma_path
+    # Opening a Chroma store can rewrite its files (newer chromadb versions migrate them), so work on a
+    # throwaway copy and leave the tracked store byte-for-byte as committed.
+    import shutil
+    import tempfile
+    source_store = Path(args.chroma_path) if args.chroma_path else ROOT / "RAG_data_layers" / "chroma_store"
+    work_store = Path(tempfile.mkdtemp(prefix="chroma_eval_")) / "store"
+    shutil.copytree(source_store, work_store)
+    os.environ["CHROMA_PATH"] = str(work_store)
     os.environ.pop("PHOENIX_COLLECTOR_ENDPOINT", None)          # the experiment records its own traces
     sys.path.insert(0, str(ROOT))
     import query
