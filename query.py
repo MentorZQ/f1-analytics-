@@ -32,6 +32,8 @@ sys.path.insert(0, str(ROOT / "RAG_data_layers/F1 Project Thoughts"))
 
 from rag_retrieval import smart_retrieve, make_embed_fn, format_prompt
 
+import tracing
+
 
 # ── Session registry ──────────────────────────────────────────────────────────
 
@@ -295,17 +297,33 @@ def answer_with_sources(
     Raises:
         SessionError: the session is unknown or its collection is missing.
     """
+    tracing.init_tracing()
+    with tracing.span("f1.query", "CHAIN", input_value=question) as root:
+        result = _answer_with_sources(question, session_key, n_chunks, model, api_key, verbose)
+        tracing.set_attrs(
+            root,
+            **{"output.value": result["answer"], "f1.session": result["session"],
+               "f1.model": model, "f1.n_chunks": n_chunks,
+               "f1.sources": result["sources"], "f1.deltas": result["deltas"]},
+        )
+        return result
+
+
+def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbose) -> dict:
     if session_key is None:
         session_key = detect_session(question)
 
     collection  = _get_collection(session_key)
     session_ctx = _get_session_context(session_key)
 
-    chunks = smart_retrieve(
-        collection, question, get_embed_fn(),
-        n_results=n_chunks,
-        session_ctx=session_ctx,
-    )
+    with tracing.span("f1.retrieve", "RETRIEVER", input_value=question) as sp:
+        chunks = smart_retrieve(
+            collection, question, get_embed_fn(),
+            n_results=n_chunks,
+            session_ctx=session_ctx,
+        )
+        tracing.record_documents(sp, chunks)
+        tracing.set_attrs(sp, **{"f1.session": session_key})
 
     if verbose:
         print(f"\n[session: {session_key} | {len(chunks)} chunks retrieved]")

@@ -1,0 +1,468 @@
+[
+ {
+  "id": "q01",
+  "question": "Why did Russell take pole at Barcelona 2026?",
+  "session": "barcelona",
+  "kind": "pole",
+  "expected_drivers": [
+   "RUS",
+   "HAM"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q02",
+  "question": "Where did Hamilton lose time to Russell at Barcelona?",
+  "session": "barcelona",
+  "kind": "pair",
+  "expected_drivers": [
+   "HAM",
+   "RUS"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q03",
+  "question": "Where did Antonelli lose time to Russell?",
+  "session": "barcelona",
+  "kind": "pair",
+  "expected_drivers": [
+   "ANT",
+   "RUS"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q04",
+  "question": "How did Norris compare to Piastri at Barcelona?",
+  "session": "barcelona",
+  "kind": "pair",
+  "expected_drivers": [
+   "NOR",
+   "PIA"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q05",
+  "question": "Compare Hamilton and Leclerc in Barcelona qualifying",
+  "session": "barcelona",
+  "kind": "teammates",
+  "expected_drivers": [
+   "HAM",
+   "LEC"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q06",
+  "question": "Who was faster through the first corner, Russell or Hamilton?",
+  "session": "barcelona",
+  "kind": "section",
+  "expected_drivers": [
+   "RUS",
+   "HAM"
+  ],
+  "answerable": true,
+  "note": "section-specific: T1"
+ },
+ {
+  "id": "q07",
+  "question": "Did Verstappen or Hadjar have the better lap at the Spanish Grand Prix qualifying?",
+  "session": "barcelona",
+  "kind": "pair",
+  "expected_drivers": [
+   "VER",
+   "HAD"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q08",
+  "question": "Why was Norris slow at Barcelona 2026?",
+  "session": "barcelona",
+  "kind": "single_slow",
+  "expected_drivers": [
+   "NOR"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q09",
+  "question": "Where did Leclerc struggle compared to pole at Barcelona?",
+  "session": "barcelona",
+  "kind": "single_slow",
+  "expected_drivers": [
+   "LEC",
+   "RUS"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q10",
+  "question": "How did Lawson compare to Hulkenberg in Barcelona qualifying?",
+  "session": "barcelona",
+  "kind": "pair",
+  "expected_drivers": [
+   "LAW",
+   "HUL"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q11",
+  "question": "Who braked later into the final chicane, Russell or Hamilton?",
+  "session": "barcelona",
+  "kind": "braking",
+  "expected_drivers": [
+   "RUS",
+   "HAM"
+  ],
+  "answerable": true,
+  "note": "a braking claim the data may not resolve"
+ },
+ {
+  "id": "q12",
+  "question": "Which driver carried more speed through the slowest corner at Barcelona, Russell or Antonelli?",
+  "session": "barcelona",
+  "kind": "apex",
+  "expected_drivers": [
+   "RUS",
+   "ANT"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q13",
+  "question": "What separated Gasly from Colapinto in Barcelona?",
+  "session": "barcelona",
+  "kind": "pair",
+  "expected_drivers": [
+   "GAS",
+   "COL"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q14",
+  "question": "Why did the pole sitter beat the field in Spain?",
+  "session": "barcelona",
+  "kind": "nameless",
+  "expected_drivers": [
+   "RUS"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q15",
+  "question": "Why did Russell take pole in Melbourne 2026?",
+  "session": "melbourne",
+  "kind": "pole",
+  "expected_drivers": [
+   "RUS",
+   "ANT"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q16",
+  "question": "Where did Antonelli lose time to Russell in Melbourne?",
+  "session": "melbourne",
+  "kind": "pair",
+  "expected_drivers": [
+   "ANT",
+   "RUS"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q17",
+  "question": "How did Hadjar compare to Leclerc in Australia 2026?",
+  "session": "melbourne",
+  "kind": "pair",
+  "expected_drivers": [
+   "HAD",
+   "LEC"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q18",
+  "question": "Compare Piastri and Norris in Melbourne qualifying",
+  "session": "melbourne",
+  "kind": "teammates",
+  "expected_drivers": [
+   "PIA",
+   "NOR"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q19",
+  "question": "Bortoleto versus Lawson in Melbourne 2026",
+  "session": "melbourne",
+  "kind": "pair",
+  "expected_drivers": [
+   "BOR",
+   "LAW"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q20",
+  "question": "How did Hamilton qualify in Australia?",
+  "session": "melbourne",
+  "kind": "single_slow",
+  "expected_drivers": [
+   "HAM"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q21",
+  "question": "Where did Leclerc lose time to Hadjar at Albert Park?",
+  "session": "melbourne",
+  "kind": "pair",
+  "expected_drivers": [
+   "LEC",
+   "HAD"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q22",
+  "question": "Who had the better exit from the final corner in Melbourne, Russell or Antonelli?",
+  "session": "melbourne",
+  "kind": "section",
+  "expected_drivers": [
+   "RUS",
+   "ANT"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q23",
+  "question": "How did Russell and Antonelli compare at turn 1 and turn 2 in Melbourne?",
+  "session": "melbourne",
+  "kind": "section",
+  "expected_drivers": [
+   "RUS",
+   "ANT"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q24",
+  "question": "Why was Hamilton behind Leclerc at the Australian Grand Prix qualifying?",
+  "session": "melbourne",
+  "kind": "pair",
+  "expected_drivers": [
+   "HAM",
+   "LEC"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q25",
+  "question": "What made the pole lap quick in Australia?",
+  "session": "melbourne",
+  "kind": "nameless",
+  "expected_drivers": [
+   "RUS"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q26",
+  "question": "How did Norris beat Piastri at Monza?",
+  "session": "monza",
+  "kind": "pole",
+  "expected_drivers": [
+   "NOR",
+   "PIA"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q27",
+  "question": "Where did Piastri lose time to Norris at Monza 2024?",
+  "session": "monza",
+  "kind": "pair",
+  "expected_drivers": [
+   "PIA",
+   "NOR"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q28",
+  "question": "Compare Leclerc and Sainz in Monza qualifying",
+  "session": "monza",
+  "kind": "teammates",
+  "expected_drivers": [
+   "LEC",
+   "SAI"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q29",
+  "question": "Why was Russell behind Norris in Italy 2024?",
+  "session": "monza",
+  "kind": "pair",
+  "expected_drivers": [
+   "RUS",
+   "NOR"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q30",
+  "question": "Hamilton versus Verstappen at Monza 2024 qualifying",
+  "session": "monza",
+  "kind": "pair",
+  "expected_drivers": [
+   "HAM",
+   "VER"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q31",
+  "question": "Who was faster through the Lesmos at Monza, Norris or Piastri?",
+  "session": "monza",
+  "kind": "section",
+  "expected_drivers": [
+   "NOR",
+   "PIA"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q32",
+  "question": "Why was Bottas slow in Monza qualifying?",
+  "session": "monza",
+  "kind": "single_slow",
+  "expected_drivers": [
+   "BOT"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q33",
+  "question": "Where did Alonso lose time compared to Hulkenberg at Monza?",
+  "session": "monza",
+  "kind": "pair",
+  "expected_drivers": [
+   "ALO",
+   "HUL"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q34",
+  "question": "Who braked later into the first chicane at Monza, Norris or Piastri?",
+  "session": "monza",
+  "kind": "braking",
+  "expected_drivers": [
+   "NOR",
+   "PIA"
+  ],
+  "answerable": true,
+  "note": "a braking claim the data may not resolve"
+ },
+ {
+  "id": "q35",
+  "question": "Who won the Barcelona Grand Prix on Sunday?",
+  "session": "barcelona",
+  "kind": "unanswerable",
+  "expected_drivers": [],
+  "answerable": false,
+  "note": "race result not in a qualifying dataset"
+ },
+ {
+  "id": "q36",
+  "question": "How did Russell's tyre degradation compare to Hamilton's over a race stint in Melbourne?",
+  "session": "melbourne",
+  "kind": "unanswerable",
+  "expected_drivers": [
+   "RUS",
+   "HAM"
+  ],
+  "answerable": false,
+  "note": "race stint data not stored"
+ },
+ {
+  "id": "q37",
+  "question": "What was Hamilton's steering angle through Turn 3 at Monza?",
+  "session": "monza",
+  "kind": "unanswerable",
+  "expected_drivers": [
+   "HAM"
+  ],
+  "answerable": false,
+  "note": "not in the stored channels"
+ },
+ {
+  "id": "q38",
+  "question": "Why did Verstappen crash in Q3 at Barcelona?",
+  "session": "barcelona",
+  "kind": "unanswerable",
+  "expected_drivers": [
+   "VER"
+  ],
+  "answerable": false,
+  "note": "false premise: no crash in the data"
+ },
+ {
+  "id": "q39",
+  "question": "How much fuel was Norris carrying on his Monza pole lap?",
+  "session": "monza",
+  "kind": "unanswerable",
+  "expected_drivers": [
+   "NOR"
+  ],
+  "answerable": false,
+  "note": "not in the data"
+ },
+ {
+  "id": "q40",
+  "question": "What will the weather be like for the Melbourne race?",
+  "session": "melbourne",
+  "kind": "unanswerable",
+  "expected_drivers": [],
+  "answerable": false,
+  "note": "forecast not in the data"
+ }
+]

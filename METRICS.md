@@ -54,13 +54,41 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 
 ---
 
+## Experiment results (Phoenix, deterministic checks)
+
+*40 questions (34 answerable, 6 unanswerable) run through the full pipeline with the same prompt and model (claude-sonnet-4-6, 6 chunks), once on the earlier data build (FastF1-era geometry sections) and once on the current build (OpenF1 + official corners). Scored by the code checks in `evals/code_checks.py`. Reproduce: `python -m evals.run_experiment --name ...` then `python -m evals.compare`.*
+
+| Check | Earlier data | Current data |
+|---|---|---|
+| Answer is grounded: every number in the chunks (number_grounding) | 32 pass / 2 fail | 36 pass / 0 fail |
+| Totals consistent with the section gains (total_consistency) | 4 / 0 | 5 pass / 1 fail |
+| No unhedged claim where the data has a gap (uncertainty_compliance) | n/a (old chunks never reported gaps) | 24 pass / 1 fail |
+| Biggest-gap sections retrieved (retrieval_coverage, broad questions only) | 19 / 5 | 22 pass / 2 fail |
+| Biggest-gap sections discussed (answer_coverage, broad questions only) | 16 / 8 | 21 pass / 3 fail |
+| Expected drivers retrieved | 37 / 1 | 37 pass / 1 fail |
+| Unanswerable questions declined | 4 / 2 | 6 pass / 0 fail |
+| Answerable questions answered | 34 / 0 | 34 pass / 0 fail |
+| Share of sentences with causal wording (inference_rate, not pass/fail) | 0.15 | 0.18 |
+
+**What the failures are (current data):**
+- *Real:* a Barcelona answer called one section's 0.147 s gain "behind Russell across the measured sections" (the lap gap was 0.321 s); another said Hamilton's "later braking" was a genuine advantage across T1-T2, T4 and T10-T11, but T4's braking comparison is unresolved because of a gap in the car data.
+- *Real retrieval gaps:* Alonso vs Hulkenberg at Monza retrieves no Alonso chunk (head-to-head chunks exist only for the top 10); nameless questions ("why did the pole sitter win?") retrieve too few of the biggest-gap sections.
+
+**How much to trust this:**
+- The checks were corrected several times while reading the first run's failures (a thousands-separator parsing bug, "overall" read as a lap total, claims blamed on the wrong section or on a gap chunk about other drivers, bold text read as a heading, decline detection tripping on markdown, "caution" not counted as a hedge) and once to catch an overclaim they had missed (a claim after a list of sections). Each fix has a regression test, and old and new runs were re-scored with the same final rules, so the comparison is like for like.
+- "Earlier data" vs "current data" differs in sections, braking text and gap handling at once, so this shows the rebuild did not hurt and where it helped (mainly retrieval and answer coverage of the big-gap sections), not which part helped.
+- One run per condition, 40 questions: differences of one or two questions are noise.
+- Coverage uses the stored time deltas as its reference, which is partly circular for retrieval. The checks do not judge whether causal explanations are sound (see inference_rate).
+
+---
+
 ## Test Suite
 
 ### Retrieval unit tests
 | Status | Count |
 |---|---|
 | Passing | 17 / 24 (`tests/test_retrieval.py`). The 7 failures (Q3-cutoff and slow-driver cases) predate the data rebuild: they fail identically on the old store, since commit e98553c removed Q3-cutoff inference and the tests were not updated |
-| Offline suite | 72 / 72 (`tests/test_server.py test_openf1_loader.py test_detect_events_official.py test_chunk_braking.py`) |
+| Offline suite | all passing (`tests/test_server.py test_openf1_loader.py test_detect_events_official.py test_chunk_braking.py test_code_checks.py test_experiment_evaluators.py`) |
 
 ---
 

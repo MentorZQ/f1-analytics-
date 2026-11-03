@@ -1,0 +1,80 @@
+"""Offline tests for the dataset-level evaluators and the question set used in Phoenix experiments."""
+
+import json
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from evals import run_experiment as rx  # noqa: E402
+
+
+def by_name():
+    return {f.__name__: f for f in rx.build_evaluators()}
+
+
+OUT = {"answer": "Russell was 0.125s faster in T12.", "sources": [{"drivers": ["RUS", "HAM"], "section": "T12", "text": "RUS 10.000s | HAM 10.125s"}],
+       "deltas": None}
+
+
+def test_every_evaluator_has_its_own_name():
+    names = [f.__name__ for f in rx.build_evaluators()]
+    assert len(names) == len(set(names)) == 9
+
+
+def test_drivers_retrieved_passes_and_fails():
+    ev = by_name()["drivers_retrieved"]
+    assert ev(OUT, {"drivers": ["RUS", "HAM"]})["label"] == "pass"
+    r = ev(OUT, {"drivers": ["RUS", "NOR"]})
+    assert r["label"] == "fail" and "NOR" in r["explanation"]
+    assert ev(OUT, {"drivers": []})["label"] == "n/a"
+
+
+def test_unanswerable_questions_must_be_declined():
+    ev = by_name()["handles_unanswerable"]
+    declined = {**OUT, "answer": "The retrieved context does not contain race results, only qualifying data."}
+    invented = {**OUT, "answer": "Russell won the race from pole after a clean start."}
+    assert ev(declined, {"answerable": False})["label"] == "pass"
+    assert ev(invented, {"answerable": False})["label"] == "fail"
+    assert ev(invented, {"answerable": True})["label"] == "n/a"
+
+
+def test_answerable_questions_must_not_be_refused():
+    ev = by_name()["answers_when_answerable"]
+    refused = {**OUT, "answer": "The context does not contain enough information."}
+    assert ev(refused, {"answerable": True})["label"] == "fail"
+    assert ev(OUT, {"answerable": True})["label"] == "pass"
+    assert ev(refused, {"answerable": False})["label"] == "n/a"
+
+
+def test_code_check_evaluators_return_phoenix_results():
+    r = by_name()["number_grounding"](OUT, {"answerable": True})
+    assert r["label"] in {"pass", "fail", "n/a"} and "explanation" in r
+
+
+def test_question_set_is_well_formed():
+    qs = json.loads((ROOT / "evals" / "questions.json").read_text())
+    assert len(qs) >= 30 and len({q["id"] for q in qs}) == len(qs)
+    for q in qs:
+        assert q["session"] in {"barcelona", "melbourne", "monza"}
+        assert q["question"].strip() and isinstance(q["answerable"], bool)
+    assert sum(not q["answerable"] for q in qs) >= 5            # unanswerable cases are part of the set
+
+
+def test_markdown_does_not_hide_a_decline():
+    ev = by_name()["handles_unanswerable"]
+    bold = {**OUT, "answer": "The retrieved context does **not contain** any data about a crash."}
+    only = {**OUT, "answer": "The retrieved context only contains weather data for the qualifying session. I cannot confirm race-day conditions."}
+    assert ev(bold, {"answerable": False})["label"] == "pass"
+    assert ev(only, {"answerable": False})["label"] == "pass"
+
+
+def test_coverage_only_applies_to_broad_questions():
+    ev = by_name()["retrieval_coverage"]
+    out = {**OUT, "deltas": {"lap_gap_s": 0.06, "sections": [{"section": "T1", "gain_s": 0.3, "retrieved": False},
+                                                              {"section": "T2", "gain_s": 0.2, "retrieved": False},
+                                                              {"section": "T3", "gain_s": 0.1, "retrieved": False}]}}
+    assert ev(out, {"answerable": True}, {"kind": "pair"})["label"] == "fail"
+    assert ev(out, {"answerable": True}, {"kind": "section"})["label"] == "n/a"
+    assert ev(out, {"answerable": False}, {"kind": "unanswerable"})["label"] == "n/a"

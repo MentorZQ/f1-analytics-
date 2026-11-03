@@ -8,6 +8,7 @@ gives the same verdict, so they are cheap to run on every trace.
   uncertainty_compliance : did the answer claim something a chunk said it could not tell?
   number_grounding       : does every number in the answer come from the chunks?
   total_consistency      : does a claimed total equal the sum of the sections it covers?
+  inference_rate         : how much of the answer is interpretation (reported, not pass/fail)
   coverage               : were the sections with the biggest time gaps retrieved / discussed?
 
 `sources` is the list the API returns: [{"section", "text", "drivers", "chunk_type"}, ...].
@@ -24,7 +25,7 @@ from dataclasses import dataclass, field
 @dataclass
 class CheckResult:
     name: str
-    label: str                  # "pass" | "fail" | "n/a"
+    label: str                  # "pass" | "fail" | "info" (a measurement) | "n/a"
     score: float | None         # 1.0 pass, 0.0 fail, or a fraction; None when n/a
     explanation: str
     details: list = field(default_factory=list)
@@ -52,7 +53,7 @@ _FIRM_BRAKING = re.compile(
 )
 _HEDGE = re.compile(
     r"cannot|can't|can not|unable|uncertain|unreliable|inconclusive|unclear|not clear|"
-    r"no firm|gap in|overlap|at least|between \d+\s*m|unknown|not possible|couldn't|could not",
+    r"no firm|gap in|overlap|at least|between \d+\s*m|unknown|not possible|couldn't|could not|caution|treat with care|approximate|tentative",
     re.I,
 )
 
@@ -92,28 +93,125 @@ def _blocks(answer: str) -> list[str]:
     return [b for b in re.split(r"\n\s*\n|\n(?=#)", answer) if b.strip()]
 
 
-def uncertain_sections(sources: list[dict]) -> list[str]:
-    seen = []
+_SECTION_REF = re.compile(r"(?<![\w-])T\d+[A-Za-z]?(?:-T?\d+[A-Za-z]?)*(?![\w-])")
+_CLAUSE_SPLIT = re.compile(r",|;|\bwhile\b|\bbut\b|\bwhereas\b|\band\b|\bthen\b|\bwith\b", re.I)
+
+
+_HEADING = re.compile(r"^\s*(?:#{1,6}\s+|\*\*[^*\n]+\*\*\s*$)")
+
+
+def _parts(answer: str) -> list[tuple[list[str] | None, str]]:
+    """
+    The answer cut at headings (markdown '#', or a line that is only bold). Each part is
+    (the sections its heading names, or None if the heading names none, its body).
+    """
+    parts, head, buf = [], None, []
+
+    def flush():
+        if buf:
+            parts.append((head, "\n".join(buf)))
+
+    for line in answer.split("\n"):
+        if _HEADING.match(line):
+            refs = _SECTION_REF.findall(_norm(line))
+            if not refs and not line.lstrip().startswith("#"):
+                buf.append(line)                   # "**LAW faster by 0.139s**": a bold line, not a new section
+                continue
+            flush()
+            head, buf = (refs or None), []
+        else:
+            buf.append(line)
+    flush()
+    return parts
+
+
+def _claim_belongs_to(sentence: str, section_id: str, default_refs: list[str] | None = None) -> bool:
+    """
+    Is the firm braking claim in this sentence about `section_id`? A sentence can talk about
+    several sections ("faster at T1-T2 on braking, and at T4 on apex speed"), so each clause is
+    attributed to the section it names, or to the last section named before it.
+    """
+    current: list[str] | None = default_refs
+    seen: list[str] = []                                # every section named so far in this sentence
+    for clause in _CLAUSE_SPLIT.split(_norm(sentence)):
+        refs = _SECTION_REF.findall(clause)
+        if refs:
+            current = refs
+            seen += refs
+        if _FIRM_BRAKING.search(clause):
+            if refs:                                     # the clause names its own section(s)
+                if section_id in [_norm(r) for r in refs]:
+                    return True
+            elif seen:                                   # "...through T1-T2, T4 and T10-T11, where his later braking...":
+                if section_id in [_norm(r) for r in seen]:      # the claim covers the sections listed before it
+                    return True
+            elif current is None or section_id in [_norm(r) for r in current]:
+                return True
+    return False
+
+
+SURNAMES = {
+    "RUS": "russell", "HAM": "hamilton", "ANT": "antonelli", "NOR": "norris", "PIA": "piastri", "VER": "verstappen",
+    "LEC": "leclerc", "SAI": "sainz", "HAD": "hadjar", "LAW": "lawson", "HUL": "hulkenberg", "BOR": "bortoleto",
+    "COL": "colapinto", "GAS": "gasly", "BEA": "bearman", "OCO": "ocon", "ALB": "albon", "PER": "perez",
+    "BOT": "bottas", "STR": "stroll", "ALO": "alonso", "LIN": "lindblad", "TSU": "tsunoda", "RIC": "ricciardo",
+    "MAG": "magnussen", "ZHO": "zhou",
+}
+
+
+def _names_driver(text: str, code: str) -> bool:
+    t = _norm(text).lower().replace("\u00fc", "u").replace("\u00e9", "e")
+    return bool(re.search(rf"\b{code.lower()}\b", t)) or SURNAMES.get(code, "\0") in t
+
+
+def _about_drivers(sentence: str, drivers: list[str]) -> bool:
+    """Does the sentence talk about this chunk's drivers? Every driver of a two-driver chunk, or the one driver."""
+    return bool(drivers) and all(_names_driver(sentence, d) for d in drivers)
+
+
+def uncertain_chunks(sources: list[dict]) -> list[dict]:
+    out = []
     for s in sources:
         text = (s.get("text") or "").lower()
-        if s.get("section") and any(m in text for m in UNCERTAIN_MARKERS) and s["section"] not in seen:
-            seen.append(s["section"])
+        if s.get("section") and any(m in text for m in UNCERTAIN_MARKERS):
+            out.append({"section": s["section"], "drivers": list(s.get("drivers") or [])})
+    return out
+
+
+def uncertain_sections(sources: list[dict]) -> list[str]:
+    seen = []
+    for c in uncertain_chunks(sources):
+        if c["section"] not in seen:
+            seen.append(c["section"])
     return seen
 
 
 def uncertainty_compliance(answer: str, sources: list[dict], deltas: dict | None = None) -> CheckResult:
     """Fail if the answer states, without hedging, who braked earlier/later in a section whose chunk says it could not tell."""
+    chunks = uncertain_chunks(sources)
     flagged = uncertain_sections(sources)
     if not flagged:
         return CheckResult("uncertainty_compliance", "n/a", None, "No retrieved chunk reports a data gap.")
     violations = []
     for sec in flagged:
-        for block in _blocks(answer):
-            if not _mentions(block, sec):
+        for heading_refs, body in _parts(answer):
+            if heading_refs is not None and sec not in heading_refs:
+                continue                                  # this part is headed by other sections
+            if heading_refs is None and not _mentions(body, sec):
                 continue
-            for sent in _sentences(block):
-                if _FIRM_BRAKING.search(sent) and not _HEDGE.search(sent) and _mentions(block, sec):
-                    violations.append({"section": sec, "sentence": sent.strip()})
+            last_refs = heading_refs                       # the section the text is currently about
+            for sent in _sentences(body):
+                sent_refs = _SECTION_REF.findall(_norm(sent))
+                firm = _FIRM_BRAKING.search(sent) and not _HEDGE.search(sent)
+                if firm:
+                    about = [c for c in chunks if c["section"] == sec]
+                    about_these_drivers = any(_about_drivers(sent, c["drivers"]) or not c["drivers"] for c in about) \
+                        or any(_about_drivers(body, c["drivers"]) for c in about)
+                    # a sentence that names no section belongs to the one named just before it
+                    if about_these_drivers and _claim_belongs_to(sent, sec, default_refs=last_refs):
+                        violations.append({"section": sec, "sentence": sent.strip()})
+                if sent_refs:
+                    last_refs = sent_refs
     if violations:
         return CheckResult("uncertainty_compliance", "fail", 0.0,
                            f"{len(violations)} unhedged braking claim(s) in section(s) the data could not resolve.",
@@ -124,7 +222,7 @@ def uncertainty_compliance(answer: str, sources: list[dict], deltas: dict | None
 
 # ── 2. Number grounding ──────────────────────────────────────────────────────
 
-_NUM = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)\s*(km/h|s|m)(?![\w/])")
+_NUM = re.compile(r"(?<![\w.,])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(km/h|s|m)(?![\w/])")
 TOL = {"s": 0.0015, "km/h": 0.06, "m": 0.6}
 MAX_SUM_TERMS = {"s": 4, "km/h": 2, "m": 2}
 
@@ -133,7 +231,7 @@ def numbers_with_units(text: str) -> list[tuple[float, str]]:
     t = _norm(text)
     out = []
     for m in _NUM.finditer(t):
-        value, unit = float(m.group(1)), m.group(2)
+        value, unit = float(m.group(1).replace(",", "")), m.group(2)
         if unit == "s" and "." not in m.group(1):          # "1s", "2s": prose, not a time
             continue
         if unit == "m" and re.match(r"\s*(?:in|ph|illi)", t[m.end():m.end() + 4]):
@@ -194,7 +292,9 @@ def number_grounding(answer: str, sources: list[dict], deltas: dict | None = Non
 # A total can be wrong even when its digits appear in the evidence (0.122s is also one section's
 # gain). So a claimed total is recomputed from the section gains of the sections the answer discusses.
 
-_TOTAL_WORDS = re.compile(r"\b(total|net|combined|overall|altogether|together|in sum|cumulative)\b", re.I)
+LAP_LEVEL_CHUNKS = {"driver_lap_summary", "head_to_head", "driver_sector", "session_pace_evolution"}
+_STRONG_TOTAL = re.compile(r"\b(total|net|combined|altogether|in sum|cumulative)\b|across (?:these|all|the|those)\b[^.]*\bsections?", re.I)
+_WEAK_TOTAL = re.compile(r"\b(overall|together)\b", re.I)
 
 
 def total_consistency(answer: str, sources: list[dict], deltas: dict | None = None) -> CheckResult:
@@ -203,16 +303,23 @@ def total_consistency(answer: str, sources: list[dict], deltas: dict | None = No
         return CheckResult("total_consistency", "n/a", None, "No section deltas to recompute a total from.")
     claims = []
     for sent in _sentences(answer):
-        if _TOTAL_WORDS.search(sent):
-            claims += [(v, sent.strip()) for v, u in numbers_with_units(sent) if u == "s"]
+        strong = bool(_STRONG_TOTAL.search(sent))
+        if strong or _WEAK_TOTAL.search(sent):
+            claims += [(v, sent.strip(), strong) for v, u in numbers_with_units(sent) if u == "s"]
     if not claims:
         return CheckResult("total_consistency", "n/a", None, "The answer states no total in seconds.")
     mentioned = [(s["section"], float(s["gain_s"])) for s in deltas["sections"] if section_mentioned(answer, s["section"])]
     gains = [g for _, g in mentioned][:14]
+    lap_level = [v for src in sources if src.get("chunk_type") in LAP_LEVEL_CHUNKS
+                 for v, u in numbers_with_units(src.get("text") or "") if u == "s"]
     lap_gap = abs(float(deltas.get("lap_gap_s") or 0))
     bad = []
-    for value, sent in claims:
-        ok = abs(value - lap_gap) <= TOL["s"] or abs(abs(sum(gains)) - value) <= TOL["s"]      # lap gap, or the net of all
+    single = [abs(g) for g in gains]
+    for value, sent, strong in claims:
+        # a weak word ("overall") often means "through this section overall": one section's own gain is fine
+        ok = (not strong and any(abs(value - g) <= TOL["s"] for g in single)) \
+            or abs(value - lap_gap) <= TOL["s"] or abs(abs(sum(gains)) - value) <= TOL["s"] \
+            or any(abs(value - v) <= TOL["s"] for v in lap_level)           # lap gap, the net of all, or a stated lap figure
         for side in ([g for g in gains if g > 0], [g for g in gains if g < 0]):                 # or one driver's gains
             for k in range(2, len(side) + 1):
                 if ok:
@@ -225,6 +332,27 @@ def total_consistency(answer: str, sources: list[dict], deltas: dict | None = No
                            f"{len(bad)} total(s) do not match the net, or either driver's total, over the {len(gains)} discussed sections: "
                            + ", ".join(f"{b['claimed_s']:g}s" for b in bad), bad)
     return CheckResult("total_consistency", "pass", 1.0, f"{len(claims)} total(s) match a sum of discussed sections.")
+
+
+# ── 2c. Inference rate ───────────────────────────────────────────────────────
+# Not a pass/fail check: it measures how much of the answer is interpretation rather than quoted data.
+
+_CAUSAL = re.compile(
+    r"\b(because|despite|although|however|which (?:explains|means|suggests|allowed|gave)|"
+    r"(?:translat\w+|convert\w+|carry|carries|carried over|feeds?|fed|fell|led to|result\w* in|"
+    r"explains?|suggest\w*|indicat\w*|impl(?:y|ies|ied)|reflect\w*|due to|thanks to|as a result|"
+    r"consequence|compromis\w+|platform for|allowing|enabled?))\b", re.I)
+
+
+def inference_rate(answer: str, sources: list[dict] | None = None, deltas: dict | None = None) -> CheckResult:
+    """Share of sentences using causal or interpretive wording. Reported, not judged."""
+    sents = [s for s in _sentences(answer) if len(s.split()) >= 5 and not s.lstrip().startswith("|")]
+    if not sents:
+        return CheckResult("inference_rate", "n/a", None, "No prose sentences.")
+    hits = [s.strip() for s in sents if _CAUSAL.search(s)]
+    rate = len(hits) / len(sents)
+    return CheckResult("inference_rate", "info", round(rate, 3),
+                       f"{len(hits)} of {len(sents)} sentences use causal or interpretive wording.", hits)
 
 
 # ── 3. Coverage of the biggest time gaps ─────────────────────────────────────
@@ -256,4 +384,5 @@ def run_all(answer: str, sources: list[dict], deltas: dict | None = None) -> lis
     return [uncertainty_compliance(answer, sources, deltas),
             number_grounding(answer, sources, deltas),
             total_consistency(answer, sources, deltas),
+            inference_rate(answer, sources, deltas),
             *coverage(answer, sources, deltas)]

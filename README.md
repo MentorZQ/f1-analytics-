@@ -181,6 +181,34 @@ The gap between the two numbers is explained by RAGAS being stricter on causal i
 
 ---
 
+## Tracing and evaluation with Phoenix
+
+[Arize Phoenix](https://github.com/Arize-ai/phoenix) runs locally and records every question as a trace: the retrieved chunks with rank and distance, the prompt and the Claude call (tokens, latency). Tracing is off unless `PHOENIX_COLLECTOR_ENDPOINT` is set, so the deployed site never stores visitor questions, and the API key is never put on a span.
+
+```bash
+pip install -r requirements_evals.txt
+python -m venv .phoenix-venv && .phoenix-venv/bin/pip install arize-phoenix
+PHOENIX_WORKING_DIR=.phoenix .phoenix-venv/bin/phoenix serve        # UI on http://localhost:6006
+
+PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006 python query.py "Where did Hamilton lose time to Russell?"
+python -m evals.annotate_traces                                      # attach the checks below to each trace
+python -m evals.run_experiment --name my-change                      # run the 40-question set as an experiment
+```
+
+**What "good" means** is defined in code, in `evals/code_checks.py`, so the same input always gets the same verdict:
+
+| Check | Fails when |
+|---|---|
+| `uncertainty_compliance` | a chunk says it cannot tell who braked later (a gap in the car data) and the answer states it anyway |
+| `number_grounding` | a number with a unit (km/h, s, m) is not in the retrieved chunks or the lap comparison, or a difference / sum of numbers that are |
+| `total_consistency` | a claimed total is not the net of the sections discussed, or one driver's gains |
+| `retrieval_coverage`, `answer_coverage` | fewer than two of the three biggest-gap sections were retrieved / discussed |
+| `inference_rate` | not pass/fail: the share of sentences using causal wording (reported as a trend) |
+
+The experiment adds three more: the expected drivers were retrieved, unanswerable questions (race results, tyre degradation, fuel load) are declined, and answerable ones are not refused. Questions are in `evals/questions.json`. Each experiment is stored next to earlier ones in Phoenix, so a change to the prompt, chunk format or data is compared question by question.
+
+---
+
 ## Adding a new session
 
 ```bash

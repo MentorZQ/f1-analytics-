@@ -45,6 +45,18 @@ def test_section_names_are_matched_whole_not_as_prefixes():
     assert cc.uncertainty_compliance(ans, [GAP_CHUNK]).label == "pass"
 
 
+def test_a_braking_claim_about_another_section_in_the_same_sentence_is_not_blamed_on_the_gap_section():
+    ans = ("### Hamilton's gains\nHamilton recovered time at T1-T2 (+0.092s) and T4 (+0.122s), driven by higher apex "
+           "speeds and more aggressive braking at T1-T2, and a 5.0 km/h apex speed advantage at T4.")
+    assert cc.uncertainty_compliance(ans, [GAP_CHUNK]).label == "pass"
+
+
+def test_the_same_sentence_fails_when_the_braking_claim_is_about_the_gap_section():
+    ans = ("### Hamilton's gains\nHamilton recovered time at T1-T2 (+0.092s) and at T4 (+0.122s), "
+           "braking 12m later at T4.")
+    assert cc.uncertainty_compliance(ans, [GAP_CHUNK]).label == "fail"
+
+
 # ── number grounding ──
 
 def test_numbers_from_the_chunks_are_grounded():
@@ -151,5 +163,106 @@ def test_the_saved_examples_run_cleanly():
     import json
     for ex in json.loads((ROOT / "web" / "examples.json").read_text()):
         results = cc.run_all(ex["answer"], ex["sources"], ex.get("deltas"))
-        assert {r.name for r in results} == {"uncertainty_compliance", "number_grounding", "total_consistency", "retrieval_coverage", "answer_coverage"}
-        assert all(r.label in {"pass", "fail", "n/a"} for r in results)
+        assert {r.name for r in results} == {"uncertainty_compliance", "number_grounding", "total_consistency", "inference_rate", "retrieval_coverage", "answer_coverage"}
+        assert all(r.label in {"pass", "fail", "info", "n/a"} for r in results)
+
+
+# ── inference rate ──
+
+def test_inference_rate_counts_causal_sentences():
+    ans = ("Russell exited at 225.5 km/h and Hamilton at 220.0 km/h in T12. "
+           "Hamilton braked 22m later, but his later braking did not translate into a time advantage. "
+           "The deficit fed into the next straight because the exit speed was lower.")
+    r = cc.inference_rate(ans)
+    assert r.label == "info" and r.score == round(2 / 3, 3)
+    assert len(r.details) == 2
+
+
+def test_inference_rate_zero_for_plain_reporting():
+    ans = "Russell was 0.125s faster in T12 with an exit of 225.5 km/h. Hamilton exited at 220.0 km/h and lost the section."
+    assert cc.inference_rate(ans).score == 0.0
+
+
+def test_inference_rate_ignores_tables_and_fragments():
+    assert cc.inference_rate("| Section | Delta |\n| T12 | +0.125s |\nShort.").label == "n/a"
+
+
+# ── regressions found by running the checks on a 40-question experiment ──
+
+def test_a_claim_under_another_sections_heading_is_not_blamed_on_the_gap_section():
+    gap = {"section": "T10-T11", "text": "LAW: first brakes between 3269m and 3306m (gap in the car data)\nTime in section: LAW 7.593s | HUL 7.432s | HUL faster by 0.161s"}
+    ans = ("### T10-T11 (Corner Sequence)\nHUL faster by 0.161s. Lawson's exact point has a data gap, so Hulkenberg braked at least 1m later.\n\n"
+           "### T12 (Corner) | 3599m-3896m\nLawson arrived with a +16 km/h entry advantage, a benefit of his stronger T10-T11 exit. "
+           "Although Hulkenberg braked 15m later (3626m vs 3612m), Lawson held the apex.")
+    assert cc.uncertainty_compliance(ans, [gap]).label == "pass"
+
+
+def test_a_firm_claim_under_the_gap_sections_own_heading_still_fails():
+    gap = {"section": "T10-T11", "text": "LAW: first brakes between 3269m and 3306m (gap in the car data)"}
+    ans = "### T10-T11\nHulkenberg braked 15m later than Lawson into the corner."
+    assert cc.uncertainty_compliance(ans, [gap]).label == "fail"
+
+
+def test_thousands_separators_are_one_number():
+    assert cc.numbers_with_units("Based on T12 (distance window 3,599m-3,896m)") == [(3599.0, "m"), (3896.0, "m")]
+    chunk = [{"section": "x", "text": "Distance window: 3599m - 3896m"}]
+    assert cc.number_grounding("Window 3,599m-3,896m", chunk).label == "pass"
+
+
+def test_overall_for_one_section_is_not_a_lap_total():
+    ans = SIX_ANSWER + "Russell was still 0.125s faster through T12 overall."
+    assert cc.total_consistency(ans, [], SIX).label == "pass"
+
+
+def test_net_across_sections_is_still_checked_even_when_the_digits_match_one_section():
+    ans = SIX_ANSWER + "Russell's net advantage across these six sections: +0.122s."
+    assert cc.total_consistency(ans, [], SIX).label == "fail"
+
+
+# ── more regressions from the experiment ──
+
+def test_a_bold_line_under_a_heading_does_not_reset_the_section():
+    gap = {"section": "T10-T11", "drivers": ["LAW", "HUL"], "text": "LAW: first brakes between 3269m and 3306m (gap in the car data)"}
+    ans = ("### T10-T11 (Corner Sequence)\n**HUL faster by 0.161s**\nBraking has a data gap.\n\n"
+           "### T12 (Corner)\n**LAW faster by 0.139s**\nAlthough Hulkenberg braked 15m later (3626m vs 3612m), Lawson held the apex.")
+    assert cc.uncertainty_compliance(ans, [gap]).label == "pass"
+
+
+def test_a_gap_chunk_about_other_drivers_does_not_blame_a_claim_about_different_drivers():
+    gap = {"section": "T4", "drivers": ["RUS", "HAM"], "text": "RUS: first brakes between 1551m and 1616m (gap in the car data)"}
+    ans = "### T4\nHadjar braked 29m later than Verstappen into the corner."
+    assert cc.uncertainty_compliance(ans, [gap]).label == "pass"
+    ans2 = "### T4\nHamilton braked 29m later than Russell into the corner."
+    assert cc.uncertainty_compliance(ans2, [gap]).label == "fail"
+
+
+def test_caution_counts_as_a_hedge():
+    gap = {"section": "T4", "drivers": ["VER", "HAD"], "text": "gap in the car data"}
+    ans = "### T4\nHadjar braked 29m later than Verstappen, though the data warrants some caution here."
+    assert cc.uncertainty_compliance(ans, [gap]).label == "pass"
+
+
+def test_a_lap_level_gap_is_not_a_section_total():
+    lap = {"section": None, "chunk_type": "driver_lap_summary", "text": "Gap to pole: 0.147s"}
+    ans = SIX_ANSWER + "Norris finished P4, 0.147s behind Russell across the measured sections."
+    assert cc.total_consistency(ans, [lap], SIX).label == "pass"
+    assert cc.total_consistency(ans, [], SIX).label == "fail"
+
+
+def test_a_headingless_claim_belongs_to_the_section_named_just_before_it():
+    gaps = [{"section": "T4", "drivers": ["RUS", "ANT"], "text": "gap in the car data"},
+            {"section": "T7-T8", "drivers": ["RUS", "ANT"], "text": "gap in the car data"},
+            {"section": "T12", "drivers": ["RUS", "ANT"], "text": "first brakes at 3629m"}]
+    ans = ("**T12** was the single biggest loss (0.084s). Despite ANT braking 12m later, Russell had the better exit.\n\n"
+           "**T7-T8 (0.066s)** shows Russell carrying higher apex speeds.")
+    assert cc.uncertainty_compliance(ans, gaps).label == "pass"
+    bad = ("**T7-T8 (0.066s)** shows Russell carrying higher apex speeds. Antonelli braked 12m later than Russell here.")
+    assert cc.uncertainty_compliance(bad, gaps).label == "fail"
+
+
+def test_a_claim_after_a_list_of_sections_covers_every_section_in_the_list():
+    gap = {"section": "T4", "drivers": ["RUS", "HAM"], "text": "RUS: first brakes between 1551m and 1616m (gap in the car data)"}
+    ans = ("Hamilton clawed back 0.294s through T1-T2, T4, and T10-T11, where his later braking and higher apex speeds "
+           "were genuine advantages over Russell.")
+    r = cc.uncertainty_compliance(ans, [gap])
+    assert r.label == "fail" and r.details[0]["section"] == "T4"

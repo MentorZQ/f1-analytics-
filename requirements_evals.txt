@@ -1,0 +1,8 @@
+# Evaluation and tracing tools (not needed to run the app). Install alongside requirements_core.txt:
+#   pip install -r requirements_evals.txt
+# The Phoenix server itself is best installed in its own environment:
+#   python -m venv .phoenix-venv && .phoenix-venv/bin/pip install arize-phoenix && .phoenix-venv/bin/phoenix serve
+arize-phoenix-client>=3.0
+arize-phoenix-otel>=0.17
+openinference-instrumentation-anthropic>=3.0
+pytest>=8.0
