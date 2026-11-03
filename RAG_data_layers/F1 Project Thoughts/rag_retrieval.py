@@ -219,6 +219,10 @@ def resolve_context_drivers(
         if pos_index is not None and standings:
             idx = len(standings) - 1 if pos_index == "last" else pos_index
             if 0 <= idx < len(standings):
+                # Pole is explained by the margin over the next car ("why did the pole sitter beat
+                # the field?"), exactly as a named pole question adds P2, so pair retrieval applies.
+                if idx == 0 and p2 and p2 != standings[0]:
+                    return {standings[0], p2}
                 return {standings[idx]}
         return named_codes
 
@@ -292,6 +296,36 @@ def rerank_by_significance(
         return chunk["distance"] - delta_weight * _event_significance(chunk)
 
     return sorted(chunks, key=adjusted)
+
+
+def _chunk_drivers(chunk: dict) -> set[str]:
+    meta = chunk.get("metadata", {})
+    return {meta[k] for k in ("driver", "driver_a", "driver_b") if meta.get(k)}
+
+
+def ensure_drivers_present(ranked: list[dict], pool: list[dict], needed: set[str], n: int) -> list[dict]:
+    """
+    Top-n of `ranked`, but with at least one chunk for every driver in `needed` that appears anywhere
+    in `pool`. A missing driver's best chunk replaces the lowest-ranked chunk that is not the only
+    representative of another needed driver. Used when a question names a pair that has no
+    head-to-head chunk: both drivers' own telemetry still reaches the model.
+    """
+    final = list(ranked[:n])
+    for driver in sorted(needed):
+        if any(driver in _chunk_drivers(c) for c in final):
+            continue
+        candidate = next((c for c in pool if driver in _chunk_drivers(c) and _chunk_drivers(c) <= needed), None)
+        if candidate is None:
+            continue
+        for i in range(len(final) - 1, -1, -1):
+            others = {d for j, c in enumerate(final) if j != i for d in _chunk_drivers(c)}
+            if (_chunk_drivers(final[i]) & needed) <= others:        # removing it loses no needed driver
+                final[i] = candidate
+                break
+        else:
+            if len(final) < n:
+                final.append(candidate)
+    return final
 
 
 def _chunks_driver_set(chunks: list[dict]) -> set[str]:
@@ -371,20 +405,26 @@ def smart_retrieve(
                                    normalize=normalize, auto_filter=False)
         seen_ids = {c["chunk_id"] for c in chunks}
 
-    # Guarantee at least one chunk for each context-inferred (non-named) driver.
-    inferred = all_codes - named_codes
-    if inferred:
+    # Guarantee at least one chunk for every driver the question is about, named or inferred
+    # (a named pair can have no head-to-head chunk, e.g. outside the stored pairs).
+    if all_codes:
         found = _chunks_driver_set(chunks)
-        for driver in inferred - found:
-            driver_where = {"$or": [
-                {"driver_a": driver}, {"driver_b": driver}, {"driver": driver},
-            ]}
-            for chunk in retrieve_chunks(collection, question, embed_fn,
-                                         n_results=3, where=driver_where,
-                                         normalize=normalize, auto_filter=False):
-                if chunk["chunk_id"] not in seen_ids:
-                    chunks.append(chunk)
-                    seen_ids.add(chunk["chunk_id"])
+        for driver in sorted(all_codes - found):
+            # The driver's own chunks first. A head-to-head chunk would pull in a partner the
+            # question never mentioned (e.g. the teammate) and put the wrong pair in the context.
+            for driver_where in ({"driver": driver},
+                                 {"$or": [{"driver_a": driver}, {"driver_b": driver}]}):
+                added = False
+                for chunk in retrieve_chunks(collection, question, embed_fn,
+                                             n_results=3, where=driver_where,
+                                             normalize=normalize, auto_filter=False):
+                    others = _chunk_drivers(chunk) - {driver}
+                    if chunk["chunk_id"] not in seen_ids and others <= all_codes:
+                        chunks.append(chunk)
+                        seen_ids.add(chunk["chunk_id"])
+                        added = True
+                        break
+                if added:
                     break
 
     # For any named driver who has a dnq_status chunk, inject it unconditionally.
@@ -398,7 +438,8 @@ def smart_retrieve(
                 chunks.append(chunk)
                 seen_ids.add(chunk["chunk_id"])
 
-    return rerank_by_significance(chunks)[:n_results]
+    ranked = rerank_by_significance(chunks)
+    return ensure_drivers_present(ranked, ranked, all_codes, n_results)
 
 
 def retrieve_chunks(
