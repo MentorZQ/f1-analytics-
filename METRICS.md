@@ -59,7 +59,7 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 ### Retrieval unit tests
 | Status | Count |
 |---|---|
-| Passing | 24 / 24 (`tests/test_retrieval.py`) |
+| Passing | 17 / 24 (`tests/test_retrieval.py`). The 7 failures (Q3-cutoff and slow-driver cases) predate the data rebuild: they fail identically on the old store, since commit e98553c removed Q3-cutoff inference and the tests were not updated |
 | Offline suite | 72 / 72 (`tests/test_server.py test_openf1_loader.py test_detect_events_official.py test_chunk_braking.py`) |
 
 ---
