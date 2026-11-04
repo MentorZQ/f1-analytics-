@@ -297,8 +297,15 @@ def test_section_times_and_per_section_gains_are_not_totals():
     assert cc.total_consistency(ans, [], SIX).label in {"pass", "n/a"}      # examined, nothing wrong to flag
 
 
-def test_a_one_decimal_rounding_of_a_stated_time_is_grounded_but_a_made_up_one_is_not():
+def test_a_rounded_time_is_grounded_only_when_the_exact_figure_is_shown_with_it():
     chunk = [{"section": None, "text": "Gap to pole: +0.186s"}]
-    assert cc.number_grounding("Roughly 0.2s off the front.", chunk).label == "pass"
-    assert cc.number_grounding("Roughly 0.5s off the front.", chunk).label == "fail"
-    assert cc.number_grounding("A gap of 0.21s.", chunk).label == "fail"           # two decimals: not a rounding
+    r = cc.number_grounding("Roughly 0.2s off the front.", chunk)
+    assert r.label == "fail" and "exact figure not shown" in r.explanation
+    assert cc.number_grounding("Roughly 0.2s (0.186s) off the front.", chunk).label == "pass"
+    assert cc.number_grounding("Pole was 0.186s ahead. Roughly 0.2s.", chunk).label == "fail"   # exact figure is in another sentence
+
+
+def test_a_made_up_or_two_decimal_figure_is_not_a_rounding():
+    chunk = [{"section": None, "text": "Gap to pole: +0.186s"}]
+    assert cc.number_grounding("Roughly 0.5s (0.186s) off the front.", chunk).label == "fail"
+    assert cc.number_grounding("A gap of 0.21s.", chunk).label == "fail"

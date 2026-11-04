@@ -18,9 +18,11 @@ Sessions available:
 """
 
 import argparse
+import contextvars
 import os
 import re
 import sys
+import time
 from collections import Counter
 from functools import lru_cache
 from pathlib import Path
@@ -150,7 +152,18 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None 
         system=system,
         messages=[{"role": "user", "content": prompt}],
     )
+    usage = getattr(message, "usage", None)
+    _LLM_USAGE.set({
+        "input_tokens": getattr(usage, "input_tokens", None),
+        "output_tokens": getattr(usage, "output_tokens", None),
+        "model": model,
+    })
     return "".join(block.text for block in message.content if block.type == "text")
+
+
+# Token usage of the most recent call_llm in this context. call_llm returns plain text (tests and
+# callers rely on that), so usage is passed beside it; None when the call was mocked or failed.
+_LLM_USAGE: contextvars.ContextVar = contextvars.ContextVar("llm_usage", default=None)
 
 
 # ── Shared resources ──────────────────────────────────────────────────────────
@@ -304,7 +317,7 @@ def answer_with_sources(
             root,
             **{"output.value": result["answer"], "f1.session": result["session"],
                "f1.model": model, "f1.n_chunks": n_chunks,
-               "f1.sources": result["sources"], "f1.deltas": result["deltas"]},
+               "f1.sources": result["sources"], "f1.deltas": result["deltas"], "f1.metrics": result["metrics"]},
         )
         return result
 
@@ -316,6 +329,7 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
     collection  = _get_collection(session_key)
     session_ctx = _get_session_context(session_key)
 
+    t_start = time.perf_counter()
     with tracing.span("f1.retrieve", "RETRIEVER", input_value=question) as sp:
         chunks = smart_retrieve(
             collection, question, get_embed_fn(),
@@ -334,8 +348,25 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
             print(f"  {c['rank']}. [{meta.get('chunk_type')}] {drv} {eid} dist={round(c['distance'],4)}")
         print()
 
+    t_retrieved = time.perf_counter()
     prompt   = format_prompt(question, chunks, max_chunks=n_chunks, session_ctx=session_ctx)
+    _LLM_USAGE.set(None)
+    t_llm = time.perf_counter()
     response = call_llm(prompt, model=model, api_key=api_key)
+    t_answered = time.perf_counter()
+    usage = _LLM_USAGE.get() or {}
+    deltas = section_deltas(collection, chunks)
+    t_done = time.perf_counter()
+    metrics = {
+        "retrieve_s": round(t_retrieved - t_start, 3),
+        "llm_s": round(t_answered - t_llm, 3),
+        "deltas_s": round(t_done - t_answered, 3),
+        "total_s": round(t_done - t_start, 3),
+        "input_tokens": usage.get("input_tokens"),
+        "output_tokens": usage.get("output_tokens"),
+        "prompt_chars": len(prompt),
+        "model": model,
+    }
 
     return {
         "answer":  response,
@@ -352,7 +383,8 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
             }
             for c in chunks
         ],
-        "deltas":  section_deltas(collection, chunks),
+        "deltas":  deltas,
+        "metrics": metrics,
     }
 
 

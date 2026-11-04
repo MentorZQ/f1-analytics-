@@ -78,3 +78,22 @@ def test_coverage_only_applies_to_broad_questions():
     assert ev(out, {"answerable": True}, {"kind": "pair"})["label"] == "fail"
     assert ev(out, {"answerable": True}, {"kind": "section"})["label"] == "n/a"
     assert ev(out, {"answerable": False}, {"kind": "unanswerable"})["label"] == "n/a"
+
+
+# ── latency and token tracking ──
+
+def test_performance_summarises_latency_tokens_and_cost_when_priced():
+    from evals import compare
+    runs = [{"output": {"metrics": {"total_s": 10.0, "llm_s": 9.0, "retrieve_s": 0.5, "input_tokens": 2000, "output_tokens": 500}}},
+            {"output": {"metrics": {"total_s": 20.0, "llm_s": 19.0, "retrieve_s": 0.5, "input_tokens": 3000, "output_tokens": 1000}}},
+            {"output": None}]
+    perf = compare.performance(runs, "claude-sonnet-5-5")
+    assert perf["n"] == 2 and perf["total_p50"] == 15.0 and perf["in_total"] == 5000 and perf["out_total"] == 1500
+    assert abs(perf["cost_total"] - (5000 / 1e6 * 2.0 + 1500 / 1e6 * 10.0)) < 1e-9
+    assert compare.performance(runs, "claude-sonnet-4-6")["cost_total"] is None      # no documented price: no invented cost
+    assert compare.performance([{"output": {"answer": "x"}}], "claude-sonnet-5-5") is None   # older runs had no metrics
+
+
+def test_percentile_is_inclusive_of_the_slowest_request():
+    from evals import compare
+    assert compare.percentile([1, 2, 3, 4, 100], 0.95) == 100

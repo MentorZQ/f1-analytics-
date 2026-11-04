@@ -138,7 +138,8 @@ def main() -> None:
     def task(input):
         out = query.answer_with_sources(input["question"], session_key=input["session"],
                                         n_chunks=args.n_chunks, model=model)
-        return {"answer": out["answer"], "session": out["session"], "sources": out["sources"], "deltas": out["deltas"]}
+        return {"answer": out["answer"], "session": out["session"], "sources": out["sources"], "deltas": out["deltas"],
+                "metrics": out.get("metrics")}
 
     client.experiments.run_experiment(
         dataset=dataset, task=task, evaluators=build_evaluators(), experiment_name=args.name,

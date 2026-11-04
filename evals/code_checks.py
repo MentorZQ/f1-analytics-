@@ -251,9 +251,9 @@ def _derivable(value: float, unit: str, pool: list[float]) -> str | None:
     for p in pool:
         if abs(p - value) <= tol:
             return "stated"
-    if unit == "s" and abs(value * 10 - round(value * 10)) < 1e-6:        # "roughly 0.2s" for a stated 0.186s
+    if unit == "s" and abs(value * 10 - round(value * 10)) < 1e-6:        # "about 0.2s" for a stated 0.186s
         if any(abs(p - value) <= 0.05 + 1e-9 for p in pool):
-            return "rounded"
+            return "rounded"                                              # acceptable only if the exact figure is shown too
     for a, b in itertools.combinations(pool, 2):
         if abs(abs(a - b) - value) <= tol:
             return "difference"
@@ -280,9 +280,18 @@ def number_grounding(answer: str, sources: list[dict], deltas: dict | None = Non
     claimed = list(dict.fromkeys(numbers_with_units(answer)))
     if not claimed:
         return CheckResult("number_grounding", "n/a", None, "The answer contains no numbers with units.")
+    sentence_numbers = [numbers_with_units(sent) for sent in _sentences(answer)]
     ungrounded, how = [], {}
     for value, unit in claimed:
         found = _derivable(value, unit, pool[unit])
+        if found == "rounded":
+            exact = [p for p in pool[unit] if abs(p - value) <= 0.05 + 1e-9]
+            shown = any((value, unit) in nums and any(u == unit and abs(n - e) <= TOL[unit] for n, u in nums for e in exact)
+                        for nums in sentence_numbers)
+            if not shown:
+                ungrounded.append(f"{value:g}{unit} (rounded, exact figure not shown)")
+                continue
+            found = "rounded, exact shown"
         if found is None:
             ungrounded.append(f"{value:g}{unit}")
         else:
