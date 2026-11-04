@@ -53,9 +53,15 @@ _FIRM_BRAKING = re.compile(
 )
 _HEDGE = re.compile(
     r"cannot|can't|can not|unable|uncertain|unreliable|inconclusive|unclear|not clear|"
-    r"no firm|gap in|overlap|at least|between \d+\s*m|unknown|not possible|couldn't|could not|caution|treat with care|approximate|tentative",
+    r"no firm|gap in|has a gap|have a gap|does not (?:directly |clearly |fully )?(?:give|support|show|establish|settle|resolve)|"
+    r"not (?:a )?clean|not sufficient|insufficient|not enough|overlap|at least|between \d+\s*m|unknown|not possible|couldn't|could not|caution|treat with care|approximate|tentative",
     re.I,
 )
+
+
+_INDIRECT_QUESTION = re.compile(
+    r"\b(?:determine|say|tell|know|establish|decide|identify|clear|question|of|about|on|to|whether)\s+"
+    r"(?:definitively\s+|conclusively\s+|confidently\s+)?(?:who|which driver)\s+brak", re.I)
 
 
 def _sentences(text: str) -> list[str]:
@@ -205,7 +211,7 @@ def uncertainty_compliance(answer: str, sources: list[dict], deltas: dict | None
             last_refs = heading_refs                       # the section the text is currently about
             for sent in _sentences(body):
                 sent_refs = _SECTION_REF.findall(_norm(sent))
-                firm = _FIRM_BRAKING.search(sent) and not _HEDGE.search(sent)
+                firm = _FIRM_BRAKING.search(sent) and not _HEDGE.search(sent) and not _INDIRECT_QUESTION.search(sent)
                 if firm:
                     about = [c for c in chunks if c["section"] == sec]
                     about_these_drivers = any(_about_drivers(sent, c["drivers"]) or not c["drivers"] for c in about) \
@@ -328,9 +334,12 @@ def _next_to_section_ref(sentence: str, value: float) -> bool:
         if m.group(2) != "s" or abs(float(m.group(1).replace(",", "")) - value) > 1e-9:
             continue
         near = t[max(0, m.start() - 22): m.end() + 22]
-        if _SECTION_REF.search(near):
+        if _SECTION_REF.search(near) or re.search(r"\b(?:straight|corner|chicane|complex|section|sequence|hairpin|esses)\b", near, re.I):
             return True
     return False
+
+
+_SUM_EXPRESSION = re.compile(r"((?:\d+\.\d+)\s*s?(?:\s*\+\s*(?:\d+\.\d+)\s*s?)+)\s*=\s*(\d+\.\d+)\s*s?")
 
 
 def total_consistency(answer: str, sources: list[dict], deltas: dict | None = None) -> CheckResult:
@@ -338,10 +347,23 @@ def total_consistency(answer: str, sources: list[dict], deltas: dict | None = No
     if not deltas or not deltas.get("sections"):
         return CheckResult("total_consistency", "n/a", None, "No section deltas to recompute a total from.")
     claims = []
+    wrong_sums = []
     for sent in _sentences(answer):
+        arithmetic = _SUM_EXPRESSION.search(sent)
+        if arithmetic:                                     # "0.086s + 0.103s = 0.189s": check the arithmetic, not the figures as totals
+            terms = [float(x) for x in re.findall(r"\d+\.\d+", arithmetic.group(1))]
+            if abs(sum(terms) - float(arithmetic.group(2))) > TOL["s"] * len(terms):
+                wrong_sums.append({"sentence": sent.strip()[:200], "terms_sum": round(sum(terms), 3), "stated": float(arithmetic.group(2))})
+            continue
+        if re.search(r"\bsectors?\b", sent, re.I):         # sector figures are not in the section list this check recomputes from
+            continue
         strong = bool(_STRONG_TOTAL.search(sent))
         if strong or _WEAK_TOTAL.search(sent):
             claims += [(v, sent.strip(), strong) for v, u in numbers_with_units(sent) if u == "s"]
+    if wrong_sums:
+        return CheckResult("total_consistency", "fail", 0.0,
+                           f"{len(wrong_sums)} written-out sum(s) do not add up: the terms give {wrong_sums[0]['terms_sum']:g}s, the answer says {wrong_sums[0]['stated']:g}s",
+                           wrong_sums)
     if not claims:
         return CheckResult("total_consistency", "n/a", None, "The answer states no total in seconds.")
     mentioned = [(s["section"], float(s["gain_s"])) for s in deltas["sections"]

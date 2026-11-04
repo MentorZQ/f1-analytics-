@@ -180,3 +180,31 @@ def test_hedged_other_section_or_non_braking_absolutes_pass():
 
 def test_a_comparison_without_driver_names_is_not_applicable_rather_than_an_error():
     assert cl.reversed_winner("RUS faster by 0.1s", [], {"sections": [{"section": "T1", "gain_s": 0.1}]}).label == "n/a"
+
+
+# ── team attribution ──
+
+GRID = [{"section": None, "chunk_type": "grid", "text": "  P3 HAD (Red Bull Racing) 1:19.303  +0.785s to pole\n  P4 LEC (Ferrari) 1:19.327\n  P1 RUS (Mercedes) 1:18.518"}]
+
+
+def test_a_driver_attached_to_the_wrong_team_fails():
+    r = cl.team_attribution("Leclerc was just 0.024s behind Haas's Hadjar in P3.", GRID)
+    assert r.label == "fail" and r.details[0]["driver"] == "HAD" and r.details[0]["said"] == "haas"
+
+
+def test_other_ways_of_naming_a_team_are_read():
+    assert cl.team_attribution("Hadjar (Haas) took P3.", GRID).label == "fail"
+    assert cl.team_attribution("Hadjar of McLaren took P3.", GRID).label == "fail"
+    assert cl.team_attribution("The Ferrari driver Russell was quick.", GRID).label == "fail"
+
+
+def test_the_right_team_passes_and_unrelated_text_is_not_applicable():
+    assert cl.team_attribution("Red Bull's Hadjar and Ferrari's Leclerc were close.", GRID).label == "pass"
+    assert cl.team_attribution("Hadjar (Red Bull) took P3.", GRID).label == "pass"
+    assert cl.team_attribution("Hadjar took P3 and Leclerc P4.", GRID).label == "n/a"
+
+
+def test_racing_bulls_and_red_bull_are_not_confused():
+    ev = [{"section": None, "text": "  P8 LAW (Racing Bulls) 1:19.994\n  P3 HAD (Red Bull Racing) 1:19.303"}]
+    assert cl.team_attribution("Racing Bulls' Lawson and Red Bull's Hadjar", ev).label == "pass"
+    assert cl.team_attribution("Red Bull's Lawson", ev).label == "fail"

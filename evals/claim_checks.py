@@ -11,6 +11,7 @@ these ask "is the answer about the right thing, and does it say the right thing 
   false_premise            : a question assumes something the evidence never shows (a crash, a penalty);
                              the answer must say so instead of explaining it
   overclaiming             : "clearly" / "definitely" about braking in a section the data could not resolve
+  team_attribution         : a driver is named together with the wrong team ("Haas's Hadjar")
   self_correction          : "wait, corrected:" - the model changed its mind in the answer text
 
 Same contract as code_checks: pure functions of (answer, evidence), no network, same verdict every time.
@@ -28,7 +29,7 @@ from evals.code_checks import CheckResult
 _RAG = Path(__file__).resolve().parent.parent / "RAG_data_layers" / "F1 Project Thoughts"
 if str(_RAG) not in sys.path:
     sys.path.insert(0, str(_RAG))
-from rag_retrieval import extract_driver_codes  # noqa: E402
+from rag_retrieval import TEAM_ALIASES, extract_driver_codes  # noqa: E402
 
 SESSION_WORDS = {
     "barcelona": ("barcelona", "spain", "spanish", "catalunya", "catalan"),
@@ -382,12 +383,62 @@ def self_correction(answer: str, sources: list[dict] | None = None) -> CheckResu
     return CheckResult("self_correction", "pass", 1.0, "No self-correction in the text.")
 
 
+# ── team attribution ─────────────────────────────────────────────────────────
+
+_CODE_TEAM = re.compile(r"\b([A-Z]{3})\s+(?:P\d+\s+)?\(([^)\n]+)\)")      # "RUS P1 (Mercedes)", "HAD (Red Bull Racing)"
+
+
+def stored_teams(sources: list[dict]) -> dict[str, str]:
+    teams: dict[str, str] = {}
+    for s in sources:
+        for code, team in _CODE_TEAM.findall(s.get("text") or ""):
+            if any(key in team.lower() for key in TEAM_ALIASES):
+                teams.setdefault(code, team.strip())
+    return teams
+
+
+def _team_key(team: str) -> str | None:
+    low = team.lower()
+    return next((key for key in TEAM_ALIASES if key in low), None)
+
+
+def team_attribution(answer: str, sources: list[dict]) -> CheckResult:
+    """'Haas's Hadjar' / 'Leclerc (McLaren)': the team named with a driver must be the driver's team in the evidence."""
+    teams = stored_teams(sources)
+    text = cc._norm(answer)
+    checked, wrong = 0, []
+    for code, team in teams.items():
+        true_key = _team_key(team)
+        if true_key is None:
+            continue
+        name = _name_alternatives(code)
+        for key, alias in TEAM_ALIASES.items():
+            patterns = [rf"(?:{alias})['\u2019]s\s+(?:\w+\s+)?{name}",                    # Haas's Hadjar
+                        rf"{name}\s*\(\s*(?:{alias})",                                   # Hadjar (Haas)
+                        rf"{name}\s*,?\s*(?:of|at|driving for|from)\s+(?:{alias})",       # Hadjar of Haas
+                        rf"(?:{alias})\s+(?:driver|star|ace|rookie|man)\s+{name}"]        # Haas driver Hadjar
+            for pattern in patterns:
+                hit = re.search(pattern, text, re.IGNORECASE)
+                if hit:
+                    checked += 1
+                    if key != true_key:
+                        wrong.append({"driver": code, "said": key, "stored": team, "text": hit.group(0)[:60]})
+    if wrong:
+        return CheckResult("team_attribution", "fail", 0.0,
+                           f"{len(wrong)} driver(s) attached to the wrong team: "
+                           + ", ".join(f"{w['driver']} -> {w['said']} (stored: {w['stored']})" for w in wrong), wrong)
+    if not checked:
+        return CheckResult("team_attribution", "n/a", None, "No driver is named together with a team.")
+    return CheckResult("team_attribution", "pass", 1.0, f"All {checked} driver-team pairing(s) match the evidence.")
+
+
 def run_all(answer: str, sources: list[dict], deltas: dict | None = None, question: str | None = None,
             session: str | None = None) -> list[CheckResult]:
     return [reversed_winner(answer, sources, deltas),
             self_correction(answer, sources),
             wrong_driver_or_session(answer, sources, question, session),
             numbers_on_right_driver(answer, sources),
+            team_attribution(answer, sources),
             completeness(answer, sources, deltas, question),
             false_premise(answer, sources, question),
             overclaiming(answer, sources, question)]

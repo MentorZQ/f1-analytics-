@@ -2,10 +2,10 @@
 
 A retrieval-augmented generation system for analysing F1 qualifying sessions. Ask natural language questions about lap times, sector performance, braking points, and head-to-head driver comparisons — answers are grounded in telemetry data from OpenF1, and where the car data has a gap the system says so instead of guessing.
 
-**Sessions included (pre-built, no re-ingestion needed; stored head-to-head comparisons cover the top 10, every teammate pair and every pair of grid neighbours):**
-- Melbourne 2026 Qualifying — 1498 chunks
-- Barcelona 2026 Qualifying — 1604 chunks
-- Monza 2024 Qualifying — 1431 chunks
+**Sessions included (pre-built, no re-ingestion needed). Comparisons between any two drivers are built on demand from a saved session snapshot, so no pair is missing:**
+- Melbourne 2026 Qualifying — 618 chunks
+- Barcelona 2026 Qualifying — 628 chunks
+- Monza 2024 Qualifying — 546 chunks
 
 ---
 
@@ -131,6 +131,18 @@ Each session is broken into specialised chunk types stored in ChromaDB:
 | `session_weather` | Air/track temperature, humidity, rainfall during the session |
 | `circuit_overview` | Track layout, length, corners, DRS zones |
 
+### Pairs, teams and the whole grid are computed, not stored
+
+Earlier versions stored a chunk for every compared pair (60% of each store) and could only answer pairs that had been stored. Now each session keeps a small **snapshot** (`RAG_data_layers/session_snapshots/`, about 0.4 MB: every driver's fastest-lap telemetry, the driver table and the track sections) and the head-to-head sections for *any* two drivers are generated at question time by the same code that used to build the stored chunks. Checked against the old store: all 2,741 stored pair chunks rebuild with identical text (`scripts/check_snapshot_parity.py`, run on a store built with `reingest.py --keep-pair-chunks`).
+
+For each question the context is assembled from, in order:
+1. whole-session views when the question is not about one pair: the **grid** ("why were many drivers close together"), a **team summary** ("the ferraris" -> both cars), the **team advantage by section** ("where did each team have an advantage"), or one **section across the whole field** ("who was fastest through T9");
+2. the two drivers' best laps and the gap between them (so answers state the margin);
+3. the pair's sections with the largest time gaps;
+4. ordinary retrieval (lap summaries, race control, weather, pace evolution; tyre, weather, flag and progress questions are routed to the chunk type that holds the answer).
+
+The slot budget always adds up to N chunks plus the one comparison block. `/health` returns 503 if a session's snapshot is missing, since pair questions would lose their sections.
+
 ### Track sections
 
 The lap is divided into non-overlapping sections that tile the full track distance. Section boundaries are shared across all drivers, and times through each section are computed by linear interpolation at the exact boundary distance — not by slicing telemetry samples. This means:
@@ -224,7 +236,8 @@ The experiment adds: expected drivers retrieved, unanswerable questions declined
 
 # 2. Run re-ingestion (OpenF1 car data + MultiViewer official corners, no login needed;
 #    use --source fastf1 for the old FastF1 path, which needs an F1 TV subscription)
-python reingest.py --chroma-path /tmp/new_store --only Silverstone
+python reingest.py --chroma-path /tmp/new_store --only Silverstone     # also writes the session snapshot
+python reingest.py --snapshots-only                                    # snapshots only, no embedding (about 4 minutes)
 
 # 3. Check the store, then copy it over RAG_data_layers/chroma_store and commit
 git add RAG_data_layers/chroma_store/
@@ -252,7 +265,8 @@ f1-analytics-/
 ├── server.py, web/                   # FastAPI app + website
 ├── RAG_data_layers/
 │   ├── circuit_data/                 # Cached official corner data
-│   ├── chroma_store/                 # Pre-built vector database (committed)
+│   ├── chroma_store/                 # Pre-built vector database (committed, 16 MB)
+│   ├── session_snapshots/            # Per-session lap telemetry for on-demand pair comparisons (1.3 MB)
 │   └── F1 Project Thoughts/
 │       ├── rag_retrieval.py          # Retrieval logic (smart_retrieve, reranking)
 │       ├── load_qualifying_openf1.py # OpenF1 session loader (default)
@@ -263,6 +277,8 @@ f1-analytics-/
 │
 ├── events_and_chunking/
 │   ├── pipeline.py                   # Top-level: runs all chunkers for a session
+│   ├── session_snapshot.py           # Save/load a session snapshot; compare_drivers() for any pair
+│   ├── session_queries.py            # Grid, team, section-ranking and team-advantage views
 │   ├── detect_events_official.py     # Sections from official corners + driver brake/throttle
 │   ├── detect_events.py              # Geometry-only detection (fallback)
 │   ├── circuit_labels.py             # Official FIA corner name mappings per circuit

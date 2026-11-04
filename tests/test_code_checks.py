@@ -165,7 +165,7 @@ def test_the_saved_examples_run_cleanly():
         results = cc.run_all(ex["answer"], ex["sources"], ex.get("deltas"))
         assert {r.name for r in results} == {"uncertainty_compliance", "number_grounding", "total_consistency", "inference_rate",
                                              "retrieval_coverage", "answer_coverage", "reversed_winner", "self_correction",
-                                             "wrong_driver_or_session", "numbers_on_right_driver", "completeness",
+                                             "wrong_driver_or_session", "numbers_on_right_driver", "team_attribution", "completeness",
                                              "false_premise", "overclaiming"}
         assert all(r.label in {"pass", "fail", "info", "n/a"} for r in results)
 
@@ -328,3 +328,38 @@ def test_bare_lap_times_count_as_seconds_so_lap_to_lap_differences_are_grounded(
     ans = "He went from 1:19.911 to 1:19.727 (-0.184s) and on to 1:19.401 (-0.326s from Lap 3)."
     assert cc.number_grounding(ans, chunk).label == "pass"
     assert cc.number_grounding("He improved by 0.9s between runs.", chunk).label == "fail"
+
+
+# ── regressions from the Haiku run on the slim store ──
+
+def test_more_ways_of_saying_the_data_does_not_settle_it_count_as_hedges():
+    gap = {"section": "T4", "drivers": ["RUS", "HAM"], "text": "RUS: first brakes between 1551m and 1616m (gap in the car data)"}
+    for sentence in ("Hamilton braked later into T4, but the context does not directly support that answer in full.",
+                     "ANT's measured braking distance was shorter, but that is not sufficient to say which driver braked later in T4.",
+                     "The context does not give a clean answer to who braked later into T4, because the car data has a gap at that point."):
+        assert cc.uncertainty_compliance("### T4\n" + sentence, [gap]).label == "pass", sentence
+
+
+def test_a_plain_claim_is_still_caught_after_widening_the_hedges():
+    gap = {"section": "T4", "drivers": ["RUS", "HAM"], "text": "RUS: first brakes between 1551m and 1616m (gap in the car data)"}
+    assert cc.uncertainty_compliance("### T4\nHamilton braked later than Russell into T4.", [gap]).label == "fail"
+
+
+def test_a_written_out_sum_is_checked_as_arithmetic_not_as_a_total():
+    ok = SIX_ANSWER + "Net picture: gains of 0.086s + 0.103s + 0.142s = 0.331s were outweighed by the straight."
+    bad = SIX_ANSWER + "Net picture: gains of 0.086s + 0.103s + 0.142s = 0.431s were outweighed by the straight."
+    assert cc.total_consistency(ok, [], SIX).label in {"pass", "n/a"}
+    r = cc.total_consistency(bad, [], SIX)
+    assert r.label == "fail" and "do not add up" in r.explanation
+
+
+def test_totals_over_sectors_are_not_judged_against_section_gains():
+    ans = SIX_ANSWER + "VER was quicker in sectors 1 and 2, but those gains (0.055s combined) were far smaller than the 0.204s HAM gained in the final sector."
+    assert cc.total_consistency(ans, [], SIX).label in {"pass", "n/a"}
+
+
+def test_a_gain_written_beside_a_named_straight_or_corner_is_not_a_total():
+    deltas = {"lap_gap_s": 0.109, "sections": [{"section": "Main straight (finish, after final corner)", "gain_s": -0.101, "start_m": 5245.0},
+                                               {"section": "T8-T9-T10", "gain_s": -0.077, "start_m": 3752.0}]}
+    ans = "PIA lost time on the main straight (0.103s), the T8-T10 complex (0.077s) and the finish straight (0.101s), which together exceed the gap when combined."
+    assert cc.total_consistency(ans, [], deltas).label in {"pass", "n/a"}

@@ -142,6 +142,34 @@ In one run in three each, two questions claimed "more aggressive braking" at T4,
 
 ---
 
+## Pairs on demand, whole-session views and the held-out questions
+
+*The store no longer holds a chunk per compared pair. Pair sections are rebuilt from a per-session snapshot at question time (identical text for all 2,741 old stored pair chunks), and grid / team / section-across-the-field views are computed from the session. Measured on Claude Haiku 5.5 (thinking off) after the change; the earlier baselines are on Sonnet 4.6, so the model differs.*
+
+| | Before | After |
+|---|---|---|
+| Chunks per session (Monza / Barcelona / Melbourne) | 1,431 / 1,604 / 1,498 | 546 / 628 / 618 |
+| Store size on disk | 36 MB | 16 MB (+1.3 MB of snapshots) |
+| Pairs that can be compared | top 10, teammates, grid neighbours (55 to 61 per session) | any pair |
+| Retrieval step | n/a | median 0.01 s (max 0.17 s) including building the pair |
+
+**The ten held-out questions (written by the user, frozen before the first run, run with no session given)**
+| Run | Clean |
+|---|---|
+| Before (Sonnet): team names not understood, "Aussie" not recognised, headline margins missing | 3 / 10 |
+| After (Sonnet) | 9 / 10 |
+| After (Haiku) | 10 / 10 |
+
+Caveat: the fixes were built after seeing these answers, so these ten are no longer a clean test of the fixes. The data-generated half of the held-out set is still to be built. Reading the answers found a factual error the checks had missed ("Leclerc was behind **Haas's** Hadjar": he drives for Red Bull), which led to the `team_attribution` check; the answer also called Ferrari the "fourth quickest team" when the best car of each team puts them third, which no check catches yet.
+
+**Other sets after the change (Haiku):** main 40 questions 39 clean (the one miss is the recurring "final corner is T13" at Melbourne; the lap ends at T14), honesty 19 / 19, naming variants 16 / 16.
+
+**Speed and cost (Haiku 5.5, 40 questions):** median 4.6 s per question (p95 5.3 s) against 14.3 s on Sonnet 4.6; about 2,600 input and 860 output tokens per question; about $0.0007 per question and $0.03 for the whole set at Haiku's documented rates. Haiku must run with thinking off: its default adaptive thinking used the whole 1,024-token budget and cut answers to about 380 characters.
+
+**Check corrections made while reading these runs:** hedges such as "does not give a clean answer" and indirect questions ("to say who braked later") were treated as claims; a written-out sum (0.086s + 0.103s + 0.142s = 0.331s) was treated as three totals and is now checked as arithmetic; totals over sectors are not judged against section gains. Each has a regression test, and all runs were re-scored with the same final rules.
+
+---
+
 ## Test Suite
 
 ### Retrieval unit tests

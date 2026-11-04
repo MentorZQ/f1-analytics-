@@ -3,16 +3,19 @@
 Ordered roughly by value. Items marked (measured) came out of an experiment; the rest are ideas.
 
 ## Retrieval and data
-- [ ] **Functions instead of stored pair chunks** (decided: option B). Persist each session's compact per-driver lap
+- [x] **Functions instead of stored pair chunks** (option B) - DONE: snapshots, compare_drivers, grid/team/section views, slim store. Original note: Persist each session's compact per-driver lap
       telemetry and events at ingest; generate head-to-head sections on demand with the existing
       `chunk_head_to_head_event`; add `grid()`, `team_summary()`, `section_ranking()`. Removes about 60% of the store and
       the "only stored pairs work" limit. Parity test: generated text must equal the stored chunk text for every stored pair.
-- [ ] **Team names -> drivers** ("the ferraris", "mclaren lock out"). Three of ten held-out questions failed on this (measured).
-- [ ] **Session aliases**: Aussie, Oz, barca, barc (measured: "Aussie quali" was answered from Barcelona).
-- [ ] **Headline margin in the prompt**: pass the pair's lap gap and lap times into the context. Answers explain sections but
+- [x] **Team names -> drivers** ("the ferraris", "mclaren lock out"). Three of ten held-out questions failed on this (measured).
+- [x] **Session aliases**: Aussie, Oz, barca, barc (measured: "Aussie quali" was answered from Barcelona).
+- [x] **Headline margin in the prompt**: pass the pair's lap gap and lap times into the context. Answers explain sections but
       never state 0.006 / 0.064 / 0.335 s (measured).
-- [ ] **Whole-grid chunk** (positions, teams, gaps to pole and to the car ahead) for "why were drivers so close" questions.
+- [x] **Whole-grid view** (positions, teams, gaps to pole and to the car ahead) for "why were drivers so close" questions.
 - [ ] Fix "final corner": the model calls T13 the last corner at Melbourne; the lap ends at T14 (measured, recurs).
+
+- [ ] **Team-level claims**: the answer called Ferrari the "fourth quickest team" when the best car of each team puts them third; no check catches ranking claims yet.
+- [ ] Pair slots are the top 4 sections by time gap, so `retrieval_coverage` is now close to true by construction for pair questions; rely on `answer_coverage` instead.
 
 ## Tool calling (saved for later, wanted for richer Phoenix traces)
 - [ ] **Option C**: give Claude the option-B functions as tools so it chooses and chains calls. Costs roughly +5 to 15 s per
