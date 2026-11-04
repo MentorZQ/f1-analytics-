@@ -321,7 +321,7 @@ def number_grounding(answer: str, sources: list[dict], deltas: dict | None = Non
 
 LAP_LEVEL_CHUNKS = {"driver_lap_summary", "head_to_head", "driver_sector", "session_pace_evolution", "lap_comparison",
                     "grid", "team_summary", "team_advantage"}
-_STRONG_TOTAL = re.compile(r"\b(total|net|combined(?! with)|altogether|in sum)\b|across (?:these|all|the|those)\b[^.]*\bsections?", re.I)
+_STRONG_TOTAL = re.compile(r"\b(total|net|combined(?! with)|altogether|in sum)\b|across (?:these|all|the|those)\b[^.]*\bsections\b", re.I)
 _WEAK_TOTAL = re.compile(r"\b(overall|together)\b", re.I)
 
 

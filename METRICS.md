@@ -188,6 +188,22 @@ Caveat: the fixes were built after seeing these answers, so these ten are no lon
 - One expected answer was corrected after the run: a speed-trap tie (RIC and ALO both 353 km/h) was recorded as RIC only.
 - The data-generated families test lookups and short comparisons the system claims to support. They say little about open-ended "why" answers; the user-written ten and the honesty set cover those better.
 
+### Data-generated held-out set, v3 (seed 20261105, 66 questions, Haiku 5.5)
+
+Written after the user pointed out that "last into Q3" must be decided from Q2 and that a pair split across sessions must be compared in the session both ran. The set adds those two families (3 "last into Q3", 6 pair questions with one driver out in Q1 and the other in Q3). Frozen (commit 922d127) before the first run.
+
+| Run | Expected facts present | Check flags |
+|---|---|---|
+| 1 (first run of the frozen set) | 66 / 66 | 5: 2 real answer defects, 3 false positives in my checks |
+| 2 (same questions after the like-for-like block listed every shared session) | 66 / 66 | 4: 1 real defect, 1 grounding flag, 2 false positives |
+
+- Every "last into Q3" answer named the right driver (HUL at Monza and Barcelona, BOR at Melbourne) and said that Leclerc / Bortoleto set no Q3 time. Every like-for-like answer stated the Q1 gap and said the headline gap mixes sessions.
+- Real defects (model, not checks): an answer opened "Lance Stroll... no, the context does not name him" (both runs; now caught by an ellipsis self-correction pattern), and a Monza answer wrote "Isack Hadjar's teammate" about Ricciardo (caught by wrong_driver_or_session).
+- A design flaw in my first like-for-like rule: "the last session both set a time" is Q3 for two drivers who both reached Q3, but Lindblad's Q3 lap (1:21.247) was slower than his Q2 lap, so the "like-for-like" gap was 1.253s in Lawson's favour against a 0.023s best-lap gap. The block now lists the gap in every shared session, and names one like-for-like session only when a driver went out earlier.
+- False positives in my checks, fixed with regression tests: "ALO: first brakes ... from 308.0 km/h" not read as ALO's speed; "across the section" (singular) read as a total over sections; "His exit speed was 130 km/h" attached to the driver named in the previous sentence; "so there is no gap in the information" read as a refusal.
+- Caveat: those four scoring fixes were made after seeing the answers, so this set is no longer a clean test of the scoring. A new seed gives a fresh set. Cost of a run: $0.04, median 3.1 s per question.
+- Not fixed: the grid's "+x to the car ahead" still subtracts best laps from mixed sessions (one answer produced "LIN... actually the car ahead is..." from it).
+
 ---
 
 ## Test Suite

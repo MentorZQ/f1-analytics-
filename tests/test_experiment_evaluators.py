@@ -189,3 +189,9 @@ def test_a_driver_named_in_a_whole_field_block_counts_as_retrieved():
     assert ev(grid, {"drivers": ["RIC", "ALO"]})["label"] == "pass"
     assert ev(grid, {"drivers": ["RIC", "BOT"]})["label"] == "fail"
     assert ev({**OUT, "sources": [{"drivers": [], "section": None, "text": "RICHARD likes it"}]}, {"drivers": ["RIC"]})["label"] == "fail"   # a code is a whole word
+
+
+def test_saying_there_is_no_gap_in_the_information_is_not_a_refusal():
+    from evals.run_experiment import declines
+    assert not declines("Bottas qualified P20, so there is no gap in the information needed to answer the question.")
+    assert declines("There is no record of that in the data.")

@@ -1,6 +1,8 @@
 """Offline tests for evals/claim_checks.py. Several cases are real sentences from experiment answers."""
 
 import sys
+
+import pytest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -227,3 +229,25 @@ def test_a_speed_in_a_one_driver_chunk_belongs_to_that_driver():
     assert cl.numbers_on_right_driver(ans, [pair, summary]).label in {"pass", "n/a"}
     swapped = "PER reached 346 km/h in the trap."
     assert cl.numbers_on_right_driver(swapped, [pair]).label == "fail"                      # without the summary it is still caught
+
+
+def test_a_braking_speed_on_a_line_led_by_the_drivers_code_belongs_to_that_driver():
+    corner = {"text": "Head-to-Head at T11\n  ALO: first brakes at 5018m from 308.0 km/h | braking distance 128m\n  STR: first brakes at 5031m from 290.0 km/h",
+              "drivers": ["ALO", "STR"], "chunk_type": "head_to_head_event"}
+    straight = {"text": "Top speed: ALO 311.0km/h | STR 308.0km/h", "drivers": ["ALO", "STR"], "chunk_type": "head_to_head_event"}
+    values = cl.driver_speed_values([corner, straight])
+    assert 308.0 in values["ALO"] and 290.0 in values["STR"]
+    answer = "ALO first braked at 5018m from 308.0 km/h, STR from 290.0 km/h."
+    assert cl.numbers_on_right_driver(answer, [corner, straight]).label == "pass"
+
+
+@pytest.mark.parametrize("text", ["The last driver through was Lance Stroll... no, the context does not name him.",
+                                  "It was Perez… actually Hulkenberg."])
+def test_an_ellipsis_followed_by_a_correction_is_a_self_correction(text):
+    assert cl.self_correction(text).label == "fail"
+
+
+def test_a_speed_after_a_sentence_break_is_not_attached_to_the_driver_named_before_it():
+    src = [{"text": "ALB 147.0 km/h exit | HUL 130.0 km/h exit", "drivers": ["ALB", "HUL"], "chunk_type": "head_to_head_event"}]
+    answer = "Hülkenberg picked up the throttle earlier, at 53m versus Albon's 63m. His exit speed was 130.0 km/h against Albon's 147.0 km/h."
+    assert cl.numbers_on_right_driver(answer, src).label != "fail"

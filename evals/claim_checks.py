@@ -217,6 +217,10 @@ def driver_speed_values(sources: list[dict]) -> dict[str, set[float]]:
     for s in sources:
         for code, v in _CODE_SPEED.findall(s.get("text") or ""):
             values.setdefault(code, set()).add(round(float(v), 1))
+        for code, rest in re.findall(r"^[ \t]*([A-Z]{3}):[ \t]*(.+)$", s.get("text") or "", re.M):
+            for v, unit in cc.numbers_with_units(rest):      # "  ALO: first brakes at 5018m from 308.0 km/h": a line led by his code
+                if unit == "km/h":
+                    values.setdefault(code, set()).add(round(v, 1))
         owners = s.get("drivers") or []
         if len(owners) == 1:                    # a one-driver chunk (lap summary: speed traps, ...): every speed in it is his
             for v, unit in cc.numbers_with_units(s.get("text") or ""):
@@ -245,7 +249,7 @@ def numbers_on_right_driver(answer: str, sources: list[dict]) -> CheckResult:
             if not m:
                 continue
             between = span[: m.start()]
-            if re.search(r"\bvs\.?\b|versus|than|against|compared|\band\b|,|;|\(", between, re.I) or _DELTA_AFTER.match(span[m.end():]) \
+            if re.search(r"\bvs\.?\b|versus|than|against|compared|\band\b|,|;|\(|[.!?]\s", between, re.I) or _DELTA_AFTER.match(span[m.end():]) \
                     or line[end + m.start(): end + m.start() + 1] == "+" \
                     or re.match(r"\s*(?:vs\.?|versus|/|and|,\s*(?:vs|and))\b", span[m.end():], re.I):
                 continue                                       # ambiguous (first of an 'x vs y' pair), or a difference
@@ -377,7 +381,7 @@ def overclaiming(answer: str, sources: list[dict], question: str | None = None) 
 
 _SELF_CORRECTION = re.compile(
     r"\bwait\b[,.:!\u2014-]|\bactually,? (?:no|that|the|it|he|she|i)\b|\bcorrection:|\bcorrected:|\blet me (?:re|double|check|correct)|"
-    r"\bhmm\b|\bsorry,|\bi (?:mis|made a mistake)|\bscratch that\b|\bon second thought\b", re.I)
+    r"\.\.\.\s*(?:no|wait|actually|hmm)\b|\u2026\s*(?:no|wait|actually|hmm)\b|\bhmm\b|\bsorry,|\bi (?:mis|made a mistake)|\bscratch that\b|\bon second thought\b", re.I)
 
 
 def self_correction(answer: str, sources: list[dict] | None = None) -> CheckResult:

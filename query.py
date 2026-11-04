@@ -154,9 +154,10 @@ def _lap_text(seconds: float) -> str:
 
 def _like_for_like(a: str, b: str, ia: dict, ib: dict) -> list[str]:
     """
-    A best lap can come from different sessions: a driver out in Q1 has only a Q1 lap, a Q3 driver's best is usually a Q3
-    lap on a later, faster track. When the two best laps come from different sessions the gap between them is not
-    like-for-like, so also give the gap in the last session in which both set a time.
+    A best lap can come from different sessions: a driver out in Q1 has only a Q1 lap, and a driver's best is not always
+    his last session (Lindblad's Q3 lap was slower than his Q2 lap). When the two best laps come from different sessions the
+    gap between them is not like-for-like, so give the gap in every session both set a time in. If one driver went out
+    earlier, the last session both ran is the like-for-like one.
     """
     ta, tb = ia.get("session_times") or {}, ib.get("session_times") or {}
     if not ta or not tb:
@@ -165,11 +166,20 @@ def _like_for_like(a: str, b: str, ia: dict, ib: dict) -> list[str]:
     shared = sorted(set(ta) & set(tb))
     if best_a == best_b or not shared:
         return []
-    n = shared[-1]
-    return [f"Their best laps are from different sessions ({a}'s from Q{best_a}, {b}'s from Q{best_b}), "
-            f"so the gap between them is not like-for-like.",
-            f"Like-for-like, in Q{n} (the last session in which both set a time): {a} {_lap_text(ta[n])}, {b} {_lap_text(tb[n])}; "
-            f"{a if ta[n] <= tb[n] else b} was {abs(ta[n] - tb[n]):.3f}s quicker."]
+
+    def per_session(n: int) -> str:
+        faster = a if ta[n] <= tb[n] else b
+        return f"Q{n}: {a} {_lap_text(ta[n])}, {b} {_lap_text(tb[n])} ({faster} {abs(ta[n] - tb[n]):.3f}s quicker)"
+
+    lines = [f"Their best laps are from different sessions ({a}'s from Q{best_a}, {b}'s from Q{best_b}), "
+             f"so the gap between them is not like-for-like.",
+             "Session by session (each session in which both set a time): " + "; ".join(per_session(n) for n in shared) + "."]
+    stage_a, stage_b = ia.get("stage"), ib.get("stage")
+    if stage_a and stage_b and stage_a != stage_b:
+        earlier, out = (a, stage_a) if stage_a < stage_b else (b, stage_b)
+        n = int(out[1])
+        lines.append(f"{earlier} went out in {out}, so {out} is the last session both ran and the like-for-like gap is {per_session(n)}.")
+    return lines
 
 
 def lap_comparison_chunk(deltas: dict | None, session_ctx: dict) -> dict | None:

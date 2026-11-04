@@ -278,11 +278,20 @@ def test_session_times_are_parsed_from_the_lap_summary():
 
 
 def test_a_comparison_across_sessions_also_gives_the_like_for_like_gap():
-    ctx = {"drivers": {"LEC": {"lap_time_seconds": 75.281, "qualifying_position": 10, "session_times": {1: 75.964, 2: 75.281}},
-                       "ALO": {"lap_time_seconds": 78.815, "qualifying_position": 22, "session_times": {1: 78.815}}}}
+    ctx = {"drivers": {"LEC": {"lap_time_seconds": 75.281, "qualifying_position": 10, "stage": "Q3", "session_times": {1: 75.964, 2: 75.281}},
+                       "ALO": {"lap_time_seconds": 78.815, "qualifying_position": 22, "stage": "Q1", "session_times": {1: 78.815}}}}
     text = query.lap_comparison_chunk({"driver_a": "LEC", "driver_b": "ALO"}, ctx)["text"]
     assert "from different sessions (LEC's from Q2, ALO's from Q1)" in text and "not like-for-like" in text
-    assert "in Q1" in text and "LEC 1:15.964, ALO 1:18.815" in text and "LEC was 2.851s quicker" in text
+    assert "ALO went out in Q1, so Q1 is the last session both ran and the like-for-like gap is Q1: LEC 1:15.964, ALO 1:18.815 (LEC 2.851s quicker)" in text
+
+
+def test_two_q3_drivers_whose_best_laps_differ_get_every_shared_session_and_no_single_like_for_like_claim():
+    # Lindblad (best lap in Q2) went slower in Q3; the last shared session is not the like-for-like one for a best-lap comparison
+    ctx = {"drivers": {"LAW": {"lap_time_seconds": 79.994, "qualifying_position": 8, "stage": "Q3", "session_times": {1: 80.491, 2: 80.144, 3: 79.994}},
+                       "LIN": {"lap_time_seconds": 79.971, "qualifying_position": 9, "stage": "Q3", "session_times": {1: 80.409, 2: 79.971, 3: 81.247}}}}
+    text = query.lap_comparison_chunk({"driver_a": "LAW", "driver_b": "LIN"}, ctx)["text"]
+    assert "Q1: LAW 1:20.491, LIN 1:20.409 (LIN 0.082s quicker)" in text and "Q3: LAW 1:19.994, LIN 1:21.247 (LAW 1.253s quicker)" in text
+    assert "went out" not in text
 
 
 def test_a_comparison_within_one_session_is_unchanged():
