@@ -13,6 +13,7 @@ these ask "is the answer about the right thing, and does it say the right thing 
   overclaiming             : "clearly" / "definitely" about braking in a section the data could not resolve
   team_attribution         : a driver is named together with the wrong team ("Haas's Hadjar")
   team_ranking             : "the fourth quickest team" must match the ranking of the teams' cars in the grid
+  name_consistency         : a first name or three-letter code attached to the wrong surname ("Isack Lindblad", "Bearman (BOR)")
   grid_start_claim         : "started from P17" when the data has only the qualifying classification, not the final grid after penalties
   tyre_claims              : blaming tyre compound or age for a gap when the evidence shows the same tyres (or none)
   self_correction          : "wait, corrected:" - the model changed its mind in the answer text
@@ -559,6 +560,49 @@ def grid_start_claim(answer: str, sources: list[dict]) -> CheckResult:
     return CheckResult("grid_start_claim", "pass", 1.0, "No claim about the race starting position.")
 
 
+# ── names that do not belong together ────────────────────────────────────────
+
+from rag_retrieval import _DRIVER_NAMES  # noqa: E402
+
+_FIRST_NAMES = {n: code for n, code in _DRIVER_NAMES.items()
+                if n not in cc.SURNAMES.values() and len(n) > 2 and n not in {"hulk", "kmag", "k-mag", "max", "mad max"}}
+_SURNAME_TO_CODE = {name: code for code, name in cc.SURNAMES.items()}
+_SURNAME_TO_CODE.update({"hülkenberg": "HUL", "hulkenberg": "HUL", "perez": "PER", "pérez": "PER"})
+_FIRST_SURNAME = re.compile(r"\b([A-Z][a-zé]+)\s+([A-Z][a-zéü]+)\b")
+_SURNAME_CODE = re.compile(r"\b([A-Z][a-zéü]+)\s*\(\s*([A-Z]{3})\b")
+_CODE_SURNAME = re.compile(r"\b([A-Z]{3})\s*\(\s*([A-Z][a-zéü]+)\s*[,)]")
+
+
+def name_consistency(answer: str, sources: list[dict] | None = None) -> CheckResult:
+    """A driver's first name must go with his surname, and a code in brackets with the surname beside it."""
+    text = cc._norm(answer)
+    wrong, checked = [], 0
+    for first, last in _FIRST_SURNAME.findall(text):
+        code = _SURNAME_TO_CODE.get(last.lower())
+        owner = _FIRST_NAMES.get(first.lower())
+        if code and owner:
+            checked += 1
+            if owner != code:
+                wrong.append(f"'{first} {last}' ({first} is {owner}, {last} is {code})")
+    for last, code in _SURNAME_CODE.findall(text):
+        expected = _SURNAME_TO_CODE.get(last.lower())
+        if expected:
+            checked += 1
+            if expected != code:
+                wrong.append(f"'{last} ({code})' ({last} is {expected})")
+    for code, last in _CODE_SURNAME.findall(text):
+        expected = _SURNAME_TO_CODE.get(last.lower())
+        if expected:
+            checked += 1
+            if expected != code:
+                wrong.append(f"'{code} ({last})' ({last} is {expected})")
+    if wrong:
+        return CheckResult("name_consistency", "fail", 0.0, f"{len(wrong)} name(s) do not belong together: " + "; ".join(wrong[:3]), wrong)
+    if not checked:
+        return CheckResult("name_consistency", "n/a", None, "The answer pairs no first name or code with a surname.")
+    return CheckResult("name_consistency", "pass", 1.0, f"All {checked} name pairing(s) are consistent.")
+
+
 def run_all(answer: str, sources: list[dict], deltas: dict | None = None, question: str | None = None,
             session: str | None = None) -> list[CheckResult]:
     return [reversed_winner(answer, sources, deltas),
@@ -569,6 +613,7 @@ def run_all(answer: str, sources: list[dict], deltas: dict | None = None, questi
             team_ranking(answer, sources),
             tyre_claims(answer, sources),
             grid_start_claim(answer, sources),
+            name_consistency(answer, sources),
             completeness(answer, sources, deltas, question),
             false_premise(answer, sources, question),
             overclaiming(answer, sources, question)]

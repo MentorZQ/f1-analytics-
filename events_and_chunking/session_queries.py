@@ -60,6 +60,55 @@ def _gap_to_car_ahead(prev: dict | None, info: dict) -> str:
     return ", no like-for-like gap to the car ahead (they went out in different sessions or one set no time there)"
 
 
+def _focus(times_a: dict, times_b: dict):
+    """The last session both set a time in, when the two best laps come from different sessions (else None)."""
+    shared = sorted(set(times_a) & set(times_b))
+    if not times_a or not times_b or not shared or min(times_a, key=times_a.get) == min(times_b, key=times_b.get):
+        return None
+    return shared[-1]
+
+
+def _field_lines(ctx: dict, rows: list) -> list[str]:
+    """Facts about the whole field that a model asked "which teams..." or "who got knocked out" would otherwise count by hand."""
+    out = []
+    no_time = ctx.get("no_time") or {}
+    if no_time:
+        out.append(f"{len(no_time)} drivers set no timed lap and went out in Q1: "
+                   + ", ".join(f"{c} ({i.get('team', '')}; {i.get('reason', 'no timed lap')})" for c, i in sorted(no_time.items())))
+    # teams: who got both cars into Q3, and the gap between teammates
+    members: dict[str, list[tuple[str, dict]]] = {}
+    for code, info in rows:
+        members.setdefault(info.get("team", ""), []).append((code, info))
+    for code, info in no_time.items():
+        members.setdefault(info.get("team", ""), []).append((code, {"stage": "Q1", "session_times": {}, "no_time": True}))
+    if any(i.get("stage") for _, i in rows):
+        both = sorted(t for t, ms in members.items() if t and len(ms) >= 2 and all(i.get("stage") == "Q3" for _, i in ms))
+        one = sorted(t for t, ms in members.items() if t and any(i.get("stage") == "Q3" for _, i in ms) and t not in both)
+        if both:
+            out.append("Teams with both cars in Q3: " + ", ".join(f"{t} ({'/'.join(c for c, _ in members[t])})" for t in both))
+        if one:
+            out.append("Teams with one car in Q3: " + ", ".join(
+                f"{t} ({'/'.join(c for c, i in members[t] if i.get('stage') == 'Q3')})" for t in one))
+    gaps = []
+    for team, ms in members.items():
+        timed = [(c, i) for c, i in ms if i.get("lap_time_seconds")]
+        if team and len(timed) == 2:
+            (a, ia), (b, ib) = timed
+            ta, tb = ia.get("session_times") or {}, ib.get("session_times") or {}
+            n = _focus(ta, tb)
+            gap = abs(ta[n] - tb[n]) if n else abs(ia["lap_time_seconds"] - ib["lap_time_seconds"])
+            gaps.append((gap, f"{team} {gap:.3f}s ({a} vs {b}, {'Q' + str(n) + ' laps' if n else 'best laps'})"))
+        elif team and len(ms) == 2 and len(timed) == 1:
+            gaps.append((-1.0, f"{team}: only {timed[0][0]} set a time"))
+    if gaps:
+        real = sorted((g for g in gaps if g[0] >= 0), reverse=True)
+        if real:
+            out.append(f"Largest teammate gap: {real[0][1]}. Smallest teammate gap: {real[-1][1]}.")
+        out.append("Teammate gaps, largest first: " + "; ".join(t for _, t in real)
+                   + ("; " + "; ".join(t for g, t in gaps if g < 0) if any(g < 0 for g, _ in gaps) else ""))
+    return out
+
+
 def grid_text(ctx: dict, session_label: str = "") -> str | None:
     rows = _drivers_with_laps(ctx)
     if not rows:
@@ -93,6 +142,7 @@ def grid_text(ctx: dict, session_label: str = "") -> str | None:
     tight = sorted(g for g in tight if g[0] < TIGHT_GAP_S and (not same_session[g[1]] or same_session[g[1]] == same_session[g[2]]))
     if tight:
         lines.append("Cars separated by less than 0.100s in lap time: " + ", ".join(f"{a}/{b} {g:.3f}s" for g, a, b in tight))
+    lines += _field_lines(ctx, rows)
     fastest = ctx.get("fastest_sector") or {}
     if fastest:
         lines.append(f"Fastest sector times in the session, over all {len(rows)} drivers: "
@@ -117,8 +167,9 @@ def grid_text(ctx: dict, session_label: str = "") -> str | None:
             slowest_in = sorted((q2_time(c), c) for c in q2 if q2_time(c))
             tail = f" (the quickest of them in Q2: {slowest_in[0][1]} {lap_text(slowest_in[0][0])})" if slowest_in else ""
             parts.append(f"{len(q2)} went out in Q2{tail}")
-        if q1:
-            parts.append(f"{len(q1)} went out in Q1")
+        no_time_n = len(ctx.get("no_time") or {})
+        if q1 or no_time_n:
+            parts.append(f"{len(q1) + no_time_n} went out in Q1" + (f" ({no_time_n} of them set no time)" if no_time_n else ""))
         lines.append("Qualifying progression, from each driver's record: " + "; ".join(parts))
         lines.append("Who was last into Q3 is decided by the Q2 times (the slowest of the cars that advanced), not by the final "
                      "classification, which is set by Q3 laps. A driver classified in the top ten who set no Q3 time still reached Q3.")
@@ -188,6 +239,26 @@ def section_ranking_text(section: dict, ctx: dict) -> str | None:
     return "\n".join(lines)
 
 
+def section_speed_text(snapshot, section: dict, ctx: dict) -> str | None:
+    """Every driver's slowest speed (the apex, in a corner), speed at the end of the section and top speed through it."""
+    rows = []
+    for driver, tel in snapshot.telemetry.items():
+        if tel is None or "Distance" not in tel.columns:
+            continue
+        window = tel[(tel["Distance"] >= section["start"]) & (tel["Distance"] <= section["end"])]
+        if len(window):
+            rows.append((driver, float(window["Speed"].min()), float(window["Speed"].iloc[-1]), float(window["Speed"].max())))
+    if not rows:
+        return None
+    teams = {c: i.get("team", "") for c, i in ctx.get("drivers", {}).items()}
+    rows.sort(key=lambda r: -r[1])
+    lines = [f"Speed through {section['id']} ({section['start']:.0f}m - {section['end']:.0f}m), all drivers, highest minimum speed first "
+             f"(minimum speed in the section is the apex speed in a corner; the exit speed is at the end of the section)"]
+    for place, (code, low, exit_speed, top) in enumerate(rows, 1):
+        lines.append(f"  {place}. {code} ({teams.get(code, '')}) minimum {low:.1f} km/h, exit {exit_speed:.1f} km/h, top {top:.1f} km/h")
+    return "\n".join(lines)
+
+
 def team_advantage_text(snapshot, ctx: dict) -> str | None:
     """For each section, which team's best car was quickest, and by how much over the next team."""
     teams = {c: i.get("team", "") for c, i in ctx.get("drivers", {}).items()}
@@ -241,15 +312,39 @@ _FIELD = re.compile(
     r"\b(?:fastest|quickest|best|slowest)\s+sector\b|\bsector\s*[123]\b[^.?!]{0,25}\b(?:fastest|quickest|best)\b|"
     r"\bspeed[- ]?trap\b|\btop speed\b|\bhighest speed\b|\bstraight[- ]line speed\b|"
     r"\bq[123]\b|\bknocked out\b|\beliminated\b|\bmade it (?:into|to|through)\b|\bcut ?off\b|\b(?:first|last) (?:car|driver)\b|"
+    r"\bwho (?:was|is) (?:the )?(?:quickest|fastest)\b|\bwho (?:got|took|won|had|topped|led)\b[^.?]{0,15}\b(?:pole|q[123])\b|"
+    r"\bboth cars\b|\bteammates?\b[^.?]{0,40}\bgaps?\b|\bgaps?\b[^.?]{0,30}\bteammates?\b|\bwhich teams?\b|\bwho got (?:knocked|eliminated)\b|"
     r"\bdominan\w*\b|\bmargin\b|\bclose(?:ly)? (?:together|matched|fought)\b|\bwho (?:made|got) (?:into )?q[123]\b", re.I)
-_SECTION_BEST = re.compile(r"\b(?:fastest|quickest|best|slowest|worst|faster|quicker|better)\b", re.I)
+_SPEED_Q = re.compile(r"\bmost speed\b|\bhighest speed\b|\bminimum speed\b|\bmin(?:imum)? speed\b|\bapex speed\b|\bexit speed\b|"
+                      r"\bcarr(?:y|ied|ies)\b[^.?]{0,20}\bspeed\b|\bspeed\b[^.?]{0,15}\b(?:through|in|out of)\b", re.I)
+_SECTION_BEST = re.compile(r"\b(?:fastest|quickest|best|slowest|worst|faster|quicker|better)\b|\bmost speed\b|\bhighest speed\b|"
+                           r"\bcarr(?:y|ied|ies)\b[^.?]{0,20}\bspeed\b", re.I)
+
+
+def asks_speed(question: str) -> bool:
+    return bool(_SPEED_Q.search(question))
 _CORNER_REF = re.compile(r"(?<![\w-])T(\d+)\b|\bturn\s+(\d+)\b", re.I)
 _FIRST_LAST = [(re.compile(r"\b(?:first|opening)\s+(?:corner|turn)\b", re.I), "first"),
                (re.compile(r"\b(?:last|final)\s+(?:corner|turn)\b", re.I), "last")]
 
 
-def corner_numbers_asked(question: str, sections: list[dict]) -> list[int]:
-    nums = [int(a or b) for a, b in _CORNER_REF.findall(question)]
+# Corner names visitors use, by circuit, as the official corner numbers. Monza only for now: the Barcelona 2026 and
+# Albert Park names are not written down here, so a question that uses them is answered only if it also gives a number.
+CORNER_NAMES = {"Monza": [(r"\bfirst chicane\b|\brettifilo\b|\bvariante del rettifilo\b", [1, 2]), (r"\bcurva grande\b", [3]),
+                          (r"\bsecond chicane\b|\broggia\b|\bdella roggia\b", [4, 5]), (r"\blesmos?\b", [6, 7]),
+                          (r"\bascari\b", [8, 9, 10]), (r"\bparabolica\b|\balboreto\b", [11])]}
+
+
+def named_corner_numbers(question: str, circuit: str | None) -> list[int]:
+    out: list[int] = []
+    for pattern, numbers in CORNER_NAMES.get(circuit or "", []):
+        if re.search(pattern, question, re.I):
+            out += numbers
+    return out
+
+
+def corner_numbers_asked(question: str, sections: list[dict], circuit: str | None = None) -> list[int]:
+    nums = [int(a or b) for a, b in _CORNER_REF.findall(question)] + named_corner_numbers(question, circuit)
     all_numbers = sorted({n for s in sections for n in s["corner_numbers"]})
     for pattern, which in _FIRST_LAST:
         if pattern.search(question) and all_numbers:
@@ -257,14 +352,14 @@ def corner_numbers_asked(question: str, sections: list[dict]) -> list[int]:
     return list(dict.fromkeys(nums))
 
 
-def names_a_corner(question: str) -> bool:
-    return bool(_CORNER_REF.search(question)) or any(p.search(question) for p, _ in _FIRST_LAST)
+def names_a_corner(question: str, circuit: str | None = None) -> bool:
+    return bool(_CORNER_REF.search(question)) or any(p.search(question) for p, _ in _FIRST_LAST) or bool(named_corner_numbers(question, circuit))
 
 
-def plan(question: str, named_teams: list[str], no_driver_named: bool) -> dict:
+def plan(question: str, named_teams: list[str], no_driver_named: bool, circuit: str | None = None) -> dict:
     """Which whole-session views the question asks for. Pure text rules, no model."""
     return {
-        "corner_facts": names_a_corner(question),
+        "corner_facts": names_a_corner(question, circuit),
         "team_advantage": bool(_TEAM_ADVANTAGE.search(question)) and not named_teams,
         "grid": bool(_FIELD.search(question)) or bool(named_teams),
         "teams": named_teams,

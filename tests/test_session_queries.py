@@ -446,3 +446,41 @@ def test_get_through_to_q3_is_a_one_fact_question_but_through_a_corner_is_not():
     assert query.is_lookup_question("Who was the last driver to get through to Q3 at the Australian GP?")
     assert not query.is_lookup_question("Who was faster through the first corner, Russell or Hamilton?")
     assert not query.is_lookup_question("Who carried more speed through T11?")
+
+
+# ── fresh-batch fixes: field-wide lines, named corners, speeds through a section ──
+
+def test_the_grid_counts_the_teams_with_both_cars_in_q3_and_the_drivers_with_no_time():
+    ctx = {"no_time": {"VER": {"team": "Red Bull Racing", "reason": "flying lap interrupted by red flag"}},
+           "drivers": {"HAD": {"lap_time_seconds": 79.3, "qualifying_position": 3, "team": "Red Bull Racing", "stage": "Q3", "session_times": {1: 80.0, 2: 79.7, 3: 79.3}},
+                       "RUS": {"lap_time_seconds": 78.5, "qualifying_position": 1, "team": "Mercedes", "stage": "Q3", "session_times": {1: 79.5, 2: 78.9, 3: 78.5}},
+                       "ANT": {"lap_time_seconds": 78.8, "qualifying_position": 2, "team": "Mercedes", "stage": "Q3", "session_times": {1: 80.1, 2: 79.4, 3: 78.8}}}}
+    text = sq.grid_text(ctx)
+    assert "Teams with both cars in Q3: Mercedes (RUS/ANT)" in text and "Teams with one car in Q3: Red Bull Racing (HAD)" in text
+    assert "1 drivers set no timed lap and went out in Q1: VER (Red Bull Racing; flying lap interrupted by red flag)" in text
+    assert "Largest teammate gap: Mercedes 0.300s (RUS vs ANT, best laps). Smallest teammate gap: Mercedes 0.300s" in text
+    assert "Red Bull Racing: only HAD set a time" in text
+
+
+def test_monza_corner_names_map_to_corner_numbers():
+    assert sq.named_corner_numbers("who carried the most speed through parabolica at monza", "Monza") == [11]
+    assert sq.named_corner_numbers("piastri min speed in the first chicane", "Monza") == [1, 2]
+    assert sq.named_corner_numbers("speed through the Lesmos", "Monza") == [6, 7]
+    assert sq.named_corner_numbers("parabolica", "Melbourne") == []                    # names are per circuit
+    assert sq.names_a_corner("through the Parabolica", "Monza") and not sq.names_a_corner("through the Parabolica", "Melbourne")
+
+
+@pytest.mark.parametrize("question", ["who was quickest?", "which teams got both cars into Q3 at monza",
+                                      "biggest and smallest gap between teammates across the grid at albert park", "who got knocked out in Q1 in melbourne"])
+def test_field_wide_questions_ask_for_the_grid(question):
+    assert sq.plan(question, [], True)["grid"]
+
+
+def test_a_speed_question_asks_for_the_speed_ranking_and_it_ranks_by_minimum_speed():
+    assert sq.asks_speed("who carried the most speed through parabolica at monza") and not sq.asks_speed("who was quickest through T3")
+    import pandas as pd
+    tel = {"AAA": pd.DataFrame({"Distance": [0.0, 50.0, 100.0, 150.0], "Speed": [300.0, 150.0, 200.0, 250.0]}),
+           "BBB": pd.DataFrame({"Distance": [0.0, 50.0, 100.0, 150.0], "Speed": [300.0, 160.0, 210.0, 240.0]})}
+    snapshot = type("S", (), {"telemetry": tel})()
+    text = sq.section_speed_text(snapshot, {"id": "T9", "start": 40.0, "end": 160.0}, {"drivers": {}})
+    assert text.index("1. BBB") < text.index("2. AAA") and "minimum 160.0 km/h, exit 240.0 km/h, top 240.0 km/h" in text

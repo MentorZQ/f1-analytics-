@@ -123,6 +123,14 @@ def load_session_context(collection) -> dict:
             "session_times":       parse_session_times(doc),
         }
 
+    # Drivers who entered but set no timed lap ("did not set a lap time"): the lap summaries do not have them.
+    no_time = {}
+    for doc in collection.get(where={"chunk_type": "driver_dnq_status"}, include=["documents"])["documents"]:
+        m = re.search(r"QUALIFYING STATUS — (\w{3}) \(([^,]+), ([^)]+)\)", doc or "")
+        if m:
+            reason = re.search(r"Reason:\s*([^|\n]+?)\.?(?:\s*\||\n|$)", doc or "")
+            no_time[m.group(1)] = {"team": m.group(3).strip(), "reason": (reason.group(1).strip() if reason else "no timed lap").lower()}
+
     standings = sorted(drivers.items(), key=lambda x: x[1]["qualifying_position"] or 99)
 
     # The fastest time in each sector over the whole field (every driver's sector chunk states it).
@@ -147,6 +155,8 @@ def load_session_context(collection) -> dict:
 
     return {
         "drivers":      drivers,
+        "no_time":      no_time,
+        "entrants":     set(drivers) | set(no_time),
         "fastest_sector": fastest_sector,
         "standings":    [d for d, _ in standings],
         "teammate_of":  teammate_of,
@@ -245,7 +255,7 @@ def _like_for_like(a: str, b: str, ia: dict, ib: dict) -> list[str]:
     return lines
 
 
-def lap_comparison_chunk(deltas: dict | None, session_ctx: dict, question: str | None = None) -> dict | None:
+def lap_comparison_chunk(deltas: dict | None, session_ctx: dict, question: str | None = None, like_for_like: bool = True) -> dict | None:
     """
     The one fact every two-driver answer needs: the two best laps and the gap between them. Section chunks
     explain where time was won, but never state the total, so answers to "why didn't X get pole?" never
@@ -278,6 +288,14 @@ def lap_comparison_chunk(deltas: dict | None, session_ctx: dict, question: str |
                      + f" against {pole}'s pole lap {_lap_text(ipole['lap_time_seconds'])}"
                      + (f" (Q{best_session(ipole)})" if ipole.get("session_times") else "")
                      + f" is {abs(ta - tb):.3f}s. Give this as the gap to pole.")
+        lines.append("The head-to-head sections below compare the two best laps.")
+        return {"chunk_id": f"lap_comparison:{a}-{b}", "text": "\n".join(lines), "distance": 0.0, "rank": 0,
+                "metadata": {"chunk_type": "lap_comparison", "driver_a": a, "driver_b": b}}
+    if not like_for_like:                                     # one driver named: his best lap against the inferred driver's best lap
+        sa, sb = ia.get("session_times") or {}, ib.get("session_times") or {}
+        if sa and sb and min(sa, key=sa.get) != min(sb, key=sb.get):
+            lines.append(f"Best laps are from {a}'s Q{min(sa, key=sa.get)} and {b}'s Q{min(sb, key=sb.get)}: call them best laps, "
+                         f"not a like-for-like comparison.")
         lines.append("The head-to-head sections below compare the two best laps.")
         return {"chunk_id": f"lap_comparison:{a}-{b}", "text": "\n".join(lines), "distance": 0.0, "rank": 0,
                 "metadata": {"chunk_type": "lap_comparison", "driver_a": a, "driver_b": b}}
@@ -477,13 +495,18 @@ def top_pair_sections(session_key: str, wanted: set[str], k: int = PAIR_SECTIONS
     return [dict(c) for c in (pinned + rest)[:k]]          # copies: the cached chunks are shared between requests
 
 
+def _circuit(session_key: str) -> str | None:
+    snapshot = _get_snapshot(session_key)
+    return snapshot.session_info.get("circuit") if snapshot is not None else None
+
+
 def pinned_sections(question: str, session_key: str) -> tuple[str, ...]:
-    """Section ids of the corners the question names ("T9", "turn 3", "the first / final corner")."""
+    """Section ids of the corners the question names ("T9", "turn 3", "the first / final corner", "Parabolica")."""
     if sq is None:
         return ()
     sections = _section_times(session_key)
     ids = []
-    for number in sq.corner_numbers_asked(question, sections):
+    for number in sq.corner_numbers_asked(question, sections, _circuit(session_key)):
         ids += [s["id"] for s in sq.sections_for_corner(sections, number)[:1]]
     return tuple(dict.fromkeys(ids))
 
@@ -511,6 +534,19 @@ def split_budget(n_chunks: int, n_extras_available: int, pair_available: bool) -
     return extras, pair, n_chunks - extras - pair
 
 
+def driver_corner_chunks(collection, wanted: set[str], pins: tuple[str, ...]) -> list[dict]:
+    """The stored corner or straight chunk for each wanted driver at the corners the question names (a one-driver question
+    like "what gear does Russell take in turn 3" has no pair of drivers to build section comparisons from)."""
+    out = []
+    for driver in sorted(wanted)[:2]:
+        got = collection.get(where={"$and": [{"chunk_type": {"$in": ["telemetry_corner_event", "telemetry_straight_event"]}},
+                                              {"driver": driver}, {"event_id": {"$in": list(pins)}}]},
+                             include=["documents", "metadatas"])
+        for cid, doc, meta in zip(got["ids"], got["documents"], got["metadatas"]):
+            out.append({"chunk_id": cid, "text": doc, "distance": 0.0, "rank": 0, "metadata": clean_metadata(dict(meta))})
+    return out
+
+
 def extra_context(question: str, session_key: str, session_ctx: dict) -> list[dict]:
     """
     Whole-session blocks for questions that are not about one pair: the grid ("why were drivers so close"),
@@ -521,7 +557,7 @@ def extra_context(question: str, session_key: str, session_ctx: dict) -> list[di
         return []
     snapshot = _get_snapshot(session_key)
     teams = named_teams(question, session_ctx)
-    asked = sq.plan(question, teams, no_driver_named=not question_drivers(question, session_ctx))
+    asked = sq.plan(question, teams, no_driver_named=not question_drivers(question, session_ctx), circuit=_circuit(session_key))
     label = "{circuit} {year}".format(**snapshot.session_info) if snapshot is not None else ""
     out: list[dict] = []
     if asked["team_advantage"] and snapshot is not None:
@@ -534,11 +570,20 @@ def extra_context(question: str, session_key: str, session_ctx: dict) -> list[di
             out.append(sq.make_chunk("team_summary", text, team, session_key))
     if asked["section_best"] and snapshot is not None:
         sections = _section_times(session_key)
-        for number in sq.corner_numbers_asked(question, sections)[:2]:
+        for number in sq.corner_numbers_asked(question, sections, _circuit(session_key))[:2]:
             for section in sq.sections_for_corner(sections, number)[:1]:
                 text = sq.section_ranking_text(section, session_ctx)
                 if text:
                     out.append(sq.make_chunk("section_ranking", text, section["id"], session_key))
+                if sq.asks_speed(question):
+                    text = sq.section_speed_text(snapshot, section, session_ctx)
+                    if text:
+                        out.append(sq.make_chunk("section_speed", text, section["id"], session_key))
+    if asked["section_best"] and snapshot is not None and re.search(r"\bmain straight\b|\bstart[- ]finish straight\b", question, re.I):
+        for section in [x for x in _section_times(session_key) if "Main straight" in x["id"]][:2]:
+            text = sq.section_ranking_text(section, session_ctx)
+            if text:
+                out.append(sq.make_chunk("section_ranking", text, section["id"], session_key))
     if asked["corner_facts"] and snapshot is not None:
         text = sq.corner_facts_text(_section_times(session_key))
         if text:
@@ -711,8 +756,14 @@ def _answer_after_filter(question, session_key, n_chunks, model, api_key, verbos
     t_start = time.perf_counter()
     wanted = resolve_context_drivers(question, question_drivers(question, session_ctx), session_ctx)
     available = extra_context(question, session_key, session_ctx)
-    pole_gap = is_pole_gap_question(question)
-    pair_all = top_pair_sections(session_key, wanted, pin=pinned_sections(question, session_key), like_for_like=not pole_gap)
+    pins = pinned_sections(question, session_key)
+    # Like-for-like laps only when the question names both drivers: with one driver named, the comparison driver is inferred
+    # (pole, teammate) and the question is about his own best lap, so best laps are compared.
+    explicit_pair = len(question_drivers(question, session_ctx)) >= 2
+    like = explicit_pair and not is_pole_gap_question(question)
+    pair_all = top_pair_sections(session_key, wanted, pin=pins, like_for_like=like)
+    if pins and wanted and not pair_all:
+        available = available + driver_corner_chunks(collection, wanted, pins)
     n_extras, n_pair, _ = split_budget(n_chunks, len(available), bool(pair_all))
     extras, pair_top = available[:n_extras], pair_all[:n_pair]
     with tracing.span("f1.retrieve", "RETRIEVER", input_value=question) as sp:
@@ -739,8 +790,8 @@ def _answer_after_filter(question, session_key, n_chunks, model, api_key, verbos
         print()
 
     t_retrieved = time.perf_counter()
-    deltas = section_deltas(collection, chunks, wanted=wanted, session_key=session_key, like_for_like=not pole_gap)
-    headline = lap_comparison_chunk(deltas, session_ctx, question)
+    deltas = section_deltas(collection, chunks, wanted=wanted, session_key=session_key, like_for_like=like)
+    headline = lap_comparison_chunk(deltas, session_ctx, question, like_for_like=like)
     t_prepared = time.perf_counter()
     prompt_chunks = [headline] + chunks if headline else chunks
     lookup = is_lookup_question(question)

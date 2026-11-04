@@ -52,7 +52,7 @@ _DRIVER_NAMES: dict[str, str] = {
     "lawson": "LAW", "liam": "LAW",
     "doohan": "DOO", "jack": "DOO",
     "max": "VER", "mad max": "VER",
-    "hulk": "HUL",
+    "hulk": "HUL", "kmag": "MAG", "k-mag": "MAG",
 }
 
 _CODES = set(_DRIVER_NAMES.values())
@@ -712,14 +712,18 @@ def format_prompt(
     named_codes = extract_driver_codes(question)
     if named_codes and session_ctx:
         known_drivers = set(session_ctx.get("drivers", {}).keys())
+        entrants = set(session_ctx.get("entrants") or known_drivers)
         missing = named_codes - known_drivers
-        if missing:
-            missing_names = ", ".join(sorted(missing))
+        absent = sorted(missing - entrants)                      # not on this session's entry list at all
+        no_lap = sorted(missing & entrants)                      # entered, but no timed lap
+        if absent:
             context_blocks.append(
-                f"[NOTE] The following driver(s) have no qualifying data in this session "
-                f"and cannot be compared: {missing_names}. "
-                f"They may not have set a lap time (e.g. due to a red flag, mechanical issue, or DNS)."
-            )
+                f"[NOTE] {', '.join(absent)} did not take part in this session: not on its entry list, so there is no "
+                f"qualifying data. Say so; do not guess a reason (red flag, mechanical problem, DNS).")
+        if no_lap:
+            context_blocks.append(
+                f"[NOTE] The following driver(s) set no timed lap in this session and cannot be compared: {', '.join(no_lap)}. "
+                f"The context's qualifying-status block gives the reason.")
 
     key = driver_key_note(question)
     if key:

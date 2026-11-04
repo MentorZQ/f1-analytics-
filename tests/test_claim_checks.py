@@ -309,3 +309,16 @@ def test_claiming_where_a_driver_started_the_race_is_flagged(text):
 @pytest.mark.parametrize("text", ["Ocon qualified P17, before any grid penalties.", "Ocon was classified P17 in qualifying.", "He started to lose time in sector 2."])
 def test_qualifying_wording_is_not_a_start_claim(text):
     assert cl.grid_start_claim(text, []).label == "pass"
+
+
+@pytest.mark.parametrize("text", ["Isack Lindblad's Q1 time was 1:20.409.", "Teammate Bearman (BOR) was classified P12.",
+                                  "BOR (Bearman) was P12.", "Arvid Hadjar was P3.", "Lewis Verstappen took P2."])
+def test_names_that_do_not_belong_together_are_flagged(text):
+    assert cl.name_consistency(text).label == "fail"
+
+
+@pytest.mark.parametrize("text", ["Arvid Lindblad's Q1 time was 1:20.409.", "Bortoleto (BOR) was P10.", "BOR (Bortoleto, Audi) was P10.",
+                                  "Nico Hülkenberg (HUL) reached Q3.", "Lando Norris took pole.", "Max Verstappen and Liam Lawson were close.",
+                                  "Carlos Sainz won the Williams battle.", "The Red Bull Racing team did well."])
+def test_consistent_names_pass_or_are_not_checked(text):
+    assert cl.name_consistency(text).label in {"pass", "n/a"}
