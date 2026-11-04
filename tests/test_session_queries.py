@@ -150,3 +150,43 @@ def test_whole_session_blocks_come_before_the_pair_sections():
     assert query.split_budget(6, 2, True) == (2, 2, 2)       # team summary + grid, two pair sections, two retrieved
     assert query.split_budget(6, 0, True) == (0, 4, 2)       # a plain pair question: four sections, two retrieved
     assert query.split_budget(6, 3, False) == (3, 0, 3)      # no pair: the blocks plus retrieval
+
+
+# ── named corners: resolve, pin, and state the facts ──
+
+def test_corner_facts_name_the_first_and_last_corner():
+    sections = [{"id": "T1-T2", "corner_numbers": [1, 2]}, {"id": "T3", "corner_numbers": [3]}, {"id": "T13", "corner_numbers": [13]},
+                {"id": "T14", "corner_numbers": [14]}, {"id": "Main straight", "corner_numbers": []}]
+    text = sq.corner_facts_text(sections)
+    assert "T1 to T14" in text and "The first corner is T1 (section T1-T2)" in text and "The final corner is T14 (section T14)" in text
+    assert sq.corner_facts_text([{"id": "Main straight", "corner_numbers": []}]) is None
+
+
+def test_the_planner_asks_for_corner_facts_only_when_a_corner_is_named():
+    assert sq.plan("who had the better exit from the final corner", [], False)["corner_facts"]
+    assert sq.plan("compare them through turn 9", [], False)["corner_facts"]
+    assert sq.plan("how was the first corner", [], False)["corner_facts"]
+    assert not sq.plan("where did Hamilton lose time to Russell", [], False)["corner_facts"]
+
+
+def test_the_final_corner_is_pinned_into_the_pair_sections_on_the_real_melbourne_lap():
+    pinned = query.pinned_sections("Who had the better exit from the final corner in Melbourne, Russell or Antonelli?", "melbourne")
+    assert pinned == ("T14",)
+    top = query.top_pair_sections("melbourne", {"RUS", "ANT"}, k=4, pin=pinned)
+    assert top[0]["metadata"]["event_id"] == "T14" and len(top) == 4
+    by_gap = query.top_pair_sections("melbourne", {"RUS", "ANT"}, k=4)
+    assert "T14" not in [c["metadata"]["event_id"] for c in by_gap]                 # the old behaviour: T14 was left out
+
+
+def test_a_turn_inside_a_merged_section_pins_that_section():
+    assert query.pinned_sections("who was quicker through turn 9 at Monza", "monza") == ("T8-T9-T10",)
+    assert query.pinned_sections("how was the first corner", "barcelona") == ("T1-T2",)
+    assert query.pinned_sections("where did Hamilton lose time", "barcelona") == ()
+
+
+def test_pinned_sections_come_first_and_the_rest_follow_by_time_gap():
+    top = query.top_pair_sections("barcelona", {"RUS", "HAM"}, k=4, pin=("T9",))
+    ids = [c["metadata"]["event_id"] for c in top]
+    assert ids[0] == "T9"
+    rest = [abs(c["metadata"]["time_delta_s"]) for c in top[1:]]
+    assert rest == sorted(rest, reverse=True)

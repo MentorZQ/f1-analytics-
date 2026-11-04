@@ -283,14 +283,29 @@ def pair_chunks(session_key: str, a: str, b: str) -> tuple[dict, ...]:
     return tuple(out)
 
 
-def top_pair_sections(session_key: str, wanted: set[str], k: int = PAIR_SECTIONS) -> list[dict]:
-    """The k sections where the two wanted drivers differ most in time, or [] if the pair cannot be built."""
+def top_pair_sections(session_key: str, wanted: set[str], k: int = PAIR_SECTIONS, pin: tuple[str, ...] = ()) -> list[dict]:
+    """
+    The k sections where the two wanted drivers differ most in time, or [] if the pair cannot be built.
+    Sections in `pin` (the corners the question names) come first whatever their gap, then the rest by gap.
+    """
     if len(wanted) != 2:
         return []
     a, b = sorted(wanted)
     sections = pair_chunks(session_key, a, b)
-    ranked = sorted(sections, key=lambda c: -abs(c["metadata"].get("time_delta_s") or 0))[:k]
-    return [dict(c) for c in ranked]                       # copies: the cached chunks are shared between requests
+    pinned = [c for event_id in pin for c in sections if c["metadata"].get("event_id") == event_id][:k]
+    rest = sorted((c for c in sections if c not in pinned), key=lambda c: -abs(c["metadata"].get("time_delta_s") or 0))
+    return [dict(c) for c in (pinned + rest)[:k]]          # copies: the cached chunks are shared between requests
+
+
+def pinned_sections(question: str, session_key: str) -> tuple[str, ...]:
+    """Section ids of the corners the question names ("T9", "turn 3", "the first / final corner")."""
+    if sq is None:
+        return ()
+    sections = _section_times(session_key)
+    ids = []
+    for number in sq.corner_numbers_asked(question, sections):
+        ids += [s["id"] for s in sq.sections_for_corner(sections, number)[:1]]
+    return tuple(dict.fromkeys(ids))
 
 
 # ── Whole-session views (grid, teams, sections across the field) ───────────────
@@ -344,6 +359,10 @@ def extra_context(question: str, session_key: str, session_ctx: dict) -> list[di
                 text = sq.section_ranking_text(section, session_ctx)
                 if text:
                     out.append(sq.make_chunk("section_ranking", text, section["id"], session_key))
+    if asked["corner_facts"] and snapshot is not None:
+        text = sq.corner_facts_text(_section_times(session_key))
+        if text:
+            out.append(sq.make_chunk("circuit_facts", text, "corners", session_key))
     if asked["grid"]:
         text = sq.grid_text(session_ctx, label)
         if text:
@@ -492,7 +511,7 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
     t_start = time.perf_counter()
     wanted = resolve_context_drivers(question, question_drivers(question, session_ctx), session_ctx)
     available = extra_context(question, session_key, session_ctx)
-    pair_all = top_pair_sections(session_key, wanted)
+    pair_all = top_pair_sections(session_key, wanted, pin=pinned_sections(question, session_key))
     n_extras, n_pair, _ = split_budget(n_chunks, len(available), bool(pair_all))
     extras, pair_top = available[:n_extras], pair_all[:n_pair]
     with tracing.span("f1.retrieve", "RETRIEVER", input_value=question) as sp:

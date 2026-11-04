@@ -144,6 +144,18 @@ def team_advantage_text(snapshot, ctx: dict) -> str | None:
     return "\n".join(lines)
 
 
+def corner_facts_text(sections: list[dict]) -> str | None:
+    """Which corner is first and which is last. Section chunks never say, so the model guessed (it called T13 the last corner of a 14-corner lap)."""
+    numbers = sorted({n for s in sections for n in s["corner_numbers"]})
+    if not numbers:
+        return None
+    first, last = numbers[0], numbers[-1]
+    by_number = {n: next(s["id"] for s in sections if n in s["corner_numbers"]) for n in (first, last)}
+    return (f"Circuit facts: {len(numbers)} numbered corners, T{first} to T{last}.\n"
+            f"The first corner is T{first} (section {by_number[first]}). The final corner is T{last} (section {by_number[last]}), "
+            f"after which the lap runs down the main straight to the line.")
+
+
 def make_chunk(kind: str, text: str, label: str, session_key: str) -> dict:
     return {"chunk_id": f"{kind}:{session_key}:{label}", "text": text, "distance": 0.0, "rank": 0,
             "metadata": {"chunk_type": kind, "event_id": label if kind == "section_ranking" else None}}
@@ -173,9 +185,14 @@ def corner_numbers_asked(question: str, sections: list[dict]) -> list[int]:
     return list(dict.fromkeys(nums))
 
 
+def names_a_corner(question: str) -> bool:
+    return bool(_CORNER_REF.search(question)) or any(p.search(question) for p, _ in _FIRST_LAST)
+
+
 def plan(question: str, named_teams: list[str], no_driver_named: bool) -> dict:
     """Which whole-session views the question asks for. Pure text rules, no model."""
     return {
+        "corner_facts": names_a_corner(question),
         "team_advantage": bool(_TEAM_ADVANTAGE.search(question)) and not named_teams,
         "grid": bool(_FIELD.search(question)) or bool(named_teams),
         "teams": named_teams,
