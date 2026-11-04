@@ -70,9 +70,11 @@ def _mentions(sentence_or_block: str, section_id: str) -> bool:
     return re.search(rf"(?<![\w-]){sid}(?![\w-])", _norm(sentence_or_block)) is not None
 
 
-def section_mentioned(answer: str, section_id: str) -> bool:
-    """Is the section discussed? Accepts the exact id, and the ways answers refer to straights."""
+def section_mentioned(answer: str, section_id: str, start_m: float | None = None) -> bool:
+    """Is the section discussed? Accepts the exact id, its distance window, and the ways answers refer to straights."""
     if _mentions(answer, section_id):
+        return True
+    if start_m is not None and re.search(rf"(?<![\d.,]){int(round(start_m))}\s*m\b", _norm(answer).replace(",", "")):
         return True
     a, sid = _norm(answer).lower(), _norm(section_id).lower()
     if sid.startswith("main straight"):
@@ -227,8 +229,11 @@ TOL = {"s": 0.0015, "km/h": 0.06, "m": 0.6}
 MAX_SUM_TERMS = {"s": 4, "km/h": 2, "m": 2}
 
 
+_MIN_SEC = re.compile(r"(?<![\d:])(\d{1,2}):(\d{2}(?:\.\d+)?)(?![\d:])")
+
+
 def numbers_with_units(text: str) -> list[tuple[float, str]]:
-    t = _norm(text)
+    t = _MIN_SEC.sub(lambda m: f"{int(m.group(1)) * 60 + float(m.group(2)):.3f}", _norm(text))
     out = []
     for m in _NUM.finditer(t):
         value, unit = float(m.group(1).replace(",", "")), m.group(2)
@@ -246,6 +251,9 @@ def _derivable(value: float, unit: str, pool: list[float]) -> str | None:
     for p in pool:
         if abs(p - value) <= tol:
             return "stated"
+    if unit == "s" and abs(value * 10 - round(value * 10)) < 1e-6:        # "roughly 0.2s" for a stated 0.186s
+        if any(abs(p - value) <= 0.05 + 1e-9 for p in pool):
+            return "rounded"
     for a, b in itertools.combinations(pool, 2):
         if abs(abs(a - b) - value) <= tol:
             return "difference"
@@ -293,8 +301,23 @@ def number_grounding(answer: str, sources: list[dict], deltas: dict | None = Non
 # gain). So a claimed total is recomputed from the section gains of the sections the answer discusses.
 
 LAP_LEVEL_CHUNKS = {"driver_lap_summary", "head_to_head", "driver_sector", "session_pace_evolution"}
-_STRONG_TOTAL = re.compile(r"\b(total|net|combined|altogether|in sum|cumulative)\b|across (?:these|all|the|those)\b[^.]*\bsections?", re.I)
+_STRONG_TOTAL = re.compile(r"\b(total|net|combined|altogether|in sum)\b|across (?:these|all|the|those)\b[^.]*\bsections?", re.I)
 _WEAK_TOTAL = re.compile(r"\b(overall|together)\b", re.I)
+
+
+MAX_TOTAL_S = 1.0
+
+
+def _next_to_section_ref(sentence: str, value: float) -> bool:
+    """Is this number written right next to a single section name ('0.092s at T1-T2', 'T4: 0.122s')?"""
+    t = _norm(sentence)
+    for m in _NUM.finditer(t):
+        if m.group(2) != "s" or abs(float(m.group(1).replace(",", "")) - value) > 1e-9:
+            continue
+        near = t[max(0, m.start() - 22): m.end() + 22]
+        if _SECTION_REF.search(near):
+            return True
+    return False
 
 
 def total_consistency(answer: str, sources: list[dict], deltas: dict | None = None) -> CheckResult:
@@ -308,7 +331,8 @@ def total_consistency(answer: str, sources: list[dict], deltas: dict | None = No
             claims += [(v, sent.strip(), strong) for v, u in numbers_with_units(sent) if u == "s"]
     if not claims:
         return CheckResult("total_consistency", "n/a", None, "The answer states no total in seconds.")
-    mentioned = [(s["section"], float(s["gain_s"])) for s in deltas["sections"] if section_mentioned(answer, s["section"])]
+    mentioned = [(s["section"], float(s["gain_s"])) for s in deltas["sections"]
+                 if section_mentioned(answer, s["section"], s.get("start_m"))]
     gains = [g for _, g in mentioned][:14]
     lap_level = [v for src in sources if src.get("chunk_type") in LAP_LEVEL_CHUNKS
                  for v, u in numbers_with_units(src.get("text") or "") if u == "s"]
@@ -316,6 +340,10 @@ def total_consistency(answer: str, sources: list[dict], deltas: dict | None = No
     bad = []
     single = [abs(g) for g in gains]
     for value, sent, strong in claims:
+        if value >= MAX_TOTAL_S:                           # section and lap times (6.442s, 80.4s) are not gap totals
+            continue
+        if _next_to_section_ref(sent, value):              # "gained 0.092s at T1-T2": one section's gain, stated as such
+            continue
         # a weak word ("overall") often means "through this section overall": one section's own gain is fine
         ok = (not strong and any(abs(value - g) <= TOL["s"] for g in single)) \
             or abs(value - lap_gap) <= TOL["s"] or abs(abs(sum(gains)) - value) <= TOL["s"] \
@@ -368,7 +396,8 @@ def coverage(answer: str, sources: list[dict], deltas: dict | None, top_n: int =
     top = sorted(deltas["sections"], key=lambda s: -abs(s["gain_s"]))[:top_n]
     names = [s["section"] for s in top]
     retrieved = [s["section"] for s in top if s.get("retrieved")]
-    mentioned = [n for n in names if section_mentioned(answer, n)]
+    starts = {s["section"]: s.get("start_m") for s in top}
+    mentioned = [n for n in names if section_mentioned(answer, n, starts.get(n))]
     def result(name, hit, what):
         frac = len(hit) / len(names)
         label = "pass" if frac >= 2 / 3 else "fail"

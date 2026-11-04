@@ -266,3 +266,39 @@ def test_a_claim_after_a_list_of_sections_covers_every_section_in_the_list():
            "were genuine advantages over Russell.")
     r = cc.uncertainty_compliance(ans, [gap])
     assert r.label == "fail" and r.details[0]["section"] == "T4"
+
+
+# ── regressions from the retrieval-fix experiment ──
+
+def test_lap_times_written_as_minutes_and_seconds_are_one_number():
+    assert cc.numbers_with_units("best lap 1:20.421s") == [(80.421, "s")]
+    chunk = [{"section": None, "text": "Lap time: 80.421s"}]
+    assert cc.number_grounding("Alonso's best lap was 1:20.421s", chunk).label == "pass"
+
+
+def test_a_section_can_be_cited_by_its_distance_window():
+    assert cc.section_mentioned("### Main Straight (4393m–4608m)", "Main straight (finish, after final corner)", 4393.0)
+    assert not cc.section_mentioned("### Main Straight (1000m–1100m)", "Main straight (finish, after final corner)", 4393.0)
+
+
+def test_combined_gains_cited_by_window_are_checked_against_all_discussed_sections():
+    deltas = {"lap_gap_s": 0.063, "sections": [
+        {"section": "T3", "gain_s": 0.078, "start_m": 993.0}, {"section": "T5-T6", "gain_s": 0.070, "start_m": 2141.0},
+        {"section": "T12", "gain_s": 0.125, "start_m": 3599.0},
+        {"section": "Main straight (finish, after final corner)", "gain_s": 0.113, "start_m": 4393.0}]}
+    ans = ("### T3\nx\n### T5-T6\nx\n### T12\nx\n### Main Straight (4393m-4608m)\nx\n"
+           "**Combined gains: ~0.386s across these sections**")
+    assert cc.total_consistency(ans, [], deltas).label == "pass"
+
+
+def test_section_times_and_per_section_gains_are_not_totals():
+    ans = (SIX_ANSWER + "Norris completed the section in 6.442s, a cumulative speed advantage. "
+           "For completeness: Hamilton gained 0.092s at T1-T2 and 0.122s at T4, so the net result was Russell on pole.")
+    assert cc.total_consistency(ans, [], SIX).label in {"pass", "n/a"}      # examined, nothing wrong to flag
+
+
+def test_a_one_decimal_rounding_of_a_stated_time_is_grounded_but_a_made_up_one_is_not():
+    chunk = [{"section": None, "text": "Gap to pole: +0.186s"}]
+    assert cc.number_grounding("Roughly 0.2s off the front.", chunk).label == "pass"
+    assert cc.number_grounding("Roughly 0.5s off the front.", chunk).label == "fail"
+    assert cc.number_grounding("A gap of 0.21s.", chunk).label == "fail"           # two decimals: not a rounding

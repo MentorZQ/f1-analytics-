@@ -74,6 +74,26 @@ Tracked metrics for the F1 qualifying RAG system. Updated as improvements are ma
 - *Real:* a Barcelona answer called one section's 0.147 s gain "behind Russell across the measured sections" (the lap gap was 0.321 s); another said Hamilton's "later braking" was a genuine advantage across T1-T2, T4 and T10-T11, but T4's braking comparison is unresolved because of a gap in the car data.
 - *Real retrieval gaps:* Alonso vs Hulkenberg at Monza retrieves no Alonso chunk (head-to-head chunks exist only for the top 10); nameless questions ("why did the pole sitter win?") retrieve too few of the biggest-gap sections.
 
+### After the retrieval fix (nameless pole questions, guaranteed named drivers)
+
+All three runs below were scored with the same final checks (the earlier two were re-scored).
+
+| Check | Earlier data | Current data | + retrieval fix |
+|---|---|---|---|
+| Biggest-gap sections retrieved (broad questions) | 19 / 5 fail | 22 / 2 | **24 / 0** |
+| Biggest-gap sections discussed in the answer | 17 / 7 | 21 / 3 | **24 / 0** |
+| Expected drivers retrieved | 37 / 1 | 37 / 1 | **38 / 0** |
+| Numbers grounded | 32 / 2 | 36 / 0 | 36 / 0 |
+| Totals consistent | 3 / 1 | 5 / 1 | 7 / 0 |
+| No unhedged claim at a data gap | n/a | 24 / 1 | 27 / 0 |
+| Unanswerable questions declined | 4 / 2 | 6 / 0 | 6 / 0 |
+
+**Reading this carefully:**
+- The retrieval fix is real and measurable without any LLM: expected drivers retrieved went from 33/34 to 34/34 and both nameless pole questions went from 1 of 3 to 3 of 3 biggest-gap sections (retrieval-only check, `evals` scripts).
+- Zero failures across the board does not mean the system is flawless. The checks were corrected about a dozen times while reading these 40 questions' failures, so they are tuned to this set. They need a held-out set of new questions before the clean sheet means much.
+- Runs vary: the one real unhedged braking claim found in the previous run did not recur in this one with the same prompt, so single runs of 40 cannot separate small improvements from noise. Repetitions are needed.
+- Alonso vs Hulkenberg (no stored head-to-head pair) now gets an honest answer from lap and sector data and says corner-level data is not available, rather than an unrelated pair.
+
 **How much to trust this:**
 - The checks were corrected several times while reading the first run's failures (a thousands-separator parsing bug, "overall" read as a lap total, claims blamed on the wrong section or on a gap chunk about other drivers, bold text read as a heading, decline detection tripping on markdown, "caution" not counted as a hedge) and once to catch an overclaim they had missed (a claim after a list of sections). Each fix has a regression test, and old and new runs were re-scored with the same final rules, so the comparison is like for like.
 - "Earlier data" vs "current data" differs in sections, braking text and gap handling at once, so this shows the rebuild did not hurt and where it helped (mainly retrieval and answer coverage of the big-gap sections), not which part helped.
