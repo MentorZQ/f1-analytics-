@@ -35,16 +35,41 @@ def _drivers_with_laps(ctx: dict) -> list[tuple[str, dict]]:
 
 # ── the grid ──
 
+def _best_session(info: dict):
+    times = info.get("session_times") or {}
+    return min(times, key=times.get) if times else None
+
+
+def _gap_to_car_ahead(prev: dict | None, info: dict) -> str:
+    """
+    The gap to the classified car ahead, from the session that decided their order. Best laps can come from different
+    sessions (a Q3 car's best may be a Q2 lap, an eliminated car's is from the session it went out in), and subtracting
+    them mixes sessions, so with per-session times the gap is given only for two cars that went out in, or were
+    classified from, the same session, and is labelled with it.
+    """
+    if prev is None:
+        return ""
+    pst, st = prev.get("session_times") or {}, info.get("session_times") or {}
+    if not pst or not st:
+        return f", {info['lap_time_seconds'] - prev['lap_time_seconds']:+.3f}s to the car ahead"
+    stage = info.get("stage")
+    if stage and stage == prev.get("stage"):
+        n = int(stage[1])
+        if n in pst and n in st:
+            return f", {st[n] - pst[n]:+.3f}s to the car ahead (both Q{n} times)"
+    return ", no like-for-like gap to the car ahead (they went out in different sessions or one set no time there)"
+
+
 def grid_text(ctx: dict, session_label: str = "") -> str | None:
     rows = _drivers_with_laps(ctx)
     if not rows:
         return None
     pole_time = min(i["lap_time_seconds"] for _, i in rows)
     lines = [f"Qualifying grid{(' - ' + session_label) if session_label else ''} (best lap of each driver)"]
-    prev_time = None
+    prev_info = None
     for code, info in rows:
         t = info["lap_time_seconds"]
-        ahead = "" if prev_time is None else f", {t - prev_time:+.3f}s to the car ahead"
+        ahead = _gap_to_car_ahead(prev_info, info)
         extra = ""
         if info.get("speed_trap_kmh"):
             extra += f"; speed trap {info['speed_trap_kmh']:g} km/h"
@@ -57,14 +82,15 @@ def grid_text(ctx: dict, session_label: str = "") -> str | None:
         if st:
             extra += "; " + ", ".join(f"Q{n} {lap_text(st[n])}" for n in sorted(st))
         lines.append(f"  P{info['qualifying_position']} {code} ({info.get('team', '')}) {lap_text(t)}  +{t - pole_time:.3f}s to pole{ahead}{extra}")
-        prev_time = t
+        prev_info = info
     times = sorted(i["lap_time_seconds"] for _, i in rows)
     by_time = sorted(rows, key=lambda x: x[1]["lap_time_seconds"])
     for n in (5, 10):
         if len(times) >= n:
             lines.append(f"Spread of the quickest {n} laps: {times[n - 1] - times[0]:.3f}s")
     tight = [(b[1]["lap_time_seconds"] - a[1]["lap_time_seconds"], a[0], b[0]) for a, b in zip(by_time, by_time[1:])]
-    tight = sorted(g for g in tight if g[0] < TIGHT_GAP_S)
+    same_session = {c: _best_session(i) for c, i in rows}
+    tight = sorted(g for g in tight if g[0] < TIGHT_GAP_S and (not same_session[g[1]] or same_session[g[1]] == same_session[g[2]]))
     if tight:
         lines.append("Cars separated by less than 0.100s in lap time: " + ", ".join(f"{a}/{b} {g:.3f}s" for g, a, b in tight))
     trapped = sorted(((i["speed_trap_kmh"], c) for c, i in rows if i.get("speed_trap_kmh")), reverse=True)

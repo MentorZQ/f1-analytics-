@@ -107,3 +107,59 @@ def test_a_snapshot_with_the_wrong_version_is_refused(tmp_path):
     np.savez_compressed(path, meta=np.array(json.dumps({"version": 99, "layout": {}, "drivers": [], "events": [], "session_info": {}})))
     with pytest.raises(ValueError):
         snap.load_snapshot(path)
+
+
+# ── laps from the other qualifying sessions ──
+
+def test_focus_session_is_the_last_shared_session_when_best_laps_come_from_different_sessions():
+    assert snap.focus_session({1: 81.0, 2: 80.5}, {1: 82.0}) == 1                       # one driver out in Q1
+    assert snap.focus_session({1: 80.4, 2: 79.97, 3: 81.2}, {1: 80.5, 2: 80.1, 3: 79.99}) == 3     # both in Q3, one slower there
+    assert snap.focus_session({1: 81.0, 2: 80.5, 3: 80.0}, {1: 81.2, 2: 80.9, 3: 80.6}) is None   # same best session
+    assert snap.focus_session({}, {1: 80.0}) is None
+
+
+def test_other_session_laps_round_trip_and_the_pair_is_compared_on_those_laps(tmp_path):
+    tel = {d: telemetry(i, 1.0 - 0.01 * i) for i, (d, _, _) in enumerate(DRIVERS)}
+    for d, t in tel.items():
+        t["Driver"] = d
+    q1_lap = telemetry(9, 0.93)                                   # BBB's slower Q1 lap
+    q1_lap["Driver"] = "BBB"
+    fastest = pd.DataFrame({"Driver": [d for d, _, _ in DRIVERS], "Team": [t for _, t, _ in DRIVERS],
+                            "QualifyingPosition": [p for _, _, p in DRIVERS],
+                            "LapTime": pd.to_timedelta([80.0 + i * 0.1 for i in range(len(DRIVERS))], unit="s"),
+                            "Q1Time": [81.0] * 5, "Q2Time": [80.5, 80.4, np.nan, np.nan, np.nan], "Q3Time": [80.0, np.nan, np.nan, np.nan, np.nan]})
+    events = detect_official_events(tel, [{"number": 1, "label": "1", "dist": 1000.0}, {"number": 2, "label": "2", "dist": 1850.0}], LAP)
+    path = tmp_path / "s.npz"
+    build_telemetry_chunks({"driver_fastest_laps": fastest, "telemetry": tel, "session_telemetry": {"BBB@Q1": q1_lap}}, events,
+                           {"year": 2026, "circuit": "Testland", "session": "Qualifying"}, head_to_head_top_n=3, snapshot_path=str(path))
+    loaded = snap.load_snapshot(path)
+    pd.testing.assert_frame_equal(loaded.session_telemetry["BBB@Q1"].reset_index(drop=True), q1_lap.reset_index(drop=True), check_dtype=True)
+    best = snap.compare_drivers(loaded, "AAA", "BBB")
+    like = snap.compare_drivers(loaded, "AAA", "BBB", session=1)
+    # AAA's best is Q3 (not stored as a Q1 lap): no Q1 lap for him, so the like-for-like comparison is unavailable
+    assert best and like == []
+    assert snap.best_session(snap.driver_row(loaded, "AAA")) == 3 and snap.best_session(snap.driver_row(loaded, "BBB")) == 2
+    # a driver whose best lap IS the session asked for uses his main telemetry
+    assert snap.compare_drivers(loaded, "AAA", "BBB", session=3) == []                  # BBB has no Q3 lap
+    only_best_q1 = snap.lap_telemetry(loaded, "BBB", 1)
+    assert only_best_q1 is not None and only_best_q1.equals(loaded.session_telemetry["BBB@Q1"])
+
+
+def test_a_like_for_like_comparison_uses_and_labels_the_other_session_laps(tmp_path):
+    tel = {d: telemetry(i, 1.0 - 0.01 * i) for i, (d, _, _) in enumerate(DRIVERS)}
+    for d, t in tel.items():
+        t["Driver"] = d
+    q1 = {f"{d}@Q1": telemetry(20 + i, 0.9 - 0.02 * i) for i, d in enumerate(("AAA", "BBB"))}
+    fastest = pd.DataFrame({"Driver": [d for d, _, _ in DRIVERS], "Team": [t for _, t, _ in DRIVERS],
+                            "QualifyingPosition": [p for _, _, p in DRIVERS],
+                            "LapTime": pd.to_timedelta([80.0 + i * 0.1 for i in range(len(DRIVERS))], unit="s"),
+                            "Q1Time": [81.0] * 5, "Q2Time": [80.5, 80.4, np.nan, np.nan, np.nan], "Q3Time": [80.0, np.nan, np.nan, np.nan, np.nan]})
+    events = detect_official_events(tel, [{"number": 1, "label": "1", "dist": 1000.0}, {"number": 2, "label": "2", "dist": 1850.0}], LAP)
+    path = tmp_path / "s.npz"
+    build_telemetry_chunks({"driver_fastest_laps": fastest, "telemetry": tel, "session_telemetry": q1}, events,
+                           {"year": 2026, "circuit": "Testland", "session": "Qualifying"}, head_to_head_top_n=3, snapshot_path=str(path))
+    loaded = snap.load_snapshot(path)
+    best, like = snap.compare_drivers(loaded, "AAA", "BBB"), snap.compare_drivers(loaded, "AAA", "BBB", session=1)
+    assert like and len(like) == len(best)
+    assert all("AAA and BBB Q1 laps" in c.text and c.metadata["lap_session"] == "Q1" for c in like)
+    assert [c.text for c in like] != [c.text for c in best]

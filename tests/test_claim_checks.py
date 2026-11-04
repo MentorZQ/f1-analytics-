@@ -251,3 +251,45 @@ def test_a_speed_after_a_sentence_break_is_not_attached_to_the_driver_named_befo
     src = [{"text": "ALB 147.0 km/h exit | HUL 130.0 km/h exit", "drivers": ["ALB", "HUL"], "chunk_type": "head_to_head_event"}]
     answer = "Hülkenberg picked up the throttle earlier, at 53m versus Albon's 63m. His exit speed was 130.0 km/h against Albon's 147.0 km/h."
     assert cl.numbers_on_right_driver(answer, src).label != "fail"
+
+
+# ── team ranking and tyre claims ──
+
+TEAM_GRID = [{"chunk_type": "grid", "drivers": [], "text": (
+    "Qualifying grid - Melbourne (best lap of each driver)\n"
+    "  P1 RUS (Mercedes) 1:18.518  +0.000s to pole\n  P2 ANT (Mercedes) 1:18.811  +0.293s to pole\n"
+    "  P3 HAD (Red Bull Racing) 1:19.303  +0.785s to pole\n  P4 LEC (Ferrari) 1:19.327  +0.809s to pole\n"
+    "  P5 PIA (McLaren) 1:19.380  +0.862s to pole\n  P6 NOR (McLaren) 1:19.475  +0.957s to pole\n"
+    "  P7 HAM (Ferrari) 1:19.478  +0.960s to pole\n")}]
+
+
+def test_ferrari_called_fourth_quickest_team_is_checked_against_the_grid():
+    # by best car: Mercedes 1, Red Bull 2, Ferrari 3, McLaren 4. By average Ferrari (79.40) edges McLaren (79.43): also 3.
+    r = cl.team_ranking("Ferrari were the fourth quickest team in qualifying.", TEAM_GRID)
+    assert r.label == "fail" and "Ferrari" in r.explanation or "ferrari" in r.explanation
+    assert cl.team_ranking("Ferrari were the third quickest team.", TEAM_GRID).label == "pass"
+    assert cl.team_ranking("McLaren were the fourth-fastest team on the grid.", TEAM_GRID).label == "pass"
+
+
+def test_team_ranking_is_not_checked_without_a_grid_or_a_ranking():
+    assert cl.team_ranking("Ferrari were the fourth quickest team.", []).label == "n/a"
+    assert cl.team_ranking("Ferrari were quick.", TEAM_GRID).label == "n/a"
+    assert cl.team_ranking("Ferrari and McLaren were the third quickest teams.", TEAM_GRID).label == "n/a"      # two teams: ambiguous
+
+
+SAME_TYRES = [{"chunk_type": "driver_lap_summary", "drivers": ["RUS"], "text": "Qualifying Lap Summary: RUS\nTyre: SOFT (1 laps old) | Fresh set"},
+              {"chunk_type": "driver_lap_summary", "drivers": ["HAM"], "text": "Qualifying Lap Summary: HAM\nTyre: SOFT (1 laps old) | Fresh set"}]
+DIFFERENT_TYRES = [SAME_TYRES[0], {"chunk_type": "driver_lap_summary", "drivers": ["HAM"], "text": "Tyre: MEDIUM (4 laps old) | Used set"}]
+
+
+def test_blaming_the_tyres_when_both_ran_the_same_fresh_softs_fails():
+    answer = "Hamilton lost time because of tyre wear compared with Russell, which explains the gap."
+    r = cl.tyre_claims(answer, SAME_TYRES)
+    assert r.label == "fail" and "same" in r.explanation
+    assert cl.tyre_claims(answer, DIFFERENT_TYRES).label == "pass"
+    assert cl.tyre_claims(answer, []).label == "fail"                                   # no tyre information at all
+
+
+def test_saying_the_tyres_were_the_same_is_not_a_tyre_claim():
+    assert cl.tyre_claims("Both ran the same fresh softs, so the gap is not due to the tyres.", SAME_TYRES).label == "n/a"
+    assert cl.tyre_claims("Hamilton was 0.2s slower through T3.", SAME_TYRES).label == "n/a"

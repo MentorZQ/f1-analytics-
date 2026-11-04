@@ -151,9 +151,12 @@ def corner_sections(snapshot) -> list[tuple[int, str]]:
     return sorted(set(out))
 
 
-def section_gap(snapshot, a: str, b: str, section_id: str):
-    """(quicker driver, gap in seconds) through a section, from the stored head-to-head computation; None if unavailable."""
-    for chunk in snap.compare_drivers(snapshot, a, b):
+def section_gap(snapshot, a: str, b: str, section_id: str, session: int | None = None):
+    """
+    (quicker driver, gap in seconds) through a section, from the stored head-to-head computation; None if unavailable.
+    `session` is the like-for-like session when the two best laps come from different sessions (see snap.focus_session).
+    """
+    for chunk in snap.compare_drivers(snapshot, a, b, session=session):
         if chunk.metadata.get("event_id") == section_id and chunk.metadata.get("time_delta_s") is not None:
             delta = chunk.metadata["time_delta_s"]                       # driver_a's time minus driver_b's
             first, second = chunk.metadata["driver_a"], chunk.metadata["driver_b"]
@@ -233,7 +236,10 @@ def build(session_key: str, data: dict, rng: random.Random, next_id) -> list[dic
         attempts += 1
         a, b = pick(2)
         number, section_id = rng.choice(corners)
-        result = section_gap(data["snapshot"], a, b, section_id)
+        focus = snap.focus_session(drivers[a].get("times") or {}, drivers[b].get("times") or {})
+        result = section_gap(data["snapshot"], a, b, section_id, focus)
+        if result is None and focus:
+            continue                                    # that session's laps were not stored for this pair
         if not result or result[1] < 0.020:
             continue
         winner, gap = result

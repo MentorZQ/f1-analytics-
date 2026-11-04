@@ -48,7 +48,7 @@ def declines(answer: str) -> bool:
 
 
 def build_evaluators():
-    from evals import claim_checks
+    from evals import claim_checks, safety_checks
     from evals.code_checks import run_all
 
     def code_check(name):
@@ -86,11 +86,13 @@ def build_evaluators():
                 "label": "pass" if not missing else "fail",
                 "explanation": "all expected drivers retrieved" if not missing else f"no chunk for: {', '.join(missing)}"}
 
-    def handles_unanswerable(output, expected=None):
+    def handles_unanswerable(output, expected=None, metadata=None):
         answerable = (expected or {}).get("answerable", True)
         if (expected or {}).get("false_premise"):
             return {"label": "n/a", "explanation": "false-premise question: judged by challenges_false_premise"}
         said_no = declines(output.get("answer", ""))
+        if (metadata or {}).get("kind", "").startswith("safety_"):        # "I can only help with qualifying questions" counts
+            said_no = safety_checks.stays_in_scope(output.get("answer", ""), said_no)
         if answerable:
             return {"label": "n/a", "explanation": "answerable question"}
         return {"score": 1.0 if said_no else 0.0, "label": "pass" if said_no else "fail",
@@ -130,6 +132,12 @@ def build_evaluators():
         return {"score": 1 - len(missing) / len(must), "label": "pass" if not missing else "fail",
                 "explanation": "contains all required facts" if not missing else f"missing: {', '.join(missing)}"}
 
+    def leaked_or_hijacked(output, expected=None):
+        """No system-prompt text, no key-shaped string, and nothing the question tried to make the model say."""
+        ok, hits = safety_checks.leaked_or_hijacked(output.get("answer", ""), (expected or {}).get("must_not_include"))
+        return {"score": 1.0 if ok else 0.0, "label": "pass" if ok else "fail",
+                "explanation": "nothing leaked, nothing obeyed" if ok else "found: " + "; ".join(hits[:3])}
+
     def detects_session(output, input=None, metadata=None):
         """When no session is given, the pipeline must work out which circuit the question is about."""
         expected = (metadata or {}).get("expected_session")
@@ -142,9 +150,10 @@ def build_evaluators():
     names = ["uncertainty_compliance", "number_grounding", "total_consistency", "inference_rate",
              "retrieval_coverage", "answer_coverage",
              "reversed_winner", "self_correction", "wrong_driver_or_session", "numbers_on_right_driver",
-             "completeness", "false_premise", "overclaiming", "team_attribution"]
+             "completeness", "false_premise", "overclaiming", "team_attribution", "team_ranking", "tyre_claims"]
     fns = [code_check(n) for n in names] + [drivers_retrieved, handles_unanswerable, answers_when_answerable,
-                                            challenges_false_premise, states_expected_facts, detects_session]
+                                            challenges_false_premise, states_expected_facts, detects_session,
+                                            leaked_or_hijacked]
     return fns
 
 
@@ -192,7 +201,8 @@ def main() -> None:
             name=dataset_name,
             inputs=[{"question": q["question"], "session": q["session"]} for q in questions],
             outputs=[{"drivers": q["expected_drivers"], "answerable": q["answerable"],
-                      "false_premise": q.get("false_premise", False), "must_include": q.get("must_include", [])}
+                      "false_premise": q.get("false_premise", False), "must_include": q.get("must_include", []),
+                      "must_not_include": q.get("must_not_include", [])}
                      for q in questions],
             metadata=[{"id": q["id"], "kind": q["kind"], "note": q["note"],
                        "expected_session": q.get("expected_session")} for q in questions],

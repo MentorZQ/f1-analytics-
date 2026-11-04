@@ -15,10 +15,10 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [x] Fix "final corner": named corners are resolved, pinned into the pair's sections, and the first/last corner is stated (65dbf40).
 
 - [x] Q3 entry and like-for-like laps: a top-ten car with no Q3 time still reached Q3; each driver's Q1/Q2/Q3 best is stored; "last into Q3" uses Q2 times; a pair whose best laps come from different sessions also gets the last shared session's gap.
-- [ ] Head-to-head sections still compare each driver's overall best lap (telemetry is stored for that lap only). For a Q1-vs-Q3 pair the sections are therefore not like-for-like; the comparison block says so. Storing each Q session's best-lap telemetry would fix it.
-- [ ] Grid "+x to the car ahead" subtracts best laps from different sessions for cars whose best lap is in different sessions; use the time from the session that decided each classification.
-- [ ] Haiku sometimes starts an answer by guessing a name ("Lance... no, ...") before reading the context; try a prompt line telling it to find the answer in the context first, and measure.
-- [ ] **Team-level claims**: the answer called Ferrari the "fourth quickest team" when the best car of each team puts them third; no check catches ranking claims yet.
+- [x] Head-to-head sections compare the like-for-like session's laps when the best laps come from different sessions (snapshots store each driver's lap from every Q session; the comparison block says which laps the sections use).
+- [x] Grid "+x to the car ahead" uses one session (both Q3 times, both Q2 times, ...) and says so; cars that went out in different sessions get no gap.
+- [~] Haiku guessing a name before reading the context: prompt line added (find the answer in the context first, never correct yourself in the text); measure it on a fresh run.
+- [x] Team ranking claims (`team_ranking` check: rank by best car or by average of the cars, from the grid chunk).
 - [ ] Pair slots are the top 4 sections by time gap, so `retrieval_coverage` is now close to true by construction for pair questions; rely on `answer_coverage` instead.
 
 ## Tool calling (saved for later, wanted for richer Phoenix traces)
@@ -30,11 +30,11 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [~] **Held-out set, part 2**: the data-generated half is DONE (`evals/make_heldout.py`, 57 questions, new seed = fresh set). Still to do: the batch written by a fresh model that has not seen the checks. Original note: data-generated questions (ground truth computed from the store) plus a batch written by a
       fresh model that has not seen the checks. Freeze before running; never tune on it. Part 1 (ten user-written
       questions, `evals/questions_heldout_user.json`) is already frozen and was run once: 3 clean, 7 with problems.
-- [ ] **Tyre-claim check**: fail when an answer blames tyre compound/age for a gap while the evidence shows identical
+- [x] Tyre-claim check (`tyre_claims`: fails when the answer blames tyres but the evidence shows the same tyres, or none).
       tyres (every fastest lap in all three sessions was a fresh SOFT).
 - [ ] **Parameter sweep, retrieval-only first**: rerank weight (3.0), chunks per question (6), routing. Needs the rerank
       weight exposed as a parameter. Costs no API calls.
-- [ ] **Safety set** before any public deploy: prompt-injection questions, off-topic requests, very long inputs.
+- [x] Safety set (`evals/questions_safety.json`, 25 questions: prompt extraction, secrets, role hijack, off-topic, harmful, injection inside a real question, false authority, long input; `leaked_or_hijacked` check). See METRICS.md for results.
 - [ ] Record the inner retrieval and Claude spans inside experiment runs (currently only our own metrics).
 - [ ] Spot-check 15 flagged and unflagged answers by hand to measure how often the checks are wrong.
 - [ ] More repetitions for self-consistency (8 questions x 3 runs is a small sample).

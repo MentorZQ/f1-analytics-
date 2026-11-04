@@ -592,6 +592,30 @@ def load_qualifying_session_openf1(
 
     telemetry = {d: _finish_telemetry(t, lap_by_driver[d], d, center, tf) for d, t in raw_tel.items()}
 
+    # ── laps from the other qualifying sessions ──
+    # A driver's best lap is from one session; comparing two drivers whose best laps come from different sessions is only
+    # like-for-like in a session both ran, so keep each driver's best lap from every session he set a time in.
+    session_telemetry = {}
+    for _, row in fastest.iterrows():
+        times = {n: row[f"Q{n}Time"] for n in (1, 2, 3) if pd.notna(row.get(f"Q{n}Time"))}
+        if len(times) < 2:
+            continue
+        best_n = min(times, key=times.get)
+        for n, t in times.items():
+            if n == best_n:
+                continue
+            cand = laps[(laps["driver_number"] == row["_num"]) & ((laps["lap_duration"] - t).abs() < 5e-4)]
+            if cand.empty:
+                continue
+            try:
+                tel = _fetch_lap_telemetry(sk, int(row["_num"]), cand.iloc[0].to_dict())
+            except Exception as e:
+                log(f"  Warning: Q{n} telemetry fetch failed for {row['Driver']}: {e}")
+                continue
+            if tel is not None:
+                session_telemetry[f"{row['Driver']}@Q{n}"] = _finish_telemetry(tel, float(t), row["Driver"], center, tf)
+    log(f"  Telemetry for {len(session_telemetry)} laps from sessions other than the driver's best")
+
     # ── weather ──
     weather = pd.DataFrame(_get("weather", session_key=sk))
     if not weather.empty:
@@ -635,6 +659,7 @@ def load_qualifying_session_openf1(
         "all_laps": all_laps[[c for c in keep if c not in ("QualifyingPosition", "QSessionReached", "Q1Time", "Q2Time", "Q3Time", "QCrashed")]],
         "weather": weather,
         "telemetry": telemetry,
+        "session_telemetry": session_telemetry,
         "dnq_drivers": dnq,
         "registration": tf,
         "centerline": center,              # lets callers place official corners on the lap

@@ -312,3 +312,20 @@ def test_the_lap_summary_states_entry_to_q3_and_the_time_set_in_each_session():
     assert progression_lines(out_q1)[1] == "Best time in each session: Q1 1:18.815"
     # a source without per-session times (the FastF1 path) keeps the plain status line
     assert progression_lines(pd.Series({"QSessionReached": "Q3"})) == ["Qualifying progression: Qualified for Q3"]
+
+
+def test_the_gap_to_the_car_ahead_uses_one_session_and_is_labelled():
+    ctx = _timed(DDD=(80.7, 3, "Q3", {1: 81.3, 2: 80.8, 3: 80.7}))
+    ctx["drivers"]["DDD"]["qualifying_position"] = 3
+    ctx["drivers"]["BBB"]["qualifying_position"] = 2
+    text = sq.grid_text(ctx)
+    ddd = next(l for l in text.splitlines() if " DDD " in l)
+    assert "+0.100s to the car ahead (both Q3 times)" in ddd              # 80.7 - 80.6, both Q3 laps
+    ccc = next(l for l in text.splitlines() if " CCC " in l)
+    assert "no like-for-like gap to the car ahead" in ccc                  # CCC set no Q3 time: nothing to subtract
+
+
+def test_cars_from_different_sessions_are_not_listed_as_separated_by_a_tiny_gap():
+    ctx = {"drivers": {"AAA": {"lap_time_seconds": 79.994, "qualifying_position": 8, "stage": "Q3", "session_times": {1: 80.5, 2: 80.1, 3: 79.994}},
+                       "BBB": {"lap_time_seconds": 79.971, "qualifying_position": 9, "stage": "Q3", "session_times": {1: 80.4, 2: 79.971, 3: 81.2}}}}
+    assert "separated by less than" not in sq.grid_text(ctx)

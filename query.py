@@ -39,10 +39,11 @@ import tracing
 
 # The pair sections are rebuilt from a saved snapshot; if the snapshot code cannot be imported, the stored chunks serve.
 try:
-    from events_and_chunking.session_snapshot import clean_metadata, compare_drivers, load_snapshot
+    from events_and_chunking.session_snapshot import (clean_metadata, compare_drivers, driver_row, focus_session, load_snapshot,
+                                                      session_times_of)
     from events_and_chunking import session_queries as sq
 except Exception:                                    # pragma: no cover - a missing optional dependency must not break answering
-    compare_drivers = load_snapshot = clean_metadata = sq = None
+    compare_drivers = load_snapshot = clean_metadata = sq = driver_row = focus_session = session_times_of = None
 
 
 # ── Session registry ──────────────────────────────────────────────────────────
@@ -161,11 +162,11 @@ def _like_for_like(a: str, b: str, ia: dict, ib: dict) -> list[str]:
     ta, tb = ia.get("session_times") or {}, ib.get("session_times") or {}
     if not ta or not tb:
         return []
+    n = focus_session(ta, tb)
+    if n is None:
+        return []
     best_a, best_b = min(ta, key=ta.get), min(tb, key=tb.get)
     shared = sorted(set(ta) & set(tb))
-    if best_a == best_b or not shared:
-        return []
-    n = shared[-1]
     faster = a if ta[n] <= tb[n] else b
     lines = [f"Their best laps are from different sessions ({a}'s from Q{best_a}, {b}'s from Q{best_b}), "
              f"so the gap between them is not like-for-like.",
@@ -206,7 +207,13 @@ def lap_comparison_chunk(deltas: dict | None, session_ctx: dict) -> dict | None:
              f"Over the lap {quicker} was {abs(ta - tb):.3f}s quicker than {slower}."]
     if pa and pb and (pa < pb) != (ta < tb):
         lines.append("Note: the classification order differs from the best-lap order for these two drivers.")
-    lines += _like_for_like(a, b, ia, ib)
+    like = _like_for_like(a, b, ia, ib)
+    lines += like
+    if like:
+        session = (deltas.get("lap_session") or "")
+        lines.append(f"The head-to-head sections below compare their {session} laps, so their gaps add up to the {session} gap."
+                     if session else
+                     "The head-to-head sections below compare each driver's overall best lap, so they are not like-for-like for this pair.")
     return {"chunk_id": f"lap_comparison:{a}-{b}", "text": "\n".join(lines), "distance": 0.0, "rank": 0,
             "metadata": {"chunk_type": "lap_comparison", "driver_a": a, "driver_b": b}}
 
@@ -250,7 +257,11 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None 
         "minimum and exit speeds, throttle application, top speed) and say what those measurements imply. "
         "A missing detail is never a reason to skip the explanation of a section. "
         "Do not add up sections or compute new totals unless the context gives the total; quote the figures as given. "
-        "Do not attribute differences to car or engine characteristics (power unit, aero, downforce): the data cannot show them."
+        "Do not attribute differences to car or engine characteristics (power unit, aero, downforce): the data cannot show them. "
+        "Find the answer in the context before you write it: begin with a fact the context states, never with a name you have "
+        "not looked up, and never correct yourself in the text (no 'no,' or 'actually' after a guess). "
+        "When the context says two drivers' best laps are from different sessions, give the like-for-like comparison it names "
+        "as the gap, and mention the best-lap gap only as the figure that mixes sessions."
     )
 
     extra = {}
@@ -336,12 +347,21 @@ def _get_snapshot(session_key: str):
 
 @lru_cache(maxsize=512)
 def pair_chunks(session_key: str, a: str, b: str) -> tuple[dict, ...]:
-    """Every head-to-head section chunk for the pair, in the same form retrieval returns them."""
+    """
+    Every head-to-head section chunk for the pair, in the same form retrieval returns them. When the two best laps come
+    from different sessions the sections compare the laps from the last session both set a time in (like-for-like);
+    if those laps were not stored it falls back to the best laps.
+    """
     snapshot = _get_snapshot(session_key)
     if snapshot is None:
         return ()
+    session = None
+    ra, rb = driver_row(snapshot, a), driver_row(snapshot, b)
+    if ra is not None and rb is not None:
+        session = focus_session(session_times_of(ra), session_times_of(rb))
+    chunks = (compare_drivers(snapshot, a, b, session=session) if session else []) or compare_drivers(snapshot, a, b)
     out = []
-    for c in compare_drivers(snapshot, a, b):
+    for c in chunks:
         out.append({"chunk_id": c.chunk_id, "text": c.text, "distance": 0.0, "rank": 0,
                     "metadata": clean_metadata({"chunk_type": c.chunk_type, "source": c.source, **c.metadata})})
     return tuple(out)
@@ -522,6 +542,7 @@ def section_deltas(collection, chunks: list[dict], wanted: set[str] | None = Non
         "driver_a":  driver_a,
         "driver_b":  driver_b,
         "lap_gap_s": round(sum(s["gain_s"] for s in ordered), 3),
+        "lap_session": (generated[0]["metadata"].get("lap_session") if generated else None),   # "Q1": sections compare that session's laps
         "sections":  ordered,
     }
 

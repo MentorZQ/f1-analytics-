@@ -12,6 +12,8 @@ these ask "is the answer about the right thing, and does it say the right thing 
                              the answer must say so instead of explaining it
   overclaiming             : "clearly" / "definitely" about braking in a section the data could not resolve
   team_attribution         : a driver is named together with the wrong team ("Haas's Hadjar")
+  team_ranking             : "the fourth quickest team" must match the ranking of the teams' cars in the grid
+  tyre_claims              : blaming tyre compound or age for a gap when the evidence shows the same tyres (or none)
   self_correction          : "wait, corrected:" - the model changed its mind in the answer text
 
 Same contract as code_checks: pure functions of (answer, evidence), no network, same verdict every time.
@@ -441,6 +443,100 @@ def team_attribution(answer: str, sources: list[dict]) -> CheckResult:
     return CheckResult("team_attribution", "pass", 1.0, f"All {checked} driver-team pairing(s) match the evidence.")
 
 
+# ── team ranking claims ──────────────────────────────────────────────────────
+
+_ORDINALS = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,
+             "eleventh": 11}
+_ORD = "|".join(_ORDINALS) + r"|\d+(?:st|nd|rd|th)"
+_RANK_CLAIM = re.compile(rf"\b({_ORD})[- ](?:quickest|fastest|best)\b[^.\n]{{0,25}}\b(?:team|constructor)", re.I)
+_GRID_ROW = re.compile(r"^\s*P\d+\s+([A-Z]{3})\s+\(([^)\n]+)\)\s+(\d+):(\d+\.\d+)", re.M)
+
+
+def team_ranking_from_grid(sources: list[dict]) -> dict[str, tuple[int, int]]:
+    """{team key: (rank by its best car, rank by the average of its cars)} from the grid chunk, or {} without one."""
+    times: dict[str, list[float]] = {}
+    for src in sources:
+        if src.get("chunk_type") != "grid":
+            continue
+        for _, team, minutes, seconds in _GRID_ROW.findall(src.get("text") or ""):
+            key = _team_key(team)
+            if key:
+                times.setdefault(key, []).append(int(minutes) * 60 + float(seconds))
+    if not times:
+        return {}
+    by_best = sorted(times, key=lambda k: min(times[k]))
+    by_avg = sorted(times, key=lambda k: sum(times[k]) / len(times[k]))
+    return {k: (by_best.index(k) + 1, by_avg.index(k) + 1) for k in times}
+
+
+def team_ranking(answer: str, sources: list[dict]) -> CheckResult:
+    """'Ferrari were the fourth quickest team': the rank must match the grid, by the best car or by the average of the cars."""
+    ranks = team_ranking_from_grid(sources)
+    if not ranks:
+        return CheckResult("team_ranking", "n/a", None, "The evidence has no grid to rank the teams from.")
+    checked, wrong = 0, []
+    for sent in cc._sentences(cc._norm(answer)):
+        claim = _RANK_CLAIM.search(sent)
+        if not claim:
+            continue
+        word = claim.group(1).lower()
+        n = _ORDINALS.get(word) or int(re.match(r"\d+", word).group())
+        named = [k for k, alias in TEAM_ALIASES.items() if k in ranks and re.search(alias, sent, re.I)]
+        if len(named) != 1:
+            continue                                        # no team, or several: cannot tell which one the ordinal belongs to
+        checked += 1
+        if n not in ranks[named[0]]:
+            wrong.append({"team": named[0], "said": n, "by_best_car": ranks[named[0]][0], "by_average": ranks[named[0]][1],
+                          "sentence": sent.strip()[:200]})
+    if wrong:
+        return CheckResult("team_ranking", "fail", 0.0,
+                           f"{len(wrong)} team ranking claim(s) do not match the grid: "
+                           + ", ".join(f"{w['team']} said {w['said']}, grid gives {w['by_best_car']} (best car) / {w['by_average']} (average)" for w in wrong), wrong)
+    if not checked:
+        return CheckResult("team_ranking", "n/a", None, "The answer ranks no team.")
+    return CheckResult("team_ranking", "pass", 1.0, f"{checked} team ranking claim(s) match the grid.")
+
+
+# ── tyre claims ──────────────────────────────────────────────────────────────
+
+_TYRE_LINE = re.compile(r"^Tyre:\s*([A-Za-z]+)(?:\s*\((\d+) laps old\))?(?:\s*\|\s*(Fresh|Used) set)?", re.M)
+_TYRE_WORD = re.compile(r"\b(tyres?|tires?|compounds?|softs?|mediums?|hards?|fresh set|used set|tyre (?:age|wear|life)|rubber)\b", re.I)
+_BLAME = re.compile(r"\b(because|due to|explain\w*|thanks to|down to|attribut\w*|result of|caused?|contribut\w*|helped|benefit\w*|"
+                    r"advantage|accounts? for|reason|responsible)\b", re.I)
+_TYRE_DENIAL = re.compile(r"\b(same|identical|equal|neither|both (?:on|used|ran|set)|no (?:tyre|tire|compound)|not (?:due|down|because|a tyre)|"
+                          r"rules? out|does not (?:show|explain|support)|cannot (?:be )?attribut|unrelated|irrelevant)\b", re.I)
+
+
+def tyres_in_evidence(sources: list[dict]) -> dict[str, tuple[str, str | None]]:
+    """{driver: (compound, 'Fresh'/'Used'/None)} from one-driver lap summaries."""
+    out = {}
+    for src in sources:
+        owners = src.get("drivers") or []
+        m = _TYRE_LINE.search(src.get("text") or "")
+        if m and len(owners) == 1:
+            out[owners[0]] = (m.group(1).upper(), m.group(3))
+    return out
+
+
+def tyre_claims(answer: str, sources: list[dict]) -> CheckResult:
+    """Fails when the answer blames tyre compound or age for a gap, but the evidence shows the same tyres (or says nothing)."""
+    claims = [sent.strip() for sent in cc._sentences(cc._norm(answer))
+              if _TYRE_WORD.search(sent) and _BLAME.search(sent) and not _TYRE_DENIAL.search(sent)
+              and re.search(r"\b(gap|slower|faster|quicker|quickest|lost|gain\w*|pace|time|lap|difference)\b", sent, re.I)]
+    if not claims:
+        return CheckResult("tyre_claims", "n/a", None, "The answer does not blame the tyres for anything.")
+    tyres = tyres_in_evidence(sources)
+    if len(tyres) >= 2 and len(set(tyres.values())) == 1:
+        compound, fresh = next(iter(tyres.values()))
+        return CheckResult("tyre_claims", "fail", 0.0,
+                           f"The answer blames the tyres, but every driver in the evidence ran the same ({compound}{', ' + fresh.lower() + ' set' if fresh else ''}).",
+                           [{"sentence": c[:200]} for c in claims])
+    if not tyres:
+        return CheckResult("tyre_claims", "fail", 0.0, "The answer blames the tyres, but the evidence has no tyre information.",
+                           [{"sentence": c[:200]} for c in claims])
+    return CheckResult("tyre_claims", "pass", 1.0, "The evidence shows a tyre difference between the drivers.")
+
+
 def run_all(answer: str, sources: list[dict], deltas: dict | None = None, question: str | None = None,
             session: str | None = None) -> list[CheckResult]:
     return [reversed_winner(answer, sources, deltas),
@@ -448,6 +544,8 @@ def run_all(answer: str, sources: list[dict], deltas: dict | None = None, questi
             wrong_driver_or_session(answer, sources, question, session),
             numbers_on_right_driver(answer, sources),
             team_attribution(answer, sources),
+            team_ranking(answer, sources),
+            tyre_claims(answer, sources),
             completeness(answer, sources, deltas, question),
             false_premise(answer, sources, question),
             overclaiming(answer, sources, question)]

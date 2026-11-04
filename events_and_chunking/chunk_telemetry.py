@@ -1002,7 +1002,8 @@ def build_telemetry_chunks(
 
     if snapshot_path:                                  # keep what is needed to rebuild any pair's sections on demand
         from events_and_chunking.session_snapshot import save_snapshot
-        save_snapshot(snapshot_path, fastest, telemetry, events, session_info)
+        save_snapshot(snapshot_path, fastest, telemetry, events, session_info,
+                      session_telemetry=fastf1_data.get("session_telemetry"))
 
     # --- Per-driver event chunks ---
     for _, row in fastest.iterrows():
