@@ -92,7 +92,9 @@ def test_answer_includes_sources_and_chart_data(client):
     assert data["session"] == "barcelona"
     assert data["paid_by"] == "free"
     assert data["free_remaining"] == 1
-    assert 1 <= len(data["sources"]) <= server.N_CHUNKS
+    retrieved = [x for x in data["sources"] if x["chunk_type"] != "lap_comparison"]
+    assert 1 <= len(retrieved) <= server.N_CHUNKS                 # at most N retrieved chunks, plus the fixed comparison block
+    assert len(data["sources"]) - len(retrieved) <= 1
     assert {data["deltas"]["driver_a"], data["deltas"]["driver_b"]} == {"RUS", "NOR"}
 
 
@@ -121,7 +123,9 @@ def test_client_cannot_choose_model_or_chunk_count(client, llm_calls):
     })
     assert response.status_code == 200
     assert llm_calls[0]["model"] == server.MODEL
-    assert len(response.json()["sources"]) <= server.N_CHUNKS
+    sources = response.json()["sources"]
+    assert len([x for x in sources if x["chunk_type"] != "lap_comparison"]) <= server.N_CHUNKS
+    assert len(sources) <= server.N_CHUNKS + 1
 
 
 @pytest.mark.parametrize("question", ["", "x" * (server.MAX_QUESTION_CHARS + 1)])
