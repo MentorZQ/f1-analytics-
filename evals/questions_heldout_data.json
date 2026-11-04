@@ -314,7 +314,7 @@
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:qualified for q3|re:reached q3|re:advanced to q3|re:progressed to q3|re:through to q3|re:made it (?:in)?to q3|re:made q3|re:\\bin q3\\b"
+   "re:qualified for q3|re:reached q3|re:advanced to q3|re:progressed to q3|re:through to q3|re:made it (?:in)?to q3|re:made q3|re:\\bin q3\\b|re:(?<!not )(?<!n't )\\bgot (?:in)?to q3"
   ],
   "author": "generated",
   "note": "HUL progression: qualified for Q3 (driver lap summary)"
@@ -331,7 +331,7 @@
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:qualified for q3|re:reached q3|re:advanced to q3|re:progressed to q3|re:through to q3|re:made it (?:in)?to q3|re:made q3|re:\\bin q3\\b"
+   "re:qualified for q3|re:reached q3|re:advanced to q3|re:progressed to q3|re:through to q3|re:made it (?:in)?to q3|re:made q3|re:\\bin q3\\b|re:(?<!not )(?<!n't )\\bgot (?:in)?to q3"
   ],
   "author": "generated",
   "note": "VER progression: qualified for Q3 (driver lap summary)"
@@ -1092,7 +1092,7 @@
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:qualified for q3|re:reached q3|re:advanced to q3|re:progressed to q3|re:through to q3|re:made it (?:in)?to q3|re:made q3|re:\\bin q3\\b"
+   "re:qualified for q3|re:reached q3|re:advanced to q3|re:progressed to q3|re:through to q3|re:made it (?:in)?to q3|re:made q3|re:\\bin q3\\b|re:(?<!not )(?<!n't )\\bgot (?:in)?to q3"
   ],
   "author": "generated",
   "note": "BOR progression: qualified for Q3 (driver lap summary)"

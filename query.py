@@ -163,7 +163,7 @@ _LOOKUP = re.compile(
     r"\bwho (?:was|set|recorded|made|got|had|took)\b[^?]{0,40}\b(?:fastest|quickest|highest|slowest|last|first|top|pole)\b|"
     r"\bwhich driver\b[^?]{0,60}\b(?:only just|last|slowest|fastest|quickest|highest)\b|"
     r"\bdid\b[^?]{0,30}\bmake (?:it )?(?:into )?q[123]\b|\bwho (?:was|were) (?:the )?(?:last|first)\b", re.I)
-_NOT_LOOKUP = re.compile(r"\bwhy\b|\bcompare\b|\bexplain\b|\bhow did\b|\bvs\.?\b|\bversus\b|\bstack up\b|\badvantage\b|\blose\b|\blost\b|\bgain|\bcorners?\b|\bturns?\b|(?<![\w-])T\d+\b|\bstraights?\b|\bsections?\b|\bthrough\b", re.I)
+_NOT_LOOKUP = re.compile(r"\bwhy\b|\bcompare\b|\bexplain\b|\bhow did\b|\bvs\.?\b|\bversus\b|\bstack up\b|\badvantage\b|\blose\b|\blost\b|\bgain|\bcorners?\b|\bturns?\b|(?<![\w-])T\d+\b|\bstraights?\b|\bsections?\b|\bthrough\s+(?:the\s+)?(?:T\d+|turns?|corners?|section|sequence|straight|chicane|first|last|final|slowest|fastest)\b", re.I)
 CONCISE_STYLE = ("this question asks for one fact. Answer in one or two sentences: the fact and the figure it rests on "
                  "(name the session each lap comes from). Do not add other drivers, sectors, corners or comparisons, and do not "
                  "say what the context lacks. When the context gives a like-for-like comparison, lead with it, then say that "

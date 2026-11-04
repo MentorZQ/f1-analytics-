@@ -299,3 +299,13 @@ def test_a_driver_named_inside_a_parenthetical_is_not_the_subject_of_the_next_cl
     unit = ("Antonelli carried more speed through that section (entry 157.0 km/h vs 131.0 km/h for Russell, apex 163.0 vs 157.4) "
             "and completed it 0.253s faster (6.243s vs 6.496s).")
     assert cl.claimed_winner_for_time(unit, 0.253, "RUS", "ANT") == "ANT"
+
+
+@pytest.mark.parametrize("text", ["Ocon started from P17 on the Barcelona grid.", "He started the race in 17th.", "Hamilton lined up in P2 at Monza."])
+def test_claiming_where_a_driver_started_the_race_is_flagged(text):
+    assert cl.grid_start_claim(text, []).label == "fail"
+
+
+@pytest.mark.parametrize("text", ["Ocon qualified P17, before any grid penalties.", "Ocon was classified P17 in qualifying.", "He started to lose time in sector 2."])
+def test_qualifying_wording_is_not_a_start_claim(text):
+    assert cl.grid_start_claim(text, []).label == "pass"

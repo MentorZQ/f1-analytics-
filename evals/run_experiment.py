@@ -164,7 +164,7 @@ def build_evaluators():
     names = ["uncertainty_compliance", "number_grounding", "total_consistency", "inference_rate",
              "retrieval_coverage", "answer_coverage",
              "reversed_winner", "self_correction", "wrong_driver_or_session", "numbers_on_right_driver",
-             "completeness", "false_premise", "overclaiming", "team_attribution", "team_ranking", "tyre_claims"]
+             "completeness", "false_premise", "overclaiming", "team_attribution", "team_ranking", "tyre_claims", "grid_start_claim"]
     fns = [code_check(n) for n in names] + [drivers_retrieved, handles_unanswerable, answers_when_answerable,
                                             challenges_false_premise, states_expected_facts, detects_session,
                                             leaked_or_hijacked, concise_when_lookup]

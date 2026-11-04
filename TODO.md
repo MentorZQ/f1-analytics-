@@ -17,7 +17,7 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [x] Q3 entry and like-for-like laps: a top-ten car with no Q3 time still reached Q3; each driver's Q1/Q2/Q3 best is stored; "last into Q3" uses Q2 times; a pair whose best laps come from different sessions also gets the last shared session's gap.
 - [x] Head-to-head sections compare the like-for-like session's laps when the best laps come from different sessions (snapshots store each driver's lap from every Q session; the comparison block says which laps the sections use).
 - [x] Grid "+x to the car ahead" uses one session (both Q3 times, both Q2 times, ...) and says so; cars that went out in different sessions get no gap.
-- [~] Haiku guessing a name before reading the context: prompt line added; down from 1-2 per run to 1 of 66 on v4, not gone.
+- [~] Haiku guessing a name before reading the context: prompt line added, but it still appears on "last into Q3" questions (2 of 3 Haiku runs); Sonnet 4.6 (the site's model) did not do it in 3 of 3. Only matters for measuring on Haiku.
 - [x] Team ranking claims (`team_ranking` check: rank by best car or by average of the cars, from the grid chunk).
 - [ ] Pair slots are the top 4 sections by time gap, so `retrieval_coverage` is now close to true by construction for pair questions; rely on `answer_coverage` instead.
 
@@ -45,3 +45,6 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [ ] Push the `openf1-official-corners` branch and deploy (Render blueprint is in `render.yaml`).
 
 - [ ] Re-run the data-generated set with a new seed (`python -m evals.make_heldout --seed N`, then run_experiment with a new `--dataset` name) whenever the checks or retrieval change materially.
+
+- [ ] Starting grid after penalties is not available from OpenF1 (`starting_grid` repeats the qualifying classification); answers say "qualified Pn, before any grid penalties". Would need another source (the race results page) to give the true grid.
+- [ ] Run the spot-check again on 15 answers from the main 40-question set and the honesty set (more "why" answers, where the checks are weakest).

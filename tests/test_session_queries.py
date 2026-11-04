@@ -236,7 +236,7 @@ def test_the_stored_progression_and_speed_trap_are_parsed_from_the_lap_summary()
 def test_the_prompt_tells_the_model_which_code_a_first_name_means():
     note = rr.driver_key_note("What was Sergio's grid position at Albert Park?")
     assert note == "Names in the question: 'Sergio' means PER (Perez)."
-    assert rr.driver_key_note("Where did Perez qualify?") is None                  # a surname needs no key
+    assert rr.driver_key_note("Where did Perez qualify?") == "Names in the question: 'Perez' means PER (Perez)."   # surnames too: the model missed Bortoleto = BOR
     assert "'Max' means VER" in rr.driver_key_note("Max vs Lewis") and "'Lewis' means HAM" in rr.driver_key_note("Max vs Lewis")
     assert rr.driver_key_note("Who was fastest?") is None
     prompt = rr.format_prompt("What was Sergio's grid position?", [], session_ctx=None)
@@ -440,3 +440,9 @@ def test_grid_position_questions_say_qualified_before_penalties_and_get_one_sent
     result = query.answer_with_sources("What was Ocon's grid position at the Spanish GP?", model="m")
     assert "qualified P17, before any grid penalties" in seen["p"] and "do not say he started from it" in seen["p"]
     assert result["answer"] == "Ocon qualified P17, before any grid penalties."
+
+
+def test_get_through_to_q3_is_a_one_fact_question_but_through_a_corner_is_not():
+    assert query.is_lookup_question("Who was the last driver to get through to Q3 at the Australian GP?")
+    assert not query.is_lookup_question("Who was faster through the first corner, Russell or Hamilton?")
+    assert not query.is_lookup_question("Who carried more speed through T11?")

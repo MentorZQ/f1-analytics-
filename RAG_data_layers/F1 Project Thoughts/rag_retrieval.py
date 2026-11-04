@@ -78,7 +78,7 @@ def driver_key_note(question: str) -> str | None:
             match = re.search(_name_regex(name), question, re.IGNORECASE)
             shown.setdefault(code, match.group(0))
     pairs = [f"'{word}' means {code} ({DRIVER_SURNAMES.get(code, code).title()})"
-             for code, word in shown.items() if word.upper() != code and word.lower() != DRIVER_SURNAMES.get(code)]
+             for code, word in shown.items() if word.upper() != code]
     return ("Names in the question: " + "; ".join(pairs) + ".") if pairs else None
 
 # "Max" is Verstappen, but "max speed" / "max throttle" are not. These words after "max" mean a quantity.

@@ -292,3 +292,26 @@ Prompt extraction (6, one in French), secrets (3), role hijack (3), off-topic (5
 - One-fact questions ("what was X's best lap", "who was last into Q3", "how far apart were X and Y") get an answer-style line, a 300-token cap, and a cut to the first two sentences (three for gap questions). New check `concise_when_lookup` (at most 600 characters and 5 sentences for those question kinds).
 - Data-generated v4 on Haiku, same 66 questions: one-fact answers (51 of them) went from a median of 775 characters (max 2,190) to 162 (max 460); expected facts present 66 / 66 before and after; mean output tokens 449 to 179; median latency 2.5 s to 1.1 s.
 
+### Spot-check of 13 answers (by the user, from the runs above)
+
+| What was checked | Result |
+|---|---|
+| Flagged answers (2) | 2 of 2 flags right (a guessed name then corrected: "Ricciardo... no"; a hijack: "PWNED"); 0 false positives in this sample |
+| Unflagged answers (11) | numbers matched the evidence in every one; 1 answer needed no change; 10 had something the user wanted different |
+| What the checks cannot see | 8 of those 10 were wording or length (hedges about causes and missing braking data, a remark about summing sections, "did not set a Q3 time" for a driver who did not make Q3, extra sentences after the answer, the like-for-like gap not leading); 2 were about correctness: a hedge that contradicted the evidence ("only these four drivers" when the sector chunk states the field-wide fastest sector), and "started from P17" claiming the race grid when the data is the qualifying classification |
+
+Sample of 13, so this shows the checks are not badly wrong on numbers, not a precise error rate. Changes made from it: gap-to-pole is the best lap against the pole lap; instruction-like sentences are removed from the question before the model sees it (`safety.py`); field-wide fastest sectors are in the grid; no remarks about sums or causes; "did not make Q3"; one-fact questions get one to three sentences (new `concise_when_lookup` check); the like-for-like gap leads and the driver who improved (or was slower) in another session is named; "qualified P17, before any grid penalties" for grid-position questions (OpenF1's `starting_grid` is the qualifying classification again, with no penalties, so the final grid is not available), with a new `grid_start_claim` check for "started from P17"; surnames are listed in the name key (the model once failed to connect "Bortoleto" to BOR with BOR in front of it).
+
+### Data-generated set v5 (seed 20261107, 66 questions, Haiku 5.5)
+
+Frozen (commit 4d18f4a) before the first run. Pair and teammate questions now expect the like-for-like gap.
+
+| Run | Expected facts present | Flagged |
+|---|---|---|
+| First run | 66 / 66 (not rerun) | 2: the name-key miss ("Bortoleto not in the context"), and the guess-first habit on "last into Q3" |
+| Final code | 65 / 66 | 2: guess-first again; and my scoring not accepting "got into Q3" (fixed afterwards, with a regression test) |
+
+- Median 1.0 s per question, 178 mean output tokens.
+- The guess-first habit ("The last driver through to Q3 was Bortoleto's teammate... no, checking the context") appeared in 2 of 3 Haiku runs on that question; Sonnet 4.6, the model the site uses, answered it correctly and concisely 3 of 3 times, so it is recorded as a limit of the measuring model.
+- As before, scoring fixes were made after seeing the answers, so v5 is no longer a clean test of the scoring.
+

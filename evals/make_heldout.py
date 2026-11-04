@@ -108,7 +108,7 @@ def _out_in(stage: str) -> str:
 
 STAGE_ALTERNATIVES = {
     "Q3": _any(r"qualified for q3", r"reached q3", r"advanced to q3", r"progressed to q3", r"through to q3", r"made it (?:in)?to q3",
-               r"made q3", r"\bin q3\b"),
+               r"made q3", r"\bin q3\b", r"(?<!not )(?<!n't )\bgot (?:in)?to q3"),
     "Q2": _out_in("Q2"),
     "Q1": _out_in("Q1"),
 }

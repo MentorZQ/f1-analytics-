@@ -13,6 +13,7 @@ these ask "is the answer about the right thing, and does it say the right thing 
   overclaiming             : "clearly" / "definitely" about braking in a section the data could not resolve
   team_attribution         : a driver is named together with the wrong team ("Haas's Hadjar")
   team_ranking             : "the fourth quickest team" must match the ranking of the teams' cars in the grid
+  grid_start_claim         : "started from P17" when the data has only the qualifying classification, not the final grid after penalties
   tyre_claims              : blaming tyre compound or age for a gap when the evidence shows the same tyres (or none)
   self_correction          : "wait, corrected:" - the model changed its mind in the answer text
 
@@ -542,6 +543,22 @@ def tyre_claims(answer: str, sources: list[dict]) -> CheckResult:
     return CheckResult("tyre_claims", "pass", 1.0, "The evidence shows a tyre difference between the drivers.")
 
 
+# ── starting-grid claims ─────────────────────────────────────────────────────
+
+_STARTED = re.compile(r"\bstart(?:ed|s)\s+(?:the (?:race|grand prix|gp)\s+)?(?:from|in|on|at)\s+(?:P\d+|\d+(?:st|nd|rd|th)|pole|the front|the back)\b|"
+                      r"\b(?:lined|lines) up\s+(?:in|on|at)\s+(?:P\d+|\d+(?:st|nd|rd|th))\b|\bstarting (?:grid )?(?:position|slot)\s+(?:was|of)\s+P?\d+", re.I)
+
+
+def grid_start_claim(answer: str, sources: list[dict]) -> CheckResult:
+    """The data is the qualifying classification. 'Started from P17' claims the race grid, which penalties can change."""
+    hits = [m.group(0) for m in _STARTED.finditer(cc._norm(answer))]
+    if hits:
+        return CheckResult("grid_start_claim", "fail", 0.0,
+                           "The answer says where a driver started the race, but the data is the qualifying classification (grid penalties are not in it): "
+                           + ", ".join(repr(h) for h in hits[:3]), hits)
+    return CheckResult("grid_start_claim", "pass", 1.0, "No claim about the race starting position.")
+
+
 def run_all(answer: str, sources: list[dict], deltas: dict | None = None, question: str | None = None,
             session: str | None = None) -> list[CheckResult]:
     return [reversed_winner(answer, sources, deltas),
@@ -551,6 +568,7 @@ def run_all(answer: str, sources: list[dict], deltas: dict | None = None, questi
             team_attribution(answer, sources),
             team_ranking(answer, sources),
             tyre_claims(answer, sources),
+            grid_start_claim(answer, sources),
             completeness(answer, sources, deltas, question),
             false_premise(answer, sources, question),
             overclaiming(answer, sources, question)]

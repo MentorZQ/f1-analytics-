@@ -186,3 +186,11 @@ def test_last_into_q3_is_the_slowest_q2_time_among_the_cars_that_advanced():
     data["snapshot"] = types.SimpleNamespace(events=[])
     qs = [q for q in make(data, 3) if q["kind"] == "data_last_into_q3"]
     assert len(qs) == 1 and qs[0]["expected_drivers"] == ["C01"]
+
+
+def test_got_into_q3_counts_as_the_q3_answer_but_did_not_get_into_q3_does_not():
+    import re as _re
+    alt = mh.STAGE_ALTERNATIVES["Q3"]
+    ok = lambda text: any(_re.search(a[3:], text, _re.I) for a in alt.split("|") if a.startswith("re:"))   # noqa: E731
+    assert ok("Verstappen got into Q3, where he set a best of 1:20.022")
+    assert not ok("He did not get into Q3.") and not ok("He didn't get into Q3.")
