@@ -93,6 +93,10 @@ def grid_text(ctx: dict, session_label: str = "") -> str | None:
     tight = sorted(g for g in tight if g[0] < TIGHT_GAP_S and (not same_session[g[1]] or same_session[g[1]] == same_session[g[2]]))
     if tight:
         lines.append("Cars separated by less than 0.100s in lap time: " + ", ".join(f"{a}/{b} {g:.3f}s" for g, a, b in tight))
+    fastest = ctx.get("fastest_sector") or {}
+    if fastest:
+        lines.append(f"Fastest sector times in the session, over all {len(rows)} drivers: "
+                     + ", ".join(f"sector {n} {t:.3f}s ({code})" for n, (t, code) in sorted(fastest.items())))
     trapped = sorted(((i["speed_trap_kmh"], c) for c, i in rows if i.get("speed_trap_kmh")), reverse=True)
     if trapped:
         top = trapped[:3]
@@ -234,6 +238,7 @@ _TEAM_ADVANTAGE = re.compile(
 _FIELD = re.compile(
     r"\bclose together\b|\bclosely\b|\btight(?:ly)?\b|\bbunched\b|\bspread\b|\bcompress\w*\b|\bgaps?\b|\bwhole field\b|\bthe field\b|"
     r"\bmidfield\b|\bgrid\b|\btop\s*(?:3|three|5|five|10|ten)\b|\bhow many (?:drivers|cars)\b|\bclassification\b|\bpecking order\b|"
+    r"\b(?:fastest|quickest|best|slowest)\s+sector\b|\bsector\s*[123]\b[^.?!]{0,25}\b(?:fastest|quickest|best)\b|"
     r"\bspeed[- ]?trap\b|\btop speed\b|\bhighest speed\b|\bstraight[- ]line speed\b|"
     r"\bq[123]\b|\bknocked out\b|\beliminated\b|\bmade it (?:into|to|through)\b|\bcut ?off\b|\b(?:first|last) (?:car|driver)\b|"
     r"\bdominan\w*\b|\bmargin\b|\bclose(?:ly)? (?:together|matched|fought)\b|\bwho (?:made|got) (?:into )?q[123]\b", re.I)

@@ -329,3 +329,37 @@ def test_cars_from_different_sessions_are_not_listed_as_separated_by_a_tiny_gap(
     ctx = {"drivers": {"AAA": {"lap_time_seconds": 79.994, "qualifying_position": 8, "stage": "Q3", "session_times": {1: 80.5, 2: 80.1, 3: 79.994}},
                        "BBB": {"lap_time_seconds": 79.971, "qualifying_position": 9, "stage": "Q3", "session_times": {1: 80.4, 2: 79.971, 3: 81.2}}}}
     assert "separated by less than" not in sq.grid_text(ctx)
+
+
+# ── gap to pole is the best lap against the pole lap ──
+
+@pytest.mark.parametrize("question,expected", [("What was Nico's gap to pole in qualifying at Melbourne?", True),
+                                               ("How far off pole was Oscar at Monza?", True),
+                                               ("How far behind pole was Lewis?", True),
+                                               ("Why didn't Lewis get pole at the Spanish Grand Prix?", False),
+                                               ("How far apart were Bortoleto and Lindblad?", False)])
+def test_pole_gap_questions_are_recognised(question, expected):
+    assert query.is_pole_gap_question(question) is expected
+
+
+def test_a_pole_gap_question_gets_the_best_lap_gap_not_the_like_for_like_one():
+    ctx = {"pole": "RUS", "drivers": {
+        "RUS": {"lap_time_seconds": 78.518, "qualifying_position": 1, "stage": "Q3", "session_times": {1: 79.507, 2: 78.934, 3: 78.518}},
+        "HUL": {"lap_time_seconds": 80.303, "qualifying_position": 11, "stage": "Q2", "session_times": {1: 81.024, 2: 80.303}}}}
+    deltas = {"driver_a": "RUS", "driver_b": "HUL", "lap_session": None}
+    text = query.lap_comparison_chunk(deltas, ctx, "What was Nico's gap to pole?")["text"]
+    assert "Gap to pole: HUL's best lap 1:20.303 (Q2) against RUS's pole lap 1:18.518 (Q3) is 1.785s. Give this as the gap to pole." in text
+    assert "like-for-like" not in text and "compare the two best laps" in text
+    pair = query.lap_comparison_chunk(deltas, ctx, "How far apart were Russell and Hulkenberg?")["text"]
+    assert "Compare them in Q2" in pair
+
+
+def test_the_field_wide_fastest_sectors_are_in_the_grid():
+    ctx = dict(STAGED, fastest_sector={1: (26.5, "AAA"), 2: (17.284, "BBB")})
+    text = sq.grid_text(ctx)
+    assert "Fastest sector times in the session, over all 5 drivers: sector 1 26.500s (AAA), sector 2 17.284s (BBB)" in text
+
+
+@pytest.mark.parametrize("question", ["Who set the quickest sector 2 time in qualifying at Albert Park?", "Who had the fastest sector 3?"])
+def test_fastest_sector_questions_ask_for_the_grid(question):
+    assert sq.plan(question, [], True)["grid"]
