@@ -113,17 +113,27 @@ def build_evaluators():
         must = (expected or {}).get("must_include") or []
         if not must:
             return {"label": "n/a", "explanation": "no required facts"}
-        text = output.get("answer", "").lower().replace("*", "")
-        missing = [m for m in must if m.lower() not in text]
+        text = output.get("answer", "").lower().replace("*", "").replace(",", "")
+        # "a|b" means either spelling is fine ("1:19.327|79.327", "P10|10th|tenth")
+        missing = [m for m in must if not any(alt.strip().lower() in text for alt in m.split("|"))]
         return {"score": 1 - len(missing) / len(must), "label": "pass" if not missing else "fail",
                 "explanation": "contains all required facts" if not missing else f"missing: {', '.join(missing)}"}
+
+    def detects_session(output, input=None, metadata=None):
+        """When no session is given, the pipeline must work out which circuit the question is about."""
+        expected = (metadata or {}).get("expected_session")
+        if not expected or (input or {}).get("session"):
+            return {"label": "n/a", "explanation": "session was given, or none expected"}
+        got = output.get("session")
+        return {"score": 1.0 if got == expected else 0.0, "label": "pass" if got == expected else "fail",
+                "explanation": f"detected {got}" if got == expected else f"detected {got}, expected {expected}"}
 
     names = ["uncertainty_compliance", "number_grounding", "total_consistency", "inference_rate",
              "retrieval_coverage", "answer_coverage",
              "reversed_winner", "self_correction", "wrong_driver_or_session", "numbers_on_right_driver",
              "completeness", "false_premise", "overclaiming"]
     fns = [code_check(n) for n in names] + [drivers_retrieved, handles_unanswerable, answers_when_answerable,
-                                            challenges_false_premise, states_expected_facts]
+                                            challenges_false_premise, states_expected_facts, detects_session]
     return fns
 
 
@@ -173,7 +183,8 @@ def main() -> None:
             outputs=[{"drivers": q["expected_drivers"], "answerable": q["answerable"],
                       "false_premise": q.get("false_premise", False), "must_include": q.get("must_include", [])}
                      for q in questions],
-            metadata=[{"id": q["id"], "kind": q["kind"], "note": q["note"]} for q in questions],
+            metadata=[{"id": q["id"], "kind": q["kind"], "note": q["note"],
+                       "expected_session": q.get("expected_session")} for q in questions],
             dataset_description="F1 qualifying RAG questions (answerable and unanswerable)",
         )
 

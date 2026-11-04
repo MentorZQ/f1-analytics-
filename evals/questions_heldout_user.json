@@ -1,0 +1,177 @@
+[
+ {
+  "id": "u01",
+  "question": "How quick were the ferraris in Australia",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "team",
+  "expected_drivers": [
+   "LEC",
+   "HAM"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "1:19.327|79.327",
+   "1:19.478|79.478"
+  ],
+  "author": "user",
+  "note": "Ferrari = LEC P4 1:19.327 and HAM P7 1:19.478 (team name, no driver named)"
+ },
+ {
+  "id": "u02",
+  "question": "why was the mercedes pace so dominant in melbourne",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "team",
+  "expected_drivers": [
+   "RUS",
+   "ANT"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "1:18.518|78.518",
+   "1:18.811|78.811"
+  ],
+  "author": "user",
+  "note": "Mercedes 1-2: RUS 1:18.518, ANT 1:18.811 (+0.293); third (HAD) +0.785"
+ },
+ {
+  "id": "u03",
+  "question": "Compare Isack and Max during Aussie quali",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "pair",
+  "expected_drivers": [
+   "HAD",
+   "VER"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "1:19.303|79.303",
+   "red flag"
+  ],
+  "author": "user",
+  "note": "HAD P3 1:19.303; VER set no lap (flying lap interrupted by a red flag, out in Q1). 'Aussie' is not a known alias"
+ },
+ {
+  "id": "u04",
+  "question": "where did each team have an advantage in melbourne",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "open",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "user",
+  "note": "open-ended, aggregate over teams: no auto facts; judge by reading. Must not invent team-level figures"
+ },
+ {
+  "id": "u05",
+  "question": "how did mclaren lock out at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "team",
+  "expected_drivers": [
+   "NOR",
+   "PIA"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "1:19.327|79.327",
+   "1:19.436|79.436",
+   "0.109"
+  ],
+  "author": "user",
+  "note": "NOR P1 1:19.327, PIA P2 1:19.436, gap 0.109"
+ },
+ {
+  "id": "u06",
+  "question": "why was verstappen so bad in monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "loaded",
+  "expected_drivers": [
+   "VER"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "P7|7th|seventh",
+   "0.335"
+  ],
+  "author": "user",
+  "note": "loaded premise ('so bad'): VER P7, 0.335 off pole, ahead of 12 cars; a good answer reports the facts"
+ },
+ {
+  "id": "u07",
+  "question": "why were leclerc and sainz so close at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "pair",
+  "expected_drivers": [
+   "LEC",
+   "SAI"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "0.006"
+  ],
+  "author": "user",
+  "note": "LEC 1:19.461 P4, SAI 1:19.467 P5: 0.006 s apart"
+ },
+ {
+  "id": "u08",
+  "question": "why did leclerc finish so poor in barc",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "single_slow",
+  "expected_drivers": [
+   "LEC"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "P10|10th|tenth"
+  ],
+  "author": "user",
+  "note": "LEC classified P10 although his best lap 1:15.281 is quicker than P8/P9: position vs fastest lap. 'barc' is not a known alias"
+ },
+ {
+  "id": "u09",
+  "question": "why didnt lewis get pole at the spanish grand prix",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "pole",
+  "expected_drivers": [
+   "HAM",
+   "RUS"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "0.064",
+   "Russell"
+  ],
+  "author": "user",
+  "note": "HAM P2, 0.064 behind RUS"
+ },
+ {
+  "id": "u10",
+  "question": "why were many drivers close together in barca",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "open",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "user",
+  "note": "aggregate over the field: ANT P3 and NOR P4 are 0.003 apart, VER 0.021 behind NOR, HAD/PIA within 0.07 more; judge by reading. 'barca' is not a known alias"
+ }
+]

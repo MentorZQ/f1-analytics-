@@ -20,7 +20,7 @@ OUT = {"answer": "Russell was 0.125s faster in T12.", "sources": [{"drivers": ["
 
 def test_every_evaluator_has_its_own_name():
     names = [f.__name__ for f in rx.build_evaluators()]
-    assert len(names) == len(set(names)) == 18
+    assert len(names) == len(set(names)) == 19
 
 
 def test_drivers_retrieved_passes_and_fails():
@@ -147,3 +147,28 @@ def test_a_correction_of_a_false_premise_is_not_penalised_as_answering_the_unans
     ans = {**OUT, "answer": "Alonso did not make Q3: he was eliminated in Q2, so the premise is incorrect."}
     assert by_name()["handles_unanswerable"](ans, {"answerable": False, "false_premise": True})["label"] == "n/a"
     assert by_name()["challenges_false_premise"](ans, {"answerable": False, "false_premise": True})["label"] == "pass"
+
+
+def test_expected_facts_accept_alternative_spellings():
+    ev = by_name()["states_expected_facts"]
+    ans = {**OUT, "answer": "Leclerc was classified **tenth**, with a best lap of 1:15.281."}
+    assert ev(ans, {"must_include": ["P10|10th|tenth", "1:15.281|75.281"]})["label"] == "pass"
+    assert ev(ans, {"must_include": ["P9|9th|ninth"]})["label"] == "fail"
+    big = {**OUT, "answer": "The gap was 1,089 seconds"}
+    assert ev(big, {"must_include": ["1089"]})["label"] == "pass"
+
+
+def test_session_detection_is_judged_only_when_no_session_was_given():
+    ev = by_name()["detects_session"]
+    out = {**OUT, "session": "barcelona"}
+    assert ev(out, input={"question": "q", "session": None}, metadata={"expected_session": "melbourne"})["label"] == "fail"
+    assert ev(out, input={"question": "q", "session": None}, metadata={"expected_session": "barcelona"})["label"] == "pass"
+    assert ev(out, input={"question": "q", "session": "monza"}, metadata={"expected_session": "melbourne"})["label"] == "n/a"
+    assert ev(out, input={"question": "q", "session": None}, metadata={})["label"] == "n/a"
+
+
+def test_heldout_user_questions_are_kept_verbatim_with_no_session_given():
+    qs = json.loads((ROOT / "evals" / "questions_heldout_user.json").read_text())
+    assert len(qs) == 10 and all(q["session"] is None and q["author"] == "user" for q in qs)
+    assert qs[2]["question"] == "Compare Isack and Max during Aussie quali"          # typos and casing untouched
+    assert qs[7]["question"] == "why did leclerc finish so poor in barc"
