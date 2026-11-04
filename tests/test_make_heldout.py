@@ -76,7 +76,8 @@ def synthetic(tmp_path_factory):
     path = tmp_path_factory.mktemp("mh") / "s.npz"
     build_telemetry_chunks({"driver_fastest_laps": fastest, "telemetry": tel}, events,
                            {"year": 2026, "circuit": "Testland", "session": "Qualifying"}, head_to_head_top_n=2, snapshot_path=str(path))
-    drivers = {d: {"time": 80.0 + i * 0.137, "position": p, "team": t, "trap": 300.0 + i} for i, (d, t, p) in enumerate(tss.DRIVERS)}
+    stages = ["Q3", "Q3", "Q2", "Q2", "Q1"]
+    drivers = {d: {"time": 80.0 + i * 0.137, "position": p, "team": t, "trap": 300.0 + i, "stage": stages[i]} for i, (d, t, p) in enumerate(tss.DRIVERS)}
     return {"drivers": drivers, "fastest_sector": {1: (26.1, "AAA")}, "snapshot": snap.load_snapshot(path)}
 
 
@@ -94,8 +95,8 @@ def test_every_generated_question_has_facts_a_correct_answer_must_contain(synthe
     qs = make(synthetic, 7)
     assert qs and all(q["must_include"] and q["expected_drivers"] and q["answerable"] for q in qs)
     kinds = {q["kind"] for q in qs}
-    assert {"data_lap_time", "data_position", "data_gap_to_pole", "data_speed_trap", "data_pair_gap", "data_teammate_gap"} <= kinds
-    assert "data_q3_cutoff" not in kinds                                  # the synthetic grid has fewer than 10 cars
+    assert {"data_lap_time", "data_position", "data_gap_to_pole", "data_speed_trap", "data_pair_gap", "data_teammate_gap", "data_stage"} <= kinds
+    assert "data_q3_cutoff" not in kinds                                  # that family assumed P10 = last into Q3, which the data contradicts
 
 
 def test_generated_gaps_are_computed_from_the_lap_times(synthetic):
@@ -131,3 +132,21 @@ def test_the_committed_corner_questions_are_checkable_from_the_snapshots_alone()
         section = re.search(r"through (\S+(?: \S+)*?) \(turn", q["note"]).group(1)
         winner, gap = mh.section_gap(snapshot, a, b, section)
         assert f"{gap:.3f}" in q["must_include"] and q["note"].endswith(f"{winner} quicker by {gap:.3f}s")
+
+
+# ── the elimination-stage family ──
+
+def test_stage_answers_are_recognised_and_the_wrong_stage_is_not():
+    q3, q2 = mh.STAGE_ALTERNATIVES["Q3"], mh.STAGE_ALTERNATIVES["Q2"]
+    assert matches(q3, "He qualified for Q3 and finished P8.") and matches(q3, "Bottas reached Q3.")
+    assert not matches(q3, "He did not qualify for Q3; he was knocked out in Q2.")
+    assert not matches(q3, "He was eliminated in Q1.")
+    assert matches(q2, "He was eliminated at the end of Q2.") and matches(q2, "Knocked out in Q2.")
+    assert not matches(q2, "He qualified for Q3.")
+
+
+def test_the_stage_family_never_uses_a_p10_assumption():
+    qs = json.loads(FILE.read_text())
+    assert not any(q["kind"] == "data_q3_cutoff" for q in qs)
+    stage = [q for q in qs if q["kind"] == "data_stage"]
+    assert len(stage) == 6 and all("progression" in q["note"] for q in stage)

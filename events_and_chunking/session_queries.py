@@ -45,7 +45,12 @@ def grid_text(ctx: dict, session_label: str = "") -> str | None:
     for code, info in rows:
         t = info["lap_time_seconds"]
         ahead = "" if prev_time is None else f", {t - prev_time:+.3f}s to the car ahead"
-        lines.append(f"  P{info['qualifying_position']} {code} ({info.get('team', '')}) {lap_text(t)}  +{t - pole_time:.3f}s to pole{ahead}")
+        extra = ""
+        if info.get("speed_trap_kmh"):
+            extra += f"; speed trap {info['speed_trap_kmh']:g} km/h"
+        if info.get("stage"):
+            extra += "; reached Q3" if info["stage"] == "Q3" else f"; out in {info['stage']}"
+        lines.append(f"  P{info['qualifying_position']} {code} ({info.get('team', '')}) {lap_text(t)}  +{t - pole_time:.3f}s to pole{ahead}{extra}")
         prev_time = t
     times = sorted(i["lap_time_seconds"] for _, i in rows)
     by_time = sorted(rows, key=lambda x: x[1]["lap_time_seconds"])
@@ -56,6 +61,22 @@ def grid_text(ctx: dict, session_label: str = "") -> str | None:
     tight = sorted(g for g in tight if g[0] < TIGHT_GAP_S)
     if tight:
         lines.append("Cars separated by less than 0.100s in lap time: " + ", ".join(f"{a}/{b} {g:.3f}s" for g, a, b in tight))
+    trapped = sorted(((i["speed_trap_kmh"], c) for c, i in rows if i.get("speed_trap_kmh")), reverse=True)
+    if trapped:
+        top = trapped[:3]
+        lines.append("Highest speed-trap readings: " + ", ".join(f"{c} {v:g} km/h" for v, c in top)
+                     + f" (of {len(trapped)} drivers)")
+    staged = {c: i.get("stage") for c, i in rows}
+    if any(staged.values()):
+        q3 = [c for c, st in staged.items() if st == "Q3"]
+        q2 = [c for c, st in staged.items() if st == "Q2"]
+        q1 = [c for c, st in staged.items() if st == "Q1"]
+        parts = [f"{len(q3)} reached Q3 (last of them: {q3[-1]})"] if q3 else []
+        if q2:
+            parts.append(f"{len(q2)} went out in Q2 (the best of them: {q2[0]})")
+        if q1:
+            parts.append(f"{len(q1)} went out in Q1")
+        lines.append("Qualifying progression, from each driver's record: " + "; ".join(parts))
     out_of_order = [c for (c, i), (_, j) in zip(rows, rows[1:]) if i["lap_time_seconds"] > j["lap_time_seconds"]]
     if out_of_order:
         lines.append("Classification order differs from best-lap order around: " + ", ".join(out_of_order))
@@ -169,6 +190,8 @@ _TEAM_ADVANTAGE = re.compile(
 _FIELD = re.compile(
     r"\bclose together\b|\bclosely\b|\btight(?:ly)?\b|\bbunched\b|\bspread\b|\bcompress\w*\b|\bgaps?\b|\bwhole field\b|\bthe field\b|"
     r"\bmidfield\b|\bgrid\b|\btop\s*(?:3|three|5|five|10|ten)\b|\bhow many (?:drivers|cars)\b|\bclassification\b|\bpecking order\b|"
+    r"\bspeed[- ]?trap\b|\btop speed\b|\bhighest speed\b|\bstraight[- ]line speed\b|"
+    r"\bq[123]\b|\bknocked out\b|\beliminated\b|\bmade it (?:into|to|through)\b|\bcut ?off\b|\b(?:first|last) (?:car|driver)\b|"
     r"\bdominan\w*\b|\bmargin\b|\bclose(?:ly)? (?:together|matched|fought)\b|\bwho (?:made|got) (?:into )?q[123]\b", re.I)
 _SECTION_BEST = re.compile(r"\b(?:fastest|quickest|best|slowest|worst|faster|quicker|better)\b", re.I)
 _CORNER_REF = re.compile(r"(?<![\w-])T(\d+)\b|\bturn\s+(\d+)\b", re.I)

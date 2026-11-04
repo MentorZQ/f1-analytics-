@@ -208,3 +208,22 @@ def test_racing_bulls_and_red_bull_are_not_confused():
     ev = [{"section": None, "text": "  P8 LAW (Racing Bulls) 1:19.994\n  P3 HAD (Red Bull Racing) 1:19.303"}]
     assert cl.team_attribution("Racing Bulls' Lawson and Red Bull's Hadjar", ev).label == "pass"
     assert cl.team_attribution("Red Bull's Lawson", ev).label == "fail"
+
+
+# ── regressions from the data-generated held-out run ──
+
+def test_took_longer_means_slower_not_winner():
+    deltas = {"driver_a": "RUS", "driver_b": "ALB", "lap_gap_s": 2.4, "sections": [{"section": "T4-T5", "gain_s": 0.461, "start_m": 1138.0}]}
+    ok = "- **T4-T5 section:** Albon took 0.461s longer (6.957s vs 6.496s)."
+    bad = "- **T4-T5 section:** Russell took 0.461s longer (6.957s vs 6.496s)."
+    assert cl.reversed_winner(ok, [], deltas).label == "pass"
+    assert cl.reversed_winner(bad, [], deltas).label == "fail"
+
+
+def test_a_speed_in_a_one_driver_chunk_belongs_to_that_driver():
+    pair = {"section": "T2-T3", "drivers": ["VER", "PER"], "text": "Top speed: VER 346.0 km/h | PER 340.0 km/h"}
+    summary = {"section": None, "drivers": ["PER"], "text": "Speed trap (speed trap): 346.0 km/h\nSpeed trap 1: 324.0 km/h"}
+    ans = "The speed traps show VER ahead (326/338/347 km/h against PER's 324/337/346 km/h)."
+    assert cl.numbers_on_right_driver(ans, [pair, summary]).label in {"pass", "n/a"}
+    swapped = "PER reached 346 km/h in the trap."
+    assert cl.numbers_on_right_driver(swapped, [pair]).label == "fail"                      # without the summary it is still caught

@@ -57,6 +57,30 @@ _DRIVER_NAMES: dict[str, str] = {
 
 _CODES = set(_DRIVER_NAMES.values())
 
+# One surname per driver (the form used in answers and checks).
+DRIVER_SURNAMES = {
+    "RUS": "russell", "HAM": "hamilton", "ANT": "antonelli", "NOR": "norris", "PIA": "piastri", "VER": "verstappen",
+    "LEC": "leclerc", "SAI": "sainz", "HAD": "hadjar", "LAW": "lawson", "HUL": "hulkenberg", "BOR": "bortoleto",
+    "COL": "colapinto", "GAS": "gasly", "BEA": "bearman", "OCO": "ocon", "ALB": "albon", "PER": "perez",
+    "BOT": "bottas", "STR": "stroll", "ALO": "alonso", "LIN": "lindblad", "TSU": "tsunoda", "RIC": "ricciardo",
+    "MAG": "magnussen", "ZHO": "zhou", "DOO": "doohan",
+}
+
+
+def driver_key_note(question: str) -> str | None:
+    """
+    "In this question 'Sergio' means PER (Perez)". Chunks and grids name drivers by three-letter code, so a question that
+    uses a first name or nickname left the model unable to connect the two ("no information about a driver named Sergio").
+    """
+    shown = {}
+    for name, code in _DRIVER_NAMES.items():
+        if re.search(_name_regex(name), question, re.IGNORECASE):
+            match = re.search(_name_regex(name), question, re.IGNORECASE)
+            shown.setdefault(code, match.group(0))
+    pairs = [f"'{word}' means {code} ({DRIVER_SURNAMES.get(code, code).title()})"
+             for code, word in shown.items() if word.upper() != code and word.lower() != DRIVER_SURNAMES.get(code)]
+    return ("Names in the question: " + "; ".join(pairs) + ".") if pairs else None
+
 # "Max" is Verstappen, but "max speed" / "max throttle" are not. These words after "max" mean a quantity.
 _MAX_QUANTITY = (r"(?!\s+(?:speed|throttle|brake|braking|rpm|gear|power|downforce|temp\w*|deceleration|acceleration|"
                  r"lateral|g\b|attack|boost|energy|deployment|velocity|pressure|load|lap|laps|time|times|out))")
@@ -693,6 +717,10 @@ def format_prompt(
                 f"and cannot be compared: {missing_names}. "
                 f"They may not have set a lap time (e.g. due to a red flag, mechanical issue, or DNS)."
             )
+
+    key = driver_key_note(question)
+    if key:
+        context_blocks.append(f"[NOTE] {key}")
 
     context = "\n\n".join(context_blocks) if context_blocks else "No context retrieved."
 

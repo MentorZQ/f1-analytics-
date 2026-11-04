@@ -10,7 +10,12 @@ A fixed seed makes the choice of drivers, pairs, corners and wording reproducibl
 file and committed BEFORE the first run; they are for measuring, not for tuning against.
 
 Question families (per session): best lap, grid position, gap to pole, speed-trap leader, fastest sector, gap between
-two drivers, who was quicker through a corner, gap between teammates, last driver into Q3.
+two drivers, who was quicker through a corner, gap between teammates, and how far a driver got in qualifying.
+
+History: the first set (seed 20261103) asked "which driver was last into Q3?" and took P10 as the answer. The stored
+progression says only 9 cars reached Q3 at Barcelona and Melbourne (the classified P10 car is recorded as out in Q2), so
+two of those three expected answers were wrong. The family now asks about one named driver and reads the stored
+progression text, which has no such ambiguity.
 """
 
 from __future__ import annotations
@@ -35,7 +40,7 @@ from events_and_chunking import session_snapshot as snap  # noqa: E402
 from rag_retrieval import _DRIVER_NAMES  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "questions_heldout_data.json"
-SEED = 20261103
+SEED = 20261104        # 20261103 was the first set (v1); its "last into Q3" family assumed P10 = last into Q3, which the data contradicts
 
 SESSIONS = {
     "monza": ("f1_qualifying_2024_monza", ["Monza", "the Italian GP", "the Italian Grand Prix"]),
@@ -88,6 +93,25 @@ def name_alternatives(code: str) -> str:
     return "|".join(f"re:\\b{re.escape(n)}\\b" for n in dict.fromkeys(n for n in names if n))
 
 
+def _any(*patterns: str) -> str:
+    """Alternatives for must_include: each is its own regex (the evaluator splits on '|', so no '|' inside a pattern)."""
+    return "|".join(f"re:{p}" for p in patterns)
+
+
+def _out_in(stage: str) -> str:
+    q = stage.lower()
+    return _any(rf"eliminated[^.]{{0,25}}\b{q}\b", rf"knocked out[^.]{{0,25}}\b{q}\b", rf"dropped out[^.]{{0,25}}\b{q}\b",
+                rf"\bout in {q}\b", rf"\bend of {q}\b", rf"\b{q} elimination\b", rf"\b{q} exit\b")
+
+
+STAGE_ALTERNATIVES = {
+    "Q3": _any(r"qualified for q3", r"reached q3", r"advanced to q3", r"progressed to q3", r"through to q3", r"made it (?:in)?to q3",
+               r"made q3", r"\bin q3\b"),
+    "Q2": _out_in("Q2"),
+    "Q1": _out_in("Q1"),
+}
+
+
 def gap_text(value: float) -> str:
     return f"{abs(value):.3f}"
 
@@ -100,8 +124,11 @@ def load_session(client, collection: str, snapshot_path: Path) -> dict:
     summaries = col.get(where={"chunk_type": "driver_lap_summary"}, include=["documents", "metadatas"])
     for doc, meta in zip(summaries["documents"], summaries["metadatas"]):
         trap = re.search(r"Speed trap \(speed trap\):\s*([\d.]+)\s*km/h", doc)
+        progression = re.search(r"Qualifying progression:\s*([^\n]+)", doc)
+        line = progression.group(1) if progression else ""
+        stage = "Q3" if "Qualified for Q3" in line else (f"Q{m.group(1)}" if (m := re.search(r"Eliminated at end of Q([12])", line)) else None)
         drivers[meta["driver"]] = {"time": meta["lap_time_seconds"], "position": int(meta["qualifying_position"]),
-                                   "team": meta.get("team", ""), "trap": float(trap.group(1)) if trap else None}
+                                   "team": meta.get("team", ""), "trap": float(trap.group(1)) if trap else None, "stage": stage}
     fastest_sector = {}
     for doc in col.get(where={"chunk_type": "driver_sector"}, include=["documents"])["documents"]:
         m = re.search(r"Fastest sector (\d) in session:\s*([\d.]+)s \((\w{3})\)", doc)
@@ -217,9 +244,13 @@ def build(session_key: str, data: dict, rng: random.Random, next_id) -> list[dic
         gap = drivers[a]["time"] - drivers[b]["time"]
         add("data_teammate_gap", f"How far apart were the two {team} drivers in qualifying at {circuit()}?", [a, b], [gap_text(gap)],
             f"{a} {drivers[a]['time']:.3f}s, {b} {drivers[b]['time']:.3f}s")
-    if len(by_pos) >= 10:
-        q3_last = by_pos[9]
-        add("data_q3_cutoff", f"Which driver was last into Q3 at {circuit()}?", [q3_last], [name_alternatives(q3_last)], f"P10 = {q3_last}")
+    staged = [c for c in codes if drivers[c].get("stage")]
+    for c in pick(2, exclude=[x for x in codes if x not in staged]):
+        stage = drivers[c]["stage"]
+        template = rng.choice(["How far did {d} get in qualifying at {c}: out in Q1, out in Q2, or into Q3?",
+                               "Did {d} make it into Q3 at {c}, or was {d} knocked out earlier?"])
+        add("data_stage", template.format(d=display(c, rng), c=circuit()), [c], [STAGE_ALTERNATIVES[stage]],
+            f"{c} progression: {stage if stage != 'Q3' else 'qualified for Q3'} (driver lap summary)")
     return questions
 
 

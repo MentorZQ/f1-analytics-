@@ -129,11 +129,11 @@ def claimed_winner_for_time(unit: str, value: float, a: str, b: str) -> str | No
             if subject:
                 verdicts.add(subject if cue.group(1) != "slower" else other[subject])
                 continue
-        cue = re.match(r"\s*(faster|quicker|slower)\b", after)                                             # "0.035s quicker"
+        cue = re.match(r"\s*(faster|quicker|slower|longer)\b", after)                                      # "0.035s quicker", "took 0.46s longer"
         if cue:
             subject = last_driver(before)
             if subject:
-                verdicts.add(subject if cue.group(1) != "slower" else other[subject])
+                verdicts.add(subject if cue.group(1) not in {"slower", "longer"} else other[subject])
                 continue
         to = re.match(r"\s*\)?\s*(?:to|for)\s+", after)                                                     # "+0.125s to RUS"
         if to:
@@ -217,6 +217,11 @@ def driver_speed_values(sources: list[dict]) -> dict[str, set[float]]:
     for s in sources:
         for code, v in _CODE_SPEED.findall(s.get("text") or ""):
             values.setdefault(code, set()).add(round(float(v), 1))
+        owners = s.get("drivers") or []
+        if len(owners) == 1:                    # a one-driver chunk (lap summary: speed traps, ...): every speed in it is his
+            for v, unit in cc.numbers_with_units(s.get("text") or ""):
+                if unit == "km/h":
+                    values.setdefault(owners[0], set()).add(round(v, 1))
     return values
 
 

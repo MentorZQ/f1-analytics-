@@ -190,3 +190,54 @@ def test_pinned_sections_come_first_and_the_rest_follow_by_time_gap():
     assert ids[0] == "T9"
     rest = [abs(c["metadata"]["time_delta_s"]) for c in top[1:]]
     assert rest == sorted(rest, reverse=True)
+
+
+# ── speed traps, qualifying stage, names ──
+
+STAGED = {"drivers": {
+    "AAA": {"lap_time_seconds": 80.0, "qualifying_position": 1, "team": "Alpha", "speed_trap_kmh": 340.0, "stage": "Q3"},
+    "BBB": {"lap_time_seconds": 80.1, "qualifying_position": 2, "team": "Alpha", "speed_trap_kmh": 353.0, "stage": "Q3"},
+    "CCC": {"lap_time_seconds": 80.5, "qualifying_position": 3, "team": "Beta", "speed_trap_kmh": 350.0, "stage": "Q3"},
+    "DDD": {"lap_time_seconds": 81.0, "qualifying_position": 4, "team": "Beta", "speed_trap_kmh": 345.0, "stage": "Q2"},
+    "EEE": {"lap_time_seconds": 82.0, "qualifying_position": 5, "team": "Gamma", "speed_trap_kmh": 330.0, "stage": "Q1"}}}
+
+
+def test_the_grid_shows_each_cars_speed_trap_and_stage():
+    text = sq.grid_text(STAGED)
+    assert "P2 BBB (Alpha) 1:20.100  +0.100s to pole, +0.100s to the car ahead; speed trap 353 km/h; reached Q3" in text
+    assert "P4 DDD (Beta)" in text and "; out in Q2" in text and "; out in Q1" in text
+
+
+def test_the_grid_states_the_highest_speed_traps_and_the_qualifying_progression():
+    text = sq.grid_text(STAGED)
+    assert "Highest speed-trap readings: BBB 353 km/h, CCC 350 km/h, DDD 345 km/h (of 5 drivers)" in text
+    assert "3 reached Q3 (last of them: CCC)" in text and "1 went out in Q2 (the best of them: DDD)" in text and "1 went out in Q1" in text
+
+
+def test_a_grid_without_those_fields_is_unchanged():
+    text = sq.grid_text(CTX)
+    assert "speed trap" not in text and "Qualifying progression" not in text
+
+
+@pytest.mark.parametrize("question", ["Who recorded the highest speed trap reading?", "which driver was last into Q3", "who was eliminated in Q1",
+                                      "what was the top speed of the field", "who was knocked out in Q2"])
+def test_field_wide_lookups_ask_for_the_grid(question):
+    assert sq.plan(question, [], True)["grid"]
+
+
+def test_the_stored_progression_and_speed_trap_are_parsed_from_the_lap_summary():
+    doc = ("Qualifying position: P10\nQualifying progression: Qualified for Q3\nSpeed trap (speed trap): 346.0 km/h\n")
+    assert query.parse_stage(doc) == "Q3" and query.parse_speed_trap(doc) == 346.0
+    assert query.parse_stage("Qualifying progression: Eliminated at end of Q2 — did not qualify for Q3") == "Q2"
+    assert query.parse_stage("Qualifying progression: Eliminated at end of Q1 — did not reach Q2 or Q3") == "Q1"
+    assert query.parse_stage("no progression here") is None and query.parse_speed_trap("nothing") is None
+
+
+def test_the_prompt_tells_the_model_which_code_a_first_name_means():
+    note = rr.driver_key_note("What was Sergio's grid position at Albert Park?")
+    assert note == "Names in the question: 'Sergio' means PER (Perez)."
+    assert rr.driver_key_note("Where did Perez qualify?") is None                  # a surname needs no key
+    assert "'Max' means VER" in rr.driver_key_note("Max vs Lewis") and "'Lewis' means HAM" in rr.driver_key_note("Max vs Lewis")
+    assert rr.driver_key_note("Who was fastest?") is None
+    prompt = rr.format_prompt("What was Sergio's grid position?", [], session_ctx=None)
+    assert "[NOTE] Names in the question: 'Sergio' means PER (Perez)." in prompt

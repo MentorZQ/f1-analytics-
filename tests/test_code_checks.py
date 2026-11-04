@@ -363,3 +363,9 @@ def test_a_gain_written_beside_a_named_straight_or_corner_is_not_a_total():
                                                {"section": "T8-T9-T10", "gain_s": -0.077, "start_m": 3752.0}]}
     ans = "PIA lost time on the main straight (0.103s), the T8-T10 complex (0.077s) and the finish straight (0.101s), which together exceed the gap when combined."
     assert cc.total_consistency(ans, [], deltas).label in {"pass", "n/a"}
+
+
+def test_a_sentence_that_says_its_figures_are_not_a_total_is_not_judged_as_one():
+    ans = SIX_ANSWER + "The sectional deltas (0.333s + 0.346s + 0.320s + 0.248s) are not a total for the lap, and cannot be reconciled with the 0.519s gap."
+    assert cc.total_consistency(ans, [], SIX).label in {"pass", "n/a"}
+    assert cc.total_consistency(SIX_ANSWER + "Net advantage across these six sections: +0.122s.", [], SIX).label == "fail"      # still caught

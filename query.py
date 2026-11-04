@@ -74,20 +74,40 @@ def detect_session(question: str) -> str:
 
 # ── Session context ───────────────────────────────────────────────────────────
 
+def parse_speed_trap(summary: str) -> float | None:
+    """The speed-trap reading on the driver's best lap, from the lap summary text."""
+    m = re.search(r"Speed trap \(speed trap\):\s*([\d.]+)\s*km/h", summary or "")
+    return float(m.group(1)) if m else None
+
+
+def parse_stage(summary: str) -> str | None:
+    """Last qualifying session the driver reached ('Q1' / 'Q2' / 'Q3'), from 'Qualifying progression: ...'."""
+    m = re.search(r"Qualifying progression:\s*([^\n]+)", summary or "")
+    if not m:
+        return None
+    line = m.group(1)
+    if "Qualified for Q3" in line:
+        return "Q3"
+    out = re.search(r"Eliminated at end of Q([12])", line)
+    return f"Q{out.group(1)}" if out else None
+
+
 def load_session_context(collection) -> dict:
     """Build session context from driver_lap_summary chunks stored in the collection."""
     results = collection.get(
         where={"chunk_type": "driver_lap_summary"},
-        include=["metadatas"],
+        include=["metadatas", "documents"],
     )
     drivers = {}
-    for m in results["metadatas"]:
+    for m, doc in zip(results["metadatas"], results["documents"]):
         if "driver" not in m:
             continue
         drivers[m["driver"]] = {
             "lap_time_seconds":    m.get("lap_time_seconds"),
             "qualifying_position": m.get("qualifying_position"),
             "team":                m.get("team", ""),
+            "speed_trap_kmh":      parse_speed_trap(doc),
+            "stage":               parse_stage(doc),
         }
 
     standings = sorted(drivers.items(), key=lambda x: x[1]["qualifying_position"] or 99)

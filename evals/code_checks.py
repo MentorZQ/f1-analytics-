@@ -19,7 +19,15 @@ from __future__ import annotations
 
 import itertools
 import re
+import sys
+from pathlib import Path
 from dataclasses import dataclass, field
+
+
+_RAG = Path(__file__).resolve().parent.parent / "RAG_data_layers" / "F1 Project Thoughts"
+if str(_RAG) not in sys.path:
+    sys.path.insert(0, str(_RAG))
+from rag_retrieval import DRIVER_SURNAMES  # noqa: E402
 
 
 @dataclass
@@ -159,13 +167,7 @@ def _claim_belongs_to(sentence: str, section_id: str, default_refs: list[str] | 
     return False
 
 
-SURNAMES = {
-    "RUS": "russell", "HAM": "hamilton", "ANT": "antonelli", "NOR": "norris", "PIA": "piastri", "VER": "verstappen",
-    "LEC": "leclerc", "SAI": "sainz", "HAD": "hadjar", "LAW": "lawson", "HUL": "hulkenberg", "BOR": "bortoleto",
-    "COL": "colapinto", "GAS": "gasly", "BEA": "bearman", "OCO": "ocon", "ALB": "albon", "PER": "perez",
-    "BOT": "bottas", "STR": "stroll", "ALO": "alonso", "LIN": "lindblad", "TSU": "tsunoda", "RIC": "ricciardo",
-    "MAG": "magnussen", "ZHO": "zhou",
-}
+SURNAMES = DRIVER_SURNAMES
 
 
 def _names_driver(text: str, code: str) -> bool:
@@ -355,6 +357,10 @@ def total_consistency(answer: str, sources: list[dict], deltas: dict | None = No
             if abs(sum(terms) - float(arithmetic.group(2))) > TOL["s"] * len(terms):
                 wrong_sums.append({"sentence": sent.strip()[:200], "terms_sum": round(sum(terms), 3), "stated": float(arithmetic.group(2))})
             continue
+        if re.search(r"\bnot (?:a |the )?(?:full |complete )?total\b|\bdo(?:es)? not (?:add|sum)\b|\bcannot be reconciled\b|\bnot a complete accounting\b", sent, re.I):
+            continue                                       # the answer itself says these figures are not a total
+        if re.search(r"\d\.\d+\s*s?\s*\+\s*\d\.\d+", sent):
+            continue                                       # a sum written out without a result is a list of terms, not a claimed total
         if re.search(r"\bsectors?\b", sent, re.I):         # sector figures are not in the section list this check recomputes from
             continue
         strong = bool(_STRONG_TOTAL.search(sent))
