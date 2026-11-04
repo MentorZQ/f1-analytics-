@@ -313,3 +313,27 @@ def test_api_docs_are_not_exposed(client):
 def test_cli_answer_still_returns_plain_text(llm_calls):
     assert query_module.answer(QUESTION, "barcelona") == "A grounded answer."
     assert query_module.answer(QUESTION, "silverstone").startswith("Unknown session")
+
+
+def test_haiku_is_called_with_thinking_disabled(monkeypatch):
+    """Haiku 5.5 thinks by default and the thinking consumes the whole token budget, truncating answers."""
+    import types
+    captured = {}
+
+    class FakeMessages:
+        def create(self, **kwargs):
+            captured.update(kwargs)
+            return types.SimpleNamespace(content=[types.SimpleNamespace(type="text", text="ok")],
+                                         usage=types.SimpleNamespace(input_tokens=1, output_tokens=1))
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            self.messages = FakeMessages()
+
+    monkeypatch.setattr(anthropic, "Anthropic", FakeClient)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    query_module.call_llm("prompt", model="claude-haiku-5-5")
+    assert captured["thinking"] == {"type": "disabled"}
+    captured.clear()
+    query_module.call_llm("prompt", model="claude-sonnet-4-6")
+    assert "thinking" not in captured

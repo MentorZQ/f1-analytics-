@@ -1,4 +1,11 @@
 {
-  "_note": "USD per million tokens. Only prices taken from Anthropic's published model documentation are listed; a model with no entry reports tokens and latency but no cost. Add an entry to enable cost for another model.",
-  "claude-sonnet-5-5": {"input_per_mtok": 2.0, "output_per_mtok": 10.0}
+  "_note": "USD per million tokens. Only prices taken from Anthropic's published model documentation are listed; a model with no entry reports tokens and latency but no cost. Add an entry to enable cost for another model. Haiku 5.5 is the documented rate for prompts of 100K tokens or fewer.",
+  "claude-sonnet-5-5": {
+    "input_per_mtok": 2.0,
+    "output_per_mtok": 10.0
+  },
+  "claude-haiku-5-5": {
+    "input_per_mtok": 0.1,
+    "output_per_mtok": 0.5
+  }
 }

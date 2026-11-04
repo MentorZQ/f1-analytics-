@@ -147,11 +147,17 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None 
         "Do not attribute differences to car or engine characteristics (power unit, aero, downforce): the data cannot show them."
     )
 
+    extra = {}
+    # Haiku 5.5 thinks by default, and the thinking eats the 1024-token budget (measured: answers cut to ~380 characters),
+    # so it answers without thinking. F1_DISABLE_THINKING=1 does the same for any other model.
+    if model.startswith("claude-haiku-5") or os.environ.get("F1_DISABLE_THINKING") == "1":
+        extra["thinking"] = {"type": "disabled"}
     message = client.messages.create(
         model=model,
         max_tokens=1024,
         system=system,
         messages=[{"role": "user", "content": prompt}],
+        **extra,
     )
     usage = getattr(message, "usage", None)
     _LLM_USAGE.set({
