@@ -35,6 +35,7 @@ def build_all_chunks(
     session_info: dict,
     head_to_head_top_n: int = 5,
     verbose: bool = True,
+    snapshot_path: str | None = None,
 ) -> list[Chunk]:
     """
     Run the full chunking pipeline for one qualifying session.
@@ -120,6 +121,7 @@ def build_all_chunks(
             events,
             session_info,
             head_to_head_top_n=head_to_head_top_n,
+            snapshot_path=snapshot_path,
         )
         all_chunks += tel_chunks
         by_type = {}

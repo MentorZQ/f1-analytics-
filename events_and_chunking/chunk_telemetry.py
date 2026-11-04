@@ -911,11 +911,57 @@ def head_to_head_pairs(fastest: pd.DataFrame, top_n: int) -> list[tuple]:
     return pairs
 
 
+def head_to_head_chunks_for_pair(
+    row_a: pd.Series,
+    row_b: pd.Series,
+    tel_a: Optional[pd.DataFrame],
+    tel_b: Optional[pd.DataFrame],
+    events: list[dict],
+    session_info: dict,
+) -> list[Chunk]:
+    """
+    Every head-to-head section chunk for one pair of drivers, in section order.
+
+    Used both when the store is built and, from the saved session snapshot, when a question asks about a pair:
+    the same code produces the same text either way.
+    """
+    if tel_a is None or tel_b is None:
+        return []
+    if "Distance" not in tel_a.columns or "Distance" not in tel_b.columns:
+        return []
+
+    out: list[Chunk] = []
+    for event in events:
+        ev_tel_a = get_event_telemetry(tel_a, event)
+        ev_tel_b = get_event_telemetry(tel_b, event)
+        if ev_tel_a.empty or ev_tel_b.empty:
+            continue
+
+        # Compute section time via linear interpolation at exact boundary
+        # distances on the full-lap telemetry — not first/last sample.
+        t_start_a = _time_at_distance(tel_a, event["dist_start"])
+        t_end_a   = _time_at_distance(tel_a, event["dist_end"])
+        t_start_b = _time_at_distance(tel_b, event["dist_start"])
+        t_end_b   = _time_at_distance(tel_b, event["dist_end"])
+
+        time_a_s = (t_end_a - t_start_a) if t_start_a is not None and t_end_a is not None else None
+        time_b_s = (t_end_b - t_start_b) if t_start_b is not None and t_end_b is not None else None
+
+        c = chunk_head_to_head_event(
+            row_a, row_b, ev_tel_a, ev_tel_b, event, session_info,
+            time_a_s=time_a_s, time_b_s=time_b_s,
+        )
+        if c:
+            out.append(c)
+    return out
+
+
 def build_telemetry_chunks(
     fastf1_data: dict,
     events: list[dict],
     session_info: dict,
     head_to_head_top_n: int = 5,
+    snapshot_path: Optional[str] = None,
 ) -> list[Chunk]:
     """
     Main entry point. Produces all telemetry event chunks for a session.
@@ -925,6 +971,7 @@ def build_telemetry_chunks(
         events:             output of detect_circuit_events()
         session_info:       session_info dict (year, circuit, etc.)
         head_to_head_top_n: generate H2H event chunks for top N + all teammates
+        snapshot_path:      if given, save the per-driver lap telemetry and sections here (see session_snapshot)
 
     Returns:
         [
@@ -953,6 +1000,10 @@ def build_telemetry_chunks(
     circuit = session_info.get("circuit", "")
     events = relabel_events(events, circuit)
 
+    if snapshot_path:                                  # keep what is needed to rebuild any pair's sections on demand
+        from events_and_chunking.session_snapshot import save_snapshot
+        save_snapshot(snapshot_path, fastest, telemetry, events, session_info)
+
     # --- Per-driver event chunks ---
     for _, row in fastest.iterrows():
         driver = row["Driver"]
@@ -977,35 +1028,8 @@ def build_telemetry_chunks(
     all_pairs = head_to_head_pairs(fastest, head_to_head_top_n)
 
     for row_a, row_b in all_pairs:
-        tel_a = telemetry.get(row_a["Driver"])
-        tel_b = telemetry.get(row_b["Driver"])
-        if tel_a is None or tel_b is None:
-            continue
-        if "Distance" not in tel_a.columns or "Distance" not in tel_b.columns:
-            continue
-
-        for event in events:
-            ev_tel_a = get_event_telemetry(tel_a, event)
-            ev_tel_b = get_event_telemetry(tel_b, event)
-            if ev_tel_a.empty or ev_tel_b.empty:
-                continue
-
-            # Compute section time via linear interpolation at exact boundary
-            # distances on the full-lap telemetry — not first/last sample.
-            t_start_a = _time_at_distance(tel_a, event["dist_start"])
-            t_end_a   = _time_at_distance(tel_a, event["dist_end"])
-            t_start_b = _time_at_distance(tel_b, event["dist_start"])
-            t_end_b   = _time_at_distance(tel_b, event["dist_end"])
-
-            time_a_s = (t_end_a - t_start_a) if t_start_a is not None and t_end_a is not None else None
-            time_b_s = (t_end_b - t_start_b) if t_start_b is not None and t_end_b is not None else None
-
-            c = chunk_head_to_head_event(
-                row_a, row_b, ev_tel_a, ev_tel_b, event, session_info,
-                time_a_s=time_a_s, time_b_s=time_b_s,
-            )
-            if c:
-                chunks.append(c)
+        chunks.extend(head_to_head_chunks_for_pair(
+            row_a, row_b, telemetry.get(row_a["Driver"]), telemetry.get(row_b["Driver"]), events, session_info))
 
     # --- Pace evolution chunks ---
     if not all_laps.empty:

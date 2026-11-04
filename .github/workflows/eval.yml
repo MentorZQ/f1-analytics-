@@ -29,7 +29,7 @@ jobs:
       - name: Run web API tests
         run: |
           pip install pytest httpx
-          pytest tests/test_server.py tests/test_openf1_loader.py tests/test_detect_events_official.py tests/test_chunk_braking.py tests/test_code_checks.py tests/test_experiment_evaluators.py tests/test_retrieval_fixes.py tests/test_head_to_head_pairs.py tests/test_consistency.py tests/test_phase0.py tests/test_claim_checks.py
+          pytest tests/test_server.py tests/test_openf1_loader.py tests/test_detect_events_official.py tests/test_chunk_braking.py tests/test_code_checks.py tests/test_experiment_evaluators.py tests/test_retrieval_fixes.py tests/test_head_to_head_pairs.py tests/test_consistency.py tests/test_phase0.py tests/test_session_snapshot.py tests/test_claim_checks.py
 
   docker-build:
     runs-on: ubuntu-latest

@@ -109,7 +109,14 @@ def load_session_data(cfg: dict, track: dict, source: str) -> dict:
     return load_qualifying_session(year=cfg["year"], circuit=cfg["circuit"])
 
 
-def ingest_session(client: chromadb.PersistentClient, cfg: dict, source: str = "openf1") -> None:
+SNAPSHOT_DIR = ROOT / "RAG_data_layers/session_snapshots"
+
+
+def collection_name_for(cfg: dict) -> str:
+    return f"f1_qualifying_{cfg['year']}_{cfg['circuit'].lower().replace(' ', '_')}"
+
+
+def ingest_session(client, cfg: dict, source: str = "openf1", snapshots_only: bool = False) -> None:
     year    = cfg["year"]
     circuit = cfg["circuit"]
     short   = cfg["short"]
@@ -131,7 +138,11 @@ def ingest_session(client: chromadb.PersistentClient, cfg: dict, source: str = "
         session_info=session_data["session_info"],
         head_to_head_top_n=cfg.get("h2h_top_n", 5),
         verbose=True,
+        snapshot_path=str(SNAPSHOT_DIR / f"{collection_name_for(cfg)}.npz"),
     )
+    if snapshots_only:                       # snapshot written; skip the slow embedding and the store
+        print(f"\nSnapshot written for {cfg['circuit']} ({len(chunks)} chunks built, none stored).")
+        return
 
     warnings = validate_chunks(chunks)
     if warnings:
@@ -140,7 +151,7 @@ def ingest_session(client: chromadb.PersistentClient, cfg: dict, source: str = "
             print(f"  {w}")
 
     # (Re)create Chroma collection
-    collection_name = f"f1_qualifying_{year}_{circuit.lower().replace(' ', '_')}"
+    collection_name = collection_name_for(cfg)
     existing = [c.name for c in client.list_collections()]
     if collection_name in existing:
         print(f"\nDropping existing collection: {collection_name}")
@@ -182,12 +193,19 @@ def main() -> None:
                         help="telemetry source (default: openf1, free and needs no login)")
     parser.add_argument("--chroma-path", help="write the store here instead of RAG_data_layers/chroma_store")
     parser.add_argument("--only", help="comma-separated circuits to rebuild, e.g. Barcelona,Monza")
+    parser.add_argument("--snapshots-only", action="store_true",
+                        help="write the session snapshots (RAG_data_layers/session_snapshots) without embedding or touching the store")
     args = parser.parse_args()
 
     sessions = SESSIONS
     if args.only:
         wanted = {w.strip().lower() for w in args.only.split(",")}
         sessions = [c for c in SESSIONS if c["circuit"].lower() in wanted]
+
+    if args.snapshots_only:
+        for cfg in sessions:
+            ingest_session(None, cfg, args.source, snapshots_only=True)
+        return
 
     chroma_path = Path(args.chroma_path) if args.chroma_path else CHROMA_PATH
     chroma_host = os.environ.get("CHROMA_HOST")
