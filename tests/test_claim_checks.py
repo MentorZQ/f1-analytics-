@@ -293,3 +293,9 @@ def test_blaming_the_tyres_when_both_ran_the_same_fresh_softs_fails():
 def test_saying_the_tyres_were_the_same_is_not_a_tyre_claim():
     assert cl.tyre_claims("Both ran the same fresh softs, so the gap is not due to the tyres.", SAME_TYRES).label == "n/a"
     assert cl.tyre_claims("Hamilton was 0.2s slower through T3.", SAME_TYRES).label == "n/a"
+
+
+def test_a_driver_named_inside_a_parenthetical_is_not_the_subject_of_the_next_clause():
+    unit = ("Antonelli carried more speed through that section (entry 157.0 km/h vs 131.0 km/h for Russell, apex 163.0 vs 157.4) "
+            "and completed it 0.253s faster (6.243s vs 6.496s).")
+    assert cl.claimed_winner_for_time(unit, 0.253, "RUS", "ANT") == "ANT"

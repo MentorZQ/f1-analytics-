@@ -117,10 +117,15 @@ def claimed_winner_for_time(unit: str, value: float, a: str, b: str) -> str | No
         def last_driver(text: str):
             """The driver the clause is about: the last one named, unless a pronoun or possessive muddies it."""
             ms = _driver_mentions(text, a, b)
+            outside = _driver_mentions(re.sub(r"\([^()]*\)", lambda m: " " * len(m.group()), text), a, b)
+            if outside:                                           # a driver named only inside a parenthetical is not the subject
+                ms = outside
             if not ms:
                 return None
             _, end, code = ms[-1]
-            if re.match(r"\s*['\u2019]s\b", text[end:]) or re.search(r"\b(?:he|she|they|him|his|her|who|which|that)\b", text[end:], re.I):
+            tail = re.sub(r"\([^()]*\)", " ", text[end:])
+            if re.match(r"\s*['\u2019]s\b", text[end:]) or re.search(
+                    r"\b(?:he|she|they|him|his|her|who|which|that(?! (?:section|corner|sequence|straight|lap|window|stretch|zone|point)))\b", tail, re.I):
                 return None                                       # "Hamilton's ...", "... where he was 0.3s faster": cannot tell who
             return code
 
