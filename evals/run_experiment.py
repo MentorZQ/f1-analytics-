@@ -115,7 +115,13 @@ def build_evaluators():
             return {"label": "n/a", "explanation": "no required facts"}
         text = output.get("answer", "").lower().replace("*", "").replace(",", "")
         # "a|b" means either spelling is fine ("1:19.327|79.327", "P10|10th|tenth")
-        missing = [m for m in must if not any(alt.strip().lower() in text for alt in m.split("|"))]
+        def present(alt: str) -> bool:
+            alt = alt.strip()
+            if alt.startswith("re:"):                        # "re:\\bp4\\b": a pattern, for facts that need a word boundary
+                return re.search(alt[3:], text, re.I) is not None
+            return alt.lower() in text
+
+        missing = [m for m in must if not any(present(alt) for alt in m.split("|"))]
         return {"score": 1 - len(missing) / len(must), "label": "pass" if not missing else "fail",
                 "explanation": "contains all required facts" if not missing else f"missing: {', '.join(missing)}"}
 

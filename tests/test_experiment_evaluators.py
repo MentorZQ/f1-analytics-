@@ -172,3 +172,12 @@ def test_heldout_user_questions_are_kept_verbatim_with_no_session_given():
     assert len(qs) == 10 and all(q["session"] is None and q["author"] == "user" for q in qs)
     assert qs[2]["question"] == "Compare Isack and Max during Aussie quali"          # typos and casing untouched
     assert qs[7]["question"] == "why did leclerc finish so poor in barc"
+
+
+def test_expected_facts_can_use_a_word_boundary_pattern():
+    ev = by_name()["states_expected_facts"]
+    p4 = {**OUT, "answer": "He qualified P4 on the grid."}
+    p40 = {**OUT, "answer": "He qualified P40 on the grid."}
+    assert ev(p4, {"must_include": [r"re:\bP4\b|fourth"]})["label"] == "pass"
+    assert ev(p40, {"must_include": [r"re:\bP4\b|fourth"]})["label"] == "fail"
+    assert ev({**OUT, "answer": "He was fourth."}, {"must_include": [r"re:\bP4\b|fourth"]})["label"] == "pass"
