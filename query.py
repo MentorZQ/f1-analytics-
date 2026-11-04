@@ -33,15 +33,16 @@ ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT / "RAG_data_layers/F1 Project Thoughts"))
 
 from rag_retrieval import (smart_retrieve, make_embed_fn, format_prompt,
-                           resolve_context_drivers, question_drivers)
+                           resolve_context_drivers, question_drivers, named_teams)
 
 import tracing
 
 # The pair sections are rebuilt from a saved snapshot; if the snapshot code cannot be imported, the stored chunks serve.
 try:
     from events_and_chunking.session_snapshot import clean_metadata, compare_drivers, load_snapshot
+    from events_and_chunking import session_queries as sq
 except Exception:                                    # pragma: no cover - a missing optional dependency must not break answering
-    compare_drivers = load_snapshot = clean_metadata = None
+    compare_drivers = load_snapshot = clean_metadata = sq = None
 
 
 # ── Session registry ──────────────────────────────────────────────────────────
@@ -292,6 +293,64 @@ def top_pair_sections(session_key: str, wanted: set[str], k: int = PAIR_SECTIONS
     return [dict(c) for c in ranked]                       # copies: the cached chunks are shared between requests
 
 
+# ── Whole-session views (grid, teams, sections across the field) ───────────────
+
+EXTRA_VIEWS = 3          # at most this many whole-session blocks go into one prompt
+MIN_RETRIEVED = 2        # chunks left for ordinary retrieval whatever else is added
+
+
+@lru_cache(maxsize=len(SESSIONS))
+def _section_times(session_key: str):
+    snapshot = _get_snapshot(session_key)
+    return sq.section_times(snapshot) if snapshot is not None and sq is not None else []
+
+
+def split_budget(n_chunks: int, n_extras_available: int, pair_available: bool) -> tuple[int, int, int]:
+    """
+    How many context slots go to (whole-session blocks, the pair's sections, ordinary retrieval).
+    Whole-session blocks come first, then the pair's biggest-gap sections, and ordinary retrieval always keeps
+    at least MIN_RETRIEVED slots. The three always add up to n_chunks.
+    """
+    extras = min(n_extras_available, max(n_chunks - MIN_RETRIEVED, 0))
+    pair = min(PAIR_SECTIONS, max(n_chunks - extras - MIN_RETRIEVED, 0)) if pair_available else 0
+    return extras, pair, n_chunks - extras - pair
+
+
+def extra_context(question: str, session_key: str, session_ctx: dict) -> list[dict]:
+    """
+    Whole-session blocks for questions that are not about one pair: the grid ("why were drivers so close"),
+    a team ("the ferraris"), the team advantage by section ("where did each team have an advantage"), and
+    one section across the field ("who was fastest through T9"). Computed from the session, not stored.
+    """
+    if sq is None:
+        return []
+    snapshot = _get_snapshot(session_key)
+    teams = named_teams(question, session_ctx)
+    asked = sq.plan(question, teams, no_driver_named=not question_drivers(question, session_ctx))
+    label = "{circuit} {year}".format(**snapshot.session_info) if snapshot is not None else ""
+    out: list[dict] = []
+    if asked["team_advantage"] and snapshot is not None:
+        text = sq.team_advantage_text(snapshot, session_ctx)
+        if text:
+            out.append(sq.make_chunk("team_advantage", text, "all", session_key))
+    for team in asked["teams"][:2]:
+        text = sq.team_text(session_ctx, team)
+        if text:
+            out.append(sq.make_chunk("team_summary", text, team, session_key))
+    if asked["section_best"] and snapshot is not None:
+        sections = _section_times(session_key)
+        for number in sq.corner_numbers_asked(question, sections)[:2]:
+            for section in sq.sections_for_corner(sections, number)[:1]:
+                text = sq.section_ranking_text(section, session_ctx)
+                if text:
+                    out.append(sq.make_chunk("section_ranking", text, section["id"], session_key))
+    if asked["grid"]:
+        text = sq.grid_text(session_ctx, label)
+        if text:
+            out.append(sq.make_chunk("grid", text, "all", session_key))
+    return out[:EXTRA_VIEWS]
+
+
 # ── Section-by-section lap comparison ─────────────────────────────────────────
 
 _DISTANCE_WINDOW = re.compile(r"Distance window:\s*([\d.]+)m\s*[–-]\s*([\d.]+)m")
@@ -432,19 +491,23 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
 
     t_start = time.perf_counter()
     wanted = resolve_context_drivers(question, question_drivers(question, session_ctx), session_ctx)
-    pair_top = top_pair_sections(session_key, wanted)            # the pair's biggest-gap sections, built on demand
+    available = extra_context(question, session_key, session_ctx)
+    pair_all = top_pair_sections(session_key, wanted)
+    n_extras, n_pair, _ = split_budget(n_chunks, len(available), bool(pair_all))
+    extras, pair_top = available[:n_extras], pair_all[:n_pair]
     with tracing.span("f1.retrieve", "RETRIEVER", input_value=question) as sp:
         retrieved = smart_retrieve(
             collection, question, get_embed_fn(),
-            n_results=n_chunks - len(pair_top),
+            n_results=n_chunks - len(extras) - len(pair_top),
             session_ctx=session_ctx,
             skip_pair_chunks=bool(pair_top),
         )
-        chunks = pair_top + retrieved
+        chunks = extras + pair_top + retrieved
         for rank, chunk in enumerate(chunks, 1):
             chunk["rank"] = rank
         tracing.record_documents(sp, chunks)
-        tracing.set_attrs(sp, **{"f1.session": session_key, "f1.pair_sections_generated": len(pair_top)})
+        tracing.set_attrs(sp, **{"f1.session": session_key, "f1.pair_sections_generated": len(pair_top),
+                                 "f1.session_views": [c["metadata"]["chunk_type"] for c in extras]})
 
     if verbose:
         print(f"\n[session: {session_key} | {len(chunks)} chunks retrieved]")

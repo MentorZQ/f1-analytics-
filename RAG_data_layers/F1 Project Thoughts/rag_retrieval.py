@@ -158,6 +158,24 @@ def team_drivers(question: str, session_ctx: dict | None) -> set[str]:
     return found
 
 
+def named_teams(question: str, session_ctx: dict | None) -> list[str]:
+    """The team names (as stored for this session) that the question mentions, in a stable order."""
+    if not session_ctx:
+        return []
+    found: list[str] = []
+    for info in session_ctx.get("drivers", {}).values():
+        team = info.get("team") or ""
+        if not team or team in found:
+            continue
+        low = team.lower()
+        hit = any(key in low and re.search(pattern, question, re.IGNORECASE) for key, pattern in TEAM_ALIASES.items())
+        if low == "rb" and re.search(r"\bvcarb\b|\brb\b(?=\s+(?:team|cars?|drivers?))", question, re.IGNORECASE):
+            hit = True
+        if hit:
+            found.append(team)
+    return sorted(found)
+
+
 def question_drivers(question: str, session_ctx: dict | None = None) -> set[str]:
     """Drivers the question is about: named by surname, first name or code, or through their team."""
     return extract_driver_codes(question) | team_drivers(question, session_ctx)

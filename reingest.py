@@ -104,7 +104,8 @@ def collection_name_for(cfg: dict) -> str:
     return f"f1_qualifying_{cfg['year']}_{cfg['circuit'].lower().replace(' ', '_')}"
 
 
-def ingest_session(client, cfg: dict, source: str = "openf1", snapshots_only: bool = False) -> None:
+def ingest_session(client, cfg: dict, source: str = "openf1", snapshots_only: bool = False,
+                   keep_pair_chunks: bool = False) -> None:
     year    = cfg["year"]
     circuit = cfg["circuit"]
     short   = cfg["short"]
@@ -131,6 +132,12 @@ def ingest_session(client, cfg: dict, source: str = "openf1", snapshots_only: bo
     if snapshots_only:                       # snapshot written; skip the slow embedding and the store
         print(f"\nSnapshot written for {cfg['circuit']} ({len(chunks)} chunks built, none stored).")
         return
+
+    if not keep_pair_chunks:
+        # Head-to-head sections are rebuilt on demand from the snapshot, for any pair, so the store does not hold them.
+        before = len(chunks)
+        chunks = [c for c in chunks if c.chunk_type != "head_to_head_event"]
+        print(f"\nNot storing {before - len(chunks)} pair-section chunks (rebuilt from the session snapshot at question time).")
 
     warnings = validate_chunks(chunks)
     if warnings:
@@ -181,6 +188,8 @@ def main() -> None:
                         help="telemetry source (default: openf1, free and needs no login)")
     parser.add_argument("--chroma-path", help="write the store here instead of RAG_data_layers/chroma_store")
     parser.add_argument("--only", help="comma-separated circuits to rebuild, e.g. Barcelona,Monza")
+    parser.add_argument("--keep-pair-chunks", action="store_true",
+                        help="also store every head-to-head section chunk (the old, much larger store)")
     parser.add_argument("--snapshots-only", action="store_true",
                         help="write the session snapshots (RAG_data_layers/session_snapshots) without embedding or touching the store")
     args = parser.parse_args()
@@ -204,7 +213,7 @@ def main() -> None:
         client = chromadb.PersistentClient(path=str(chroma_path))
 
     for cfg in sessions:
-        ingest_session(client, cfg, args.source)
+        ingest_session(client, cfg, args.source, keep_pair_chunks=args.keep_pair_chunks)
 
     print("\n\nAll collections rebuilt.")
     for c in client.list_collections():
