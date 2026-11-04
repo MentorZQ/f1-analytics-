@@ -1,5 +1,7 @@
 """
-For every head-to-head section chunk in the store, rebuild it from the session snapshot and compare the text.
+For every head-to-head section chunk in a store that still has them (built with `reingest.py --keep-pair-chunks`),
+rebuild it from the session snapshot and compare the text. This is how the snapshot was shown to reproduce all
+2,741 original pair chunks exactly; a store built without pair chunks has nothing to compare.
 
     python scripts/check_snapshot_parity.py [--store PATH]
 
@@ -29,6 +31,9 @@ def main() -> int:
     for name in SESSIONS:
         snapshot = snap.load_snapshot(ROOT / "RAG_data_layers" / "session_snapshots" / f"{name}.npz")
         stored = client.get_collection(name).get(where={"chunk_type": "head_to_head_event"}, include=["documents", "metadatas"])
+        if not stored["ids"]:
+            print(f"{name}: no stored pair chunks (the store is built without them); nothing to compare")
+            continue
         by_pair: dict = {}
         for cid, doc, meta in zip(stored["ids"], stored["documents"], stored["metadatas"]):
             by_pair.setdefault((meta["driver_a"], meta["driver_b"]), {})[cid] = doc
