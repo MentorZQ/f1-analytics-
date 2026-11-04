@@ -43,19 +43,7 @@ def embed_text(text: str) -> list[float]:
     return next(_model.embed([text])).tolist()
 
 
-def clean_metadata(metadata: dict) -> dict:
-    cleaned = {}
-    for key, value in metadata.items():
-        if value is None:
-            continue
-        if isinstance(value, np.generic):
-            value = value.item()
-        if isinstance(value, float) and value != value:  # NaN
-            continue
-        if isinstance(value, (list, tuple, set, dict)):
-            value = json.dumps(value)
-        cleaned[key] = value
-    return cleaned
+from events_and_chunking.session_snapshot import clean_metadata  # noqa: E402,F401  (shared with query.py)
 
 
 # ── Sessions to rebuild ───────────────────────────────────────────────────────

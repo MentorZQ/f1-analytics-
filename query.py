@@ -37,6 +37,12 @@ from rag_retrieval import (smart_retrieve, make_embed_fn, format_prompt,
 
 import tracing
 
+# The pair sections are rebuilt from a saved snapshot; if the snapshot code cannot be imported, the stored chunks serve.
+try:
+    from events_and_chunking.session_snapshot import clean_metadata, compare_drivers, load_snapshot
+except Exception:                                    # pragma: no cover - a missing optional dependency must not break answering
+    compare_drivers = load_snapshot = clean_metadata = None
+
 
 # ── Session registry ──────────────────────────────────────────────────────────
 
@@ -249,12 +255,49 @@ def _get_session_context(session_key: str) -> dict:
     return load_session_context(_get_collection(session_key))
 
 
+# ── Pair sections generated on demand ─────────────────────────────────────────
+
+SNAPSHOT_DIR = ROOT / "RAG_data_layers" / "session_snapshots"
+PAIR_SECTIONS = 4        # the pair's sections with the largest time gaps that go into the context
+
+
+@lru_cache(maxsize=len(SESSIONS))
+def _get_snapshot(session_key: str):
+    if load_snapshot is None or session_key not in SESSIONS:
+        return None
+    path = SNAPSHOT_DIR / f"{SESSIONS[session_key]}.npz"
+    return load_snapshot(path) if path.exists() else None
+
+
+@lru_cache(maxsize=512)
+def pair_chunks(session_key: str, a: str, b: str) -> tuple[dict, ...]:
+    """Every head-to-head section chunk for the pair, in the same form retrieval returns them."""
+    snapshot = _get_snapshot(session_key)
+    if snapshot is None:
+        return ()
+    out = []
+    for c in compare_drivers(snapshot, a, b):
+        out.append({"chunk_id": c.chunk_id, "text": c.text, "distance": 0.0, "rank": 0,
+                    "metadata": clean_metadata({"chunk_type": c.chunk_type, "source": c.source, **c.metadata})})
+    return tuple(out)
+
+
+def top_pair_sections(session_key: str, wanted: set[str], k: int = PAIR_SECTIONS) -> list[dict]:
+    """The k sections where the two wanted drivers differ most in time, or [] if the pair cannot be built."""
+    if len(wanted) != 2:
+        return []
+    a, b = sorted(wanted)
+    sections = pair_chunks(session_key, a, b)
+    ranked = sorted(sections, key=lambda c: -abs(c["metadata"].get("time_delta_s") or 0))[:k]
+    return [dict(c) for c in ranked]                       # copies: the cached chunks are shared between requests
+
+
 # ── Section-by-section lap comparison ─────────────────────────────────────────
 
 _DISTANCE_WINDOW = re.compile(r"Distance window:\s*([\d.]+)m\s*[–-]\s*([\d.]+)m")
 
 
-def section_deltas(collection, chunks: list[dict], wanted: set[str] | None = None) -> dict | None:
+def section_deltas(collection, chunks: list[dict], wanted: set[str] | None = None, session_key: str | None = None) -> dict | None:
     """Compare a whole lap for the driver pair most represented in `chunks`.
 
     `wanted` is the set of drivers the question is about (named or inferred). When given, only a
@@ -283,16 +326,20 @@ def section_deltas(collection, chunks: list[dict], wanted: set[str] | None = Non
         return None
     first, second = sorted(pairs.most_common(1)[0][0])
 
-    stored = collection.get(
-        where={"$and": [
-            {"chunk_type": "head_to_head_event"},
-            {"$or": [
-                {"$and": [{"driver_a": first}, {"driver_b": second}]},
-                {"$and": [{"driver_a": second}, {"driver_b": first}]},
+    generated = pair_chunks(session_key, first, second) if session_key else ()
+    if generated:
+        stored = {"documents": [c["text"] for c in generated], "metadatas": [c["metadata"] for c in generated]}
+    else:
+        stored = collection.get(
+            where={"$and": [
+                {"chunk_type": "head_to_head_event"},
+                {"$or": [
+                    {"$and": [{"driver_a": first}, {"driver_b": second}]},
+                    {"$and": [{"driver_a": second}, {"driver_b": first}]},
+                ]},
             ]},
-        ]},
-        include=["documents", "metadatas"],
-    )
+            include=["documents", "metadatas"],
+        )
 
     if not stored["metadatas"]:
         return None                                        # this pair has no stored comparison
@@ -384,14 +431,20 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
     session_ctx = _get_session_context(session_key)
 
     t_start = time.perf_counter()
+    wanted = resolve_context_drivers(question, question_drivers(question, session_ctx), session_ctx)
+    pair_top = top_pair_sections(session_key, wanted)            # the pair's biggest-gap sections, built on demand
     with tracing.span("f1.retrieve", "RETRIEVER", input_value=question) as sp:
-        chunks = smart_retrieve(
+        retrieved = smart_retrieve(
             collection, question, get_embed_fn(),
-            n_results=n_chunks,
+            n_results=n_chunks - len(pair_top),
             session_ctx=session_ctx,
+            skip_pair_chunks=bool(pair_top),
         )
+        chunks = pair_top + retrieved
+        for rank, chunk in enumerate(chunks, 1):
+            chunk["rank"] = rank
         tracing.record_documents(sp, chunks)
-        tracing.set_attrs(sp, **{"f1.session": session_key})
+        tracing.set_attrs(sp, **{"f1.session": session_key, "f1.pair_sections_generated": len(pair_top)})
 
     if verbose:
         print(f"\n[session: {session_key} | {len(chunks)} chunks retrieved]")
@@ -403,8 +456,7 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
         print()
 
     t_retrieved = time.perf_counter()
-    wanted = resolve_context_drivers(question, question_drivers(question, session_ctx), session_ctx)
-    deltas = section_deltas(collection, chunks, wanted=wanted)
+    deltas = section_deltas(collection, chunks, wanted=wanted, session_key=session_key)
     headline = lap_comparison_chunk(deltas, session_ctx)
     t_prepared = time.perf_counter()
     prompt_chunks = [headline] + chunks if headline else chunks

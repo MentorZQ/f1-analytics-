@@ -478,6 +478,7 @@ def smart_retrieve(
     n_results: int = 5,
     session_ctx: dict | None = None,
     normalize: bool = True,
+    skip_pair_chunks: bool = False,
 ) -> list[dict]:
     """
     retrieve_chunks with context-aware driver filter expansion and guaranteed
@@ -504,11 +505,15 @@ def smart_retrieve(
         all_codes = named_codes
 
     where = build_driver_where(all_codes) if all_codes else None
+    if skip_pair_chunks:
+        # The pair's head-to-head sections are generated on demand, so none are fetched from the store.
+        no_pairs = {"chunk_type": {"$ne": "head_to_head_event"}}
+        where = {"$and": [where, no_pairs]} if where else no_pairs
 
     # When comparing two drivers, prioritise head_to_head_event chunks so all
     # section comparisons for that pair enter the candidate pool before the
     # general fetch consumes slots with per-driver telemetry chunks.
-    if len(all_codes) >= 2:
+    if len(all_codes) >= 2 and not skip_pair_chunks:
         codes_list = sorted(all_codes)
         pair_conditions = []
         for i, a in enumerate(codes_list):

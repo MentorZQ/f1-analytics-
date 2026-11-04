@@ -28,6 +28,22 @@ from events_and_chunking.chunk_types import Chunk
 FORMAT_VERSION = 1
 
 
+def clean_metadata(metadata: dict) -> dict:
+    """The metadata a chunk is stored with: no None/NaN, numpy scalars unwrapped, containers as JSON."""
+    cleaned = {}
+    for key, value in metadata.items():
+        if value is None:
+            continue
+        if isinstance(value, np.generic):
+            value = value.item()
+        if isinstance(value, float) and value != value:  # NaN
+            continue
+        if isinstance(value, (list, tuple, set, dict)):
+            value = json.dumps(value)
+        cleaned[key] = value
+    return cleaned
+
+
 @dataclass
 class Snapshot:
     fastest: pd.DataFrame          # one row per driver (Driver, Team, QualifyingPosition, ...)
