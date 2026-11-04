@@ -125,16 +125,17 @@
   "expected_session": "monza",
   "kind": "data_speed_trap",
   "expected_drivers": [
+   "ALO",
    "RIC"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:\\bricciardo\\b|re:\\bdaniel\\b|re:\\bRIC\\b",
+   "re:\\balonso\\b|re:\\bfernando\\b|re:\\bALO\\b|re:\\bricciardo\\b|re:\\bdaniel\\b|re:\\bRIC\\b",
    "353"
   ],
   "author": "generated",
-  "note": "RIC 353 km/h, highest speed-trap reading of 20 drivers"
+  "note": "ALO and RIC 353 km/h, highest speed-trap reading of 20 drivers"
  },
  {
   "id": "d09",

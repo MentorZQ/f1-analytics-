@@ -12,7 +12,7 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [x] **Headline margin in the prompt**: pass the pair's lap gap and lap times into the context. Answers explain sections but
       never state 0.006 / 0.064 / 0.335 s (measured).
 - [x] **Whole-grid view** (positions, teams, gaps to pole and to the car ahead) for "why were drivers so close" questions.
-- [ ] Fix "final corner": the model calls T13 the last corner at Melbourne; the lap ends at T14 (measured, recurs).
+- [x] Fix "final corner": named corners are resolved, pinned into the pair's sections, and the first/last corner is stated (65dbf40).
 
 - [ ] **Team-level claims**: the answer called Ferrari the "fourth quickest team" when the best car of each team puts them third; no check catches ranking claims yet.
 - [ ] Pair slots are the top 4 sections by time gap, so `retrieval_coverage` is now close to true by construction for pair questions; rely on `answer_coverage` instead.
@@ -23,7 +23,7 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
       Needs checks on the tool calls (right function, right arguments) and tool results counted as evidence.
 
 ## Evaluation
-- [ ] **Held-out set, part 2**: data-generated questions (ground truth computed from the store) plus a batch written by a
+- [~] **Held-out set, part 2**: the data-generated half is DONE (`evals/make_heldout.py`, 57 questions, new seed = fresh set). Still to do: the batch written by a fresh model that has not seen the checks. Original note: data-generated questions (ground truth computed from the store) plus a batch written by a
       fresh model that has not seen the checks. Freeze before running; never tune on it. Part 1 (ten user-written
       questions, `evals/questions_heldout_user.json`) is already frozen and was run once: 3 clean, 7 with problems.
 - [ ] **Tyre-claim check**: fail when an answer blames tyre compound/age for a gap while the evidence shows identical
@@ -39,3 +39,5 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [ ] Add a documented price for `claude-sonnet-4-6` to `evals/prices.json` (or move the app to a model with a documented price).
 - [ ] Update the 7 stale tests in `tests/test_retrieval.py` (Q3-cutoff and slow-driver cases).
 - [ ] Push the `openf1-official-corners` branch and deploy (Render blueprint is in `render.yaml`).
+
+- [ ] Re-run the data-generated set with a new seed (`python -m evals.make_heldout --seed N`, then run_experiment with a new `--dataset` name) whenever the checks or retrieval change materially.

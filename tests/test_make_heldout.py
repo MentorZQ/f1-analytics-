@@ -150,3 +150,12 @@ def test_the_stage_family_never_uses_a_p10_assumption():
     assert not any(q["kind"] == "data_q3_cutoff" for q in qs)
     stage = [q for q in qs if q["kind"] == "data_stage"]
     assert len(stage) == 6 and all("progression" in q["note"] for q in stage)
+
+
+def test_a_speed_trap_tie_names_every_tied_driver(synthetic):
+    data = {**synthetic, "drivers": {c: {**v, "trap": 350.0} for c, v in synthetic["drivers"].items()}}
+    counter = iter(range(1, 999))
+    qs = mh.build("monza", data, random.Random(3), lambda: f"d{next(counter):02d}")
+    trap = next(q for q in qs if q["kind"] == "data_speed_trap")
+    assert sorted(trap["expected_drivers"]) == sorted(synthetic["drivers"]) and "tied" not in trap["note"] and " and " in trap["note"]
+    assert matches(trap["must_include"][0], "Aaa and Bbb both recorded it") or matches(trap["must_include"][0], "AAA was highest")

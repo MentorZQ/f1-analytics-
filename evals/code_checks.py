@@ -321,12 +321,12 @@ def number_grounding(answer: str, sources: list[dict], deltas: dict | None = Non
 
 LAP_LEVEL_CHUNKS = {"driver_lap_summary", "head_to_head", "driver_sector", "session_pace_evolution", "lap_comparison",
                     "grid", "team_summary", "team_advantage"}
-_STRONG_TOTAL = re.compile(r"\b(total|net|combined|altogether|in sum)\b|across (?:these|all|the|those)\b[^.]*\bsections?", re.I)
+_STRONG_TOTAL = re.compile(r"\b(total|net|combined(?! with)|altogether|in sum)\b|across (?:these|all|the|those)\b[^.]*\bsections?", re.I)
 _WEAK_TOTAL = re.compile(r"\b(overall|together)\b", re.I)
 
 
 MAX_TOTAL_S = 1.0
-_SINGLE_SECTION_CUE = re.compile(r"\b(?:largest|biggest|greatest|single|one section|that section|this section|that one)\b", re.I)
+_SINGLE_SECTION_CUE = re.compile(r"\b(?:largest|biggest|greatest|single|one section|that section|this section|that one|window|sequence|complex)\b", re.I)
 
 
 def _next_to_section_ref(sentence: str, value: float) -> bool:

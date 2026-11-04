@@ -181,3 +181,11 @@ def test_expected_facts_can_use_a_word_boundary_pattern():
     assert ev(p4, {"must_include": [r"re:\bP4\b|fourth"]})["label"] == "pass"
     assert ev(p40, {"must_include": [r"re:\bP4\b|fourth"]})["label"] == "fail"
     assert ev({**OUT, "answer": "He was fourth."}, {"must_include": [r"re:\bP4\b|fourth"]})["label"] == "pass"
+
+
+def test_a_driver_named_in_a_whole_field_block_counts_as_retrieved():
+    ev = by_name()["drivers_retrieved"]
+    grid = {**OUT, "sources": [{"drivers": [], "section": None, "text": "Highest speed-trap readings: RIC 353 km/h, ALO 353 km/h"}]}
+    assert ev(grid, {"drivers": ["RIC", "ALO"]})["label"] == "pass"
+    assert ev(grid, {"drivers": ["RIC", "BOT"]})["label"] == "fail"
+    assert ev({**OUT, "sources": [{"drivers": [], "section": None, "text": "RICHARD likes it"}]}, {"drivers": ["RIC"]})["label"] == "fail"   # a code is a whole word

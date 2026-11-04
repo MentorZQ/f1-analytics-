@@ -369,3 +369,9 @@ def test_a_sentence_that_says_its_figures_are_not_a_total_is_not_judged_as_one()
     ans = SIX_ANSWER + "The sectional deltas (0.333s + 0.346s + 0.320s + 0.248s) are not a total for the lap, and cannot be reconciled with the 0.519s gap."
     assert cc.total_consistency(ans, [], SIX).label in {"pass", "n/a"}
     assert cc.total_consistency(SIX_ANSWER + "Net advantage across these six sections: +0.122s.", [], SIX).label == "fail"      # still caught
+
+
+def test_combined_with_and_a_window_total_are_not_section_list_totals():
+    assert cc.total_consistency(SIX_ANSWER + "LIN's later braking, combined with an earlier throttle pickup, gave him the small 0.125s advantage.", [], SIX).label in {"pass", "n/a"}
+    assert cc.total_consistency(SIX_ANSWER + "The 0.125s gap is the total for the 300m window.", [], SIX).label in {"pass", "n/a"}
+    assert cc.total_consistency(SIX_ANSWER + "Their combined advantage was 0.122s.", [], SIX).label == "fail"                  # a real combined claim is still checked

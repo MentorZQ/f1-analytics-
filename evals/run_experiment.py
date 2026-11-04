@@ -75,7 +75,12 @@ def build_evaluators():
         want = set((expected or {}).get("drivers") or [])
         if not want:
             return {"label": "n/a", "explanation": "no drivers expected"}
-        got = {d for s in output.get("sources", []) for d in s.get("drivers", [])}
+        sources = output.get("sources", [])
+        got = {d for s in sources for d in s.get("drivers", [])}
+        # A whole-field block (the grid, a section ranking) names drivers in its text without being "for" one driver:
+        # a driver counts as present if his code appears as a word anywhere in the evidence.
+        text = "\n".join(s.get("text") or "" for s in sources)
+        got |= {d for d in want if re.search(rf"\b{d}\b", text)}
         missing = sorted(want - got)
         return {"score": 1.0 if not missing else 1 - len(missing) / len(want),
                 "label": "pass" if not missing else "fail",

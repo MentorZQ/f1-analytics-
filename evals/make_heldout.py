@@ -201,9 +201,11 @@ def build(session_key: str, data: dict, rng: random.Random, next_id) -> list[dic
             f"{c} {drivers[c]['time']:.3f}s vs pole {drivers[pole]['time']:.3f}s = {gap:.3f}s")
     trapped = [(drivers[c]["trap"], c) for c in codes if drivers[c]["trap"]]
     if trapped:
-        speed, leader = max(trapped)
-        add("data_speed_trap", f"Who recorded the highest speed trap reading in qualifying at {circuit()}?", [leader],
-            [name_alternatives(leader), f"{speed:g}"], f"{leader} {speed:g} km/h, highest speed-trap reading of {len(trapped)} drivers")
+        speed = max(t for t, _ in trapped)
+        leaders = sorted(c for t, c in trapped if t == speed)                    # a tie names every tied driver
+        add("data_speed_trap", f"Who recorded the highest speed trap reading in qualifying at {circuit()}?", leaders,
+            ["|".join(name_alternatives(c) for c in leaders), f"{speed:g}"],
+            f"{' and '.join(leaders)} {speed:g} km/h, highest speed-trap reading of {len(trapped)} drivers")
     if data["fastest_sector"]:
         sector = rng.choice(sorted(data["fastest_sector"]))
         t, leader = data["fastest_sector"][sector]
