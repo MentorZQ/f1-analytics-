@@ -42,7 +42,7 @@ from events_and_chunking import session_snapshot as snap  # noqa: E402
 from rag_retrieval import _DRIVER_NAMES  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "questions_heldout_data.json"
-SEED = 20261105        # v1 20261103 and v2 20261104 mis-stated who reached Q3 (see the module docstring); v3 uses the corrected stage and times
+SEED = 20261106        # v3 20261105; v4 uses like-for-like sections for corner questions (the pair is compared in the last session both ran)
 
 SESSIONS = {
     "monza": ("f1_qualifying_2024_monza", ["Monza", "the Italian GP", "the Italian Grand Prix"]),
