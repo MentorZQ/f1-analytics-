@@ -212,3 +212,9 @@ def test_a_long_answer_to_a_one_fact_question_fails_the_concise_check():
     assert ev["concise_when_lookup"]({"answer": short}, meta)["label"] == "pass"
     assert ev["concise_when_lookup"]({"answer": short + " Also, " + "more detail. " * 60}, meta)["label"] == "fail"
     assert ev["concise_when_lookup"]({"answer": "x" * 2000}, {"kind": "data_corner_winner"})["label"] == "n/a"
+
+
+def test_not_on_the_entry_list_and_outside_what_the_data_shows_count_as_declines():
+    assert rx.declines("Ricciardo did not take part in the 2026 Barcelona Qualifying session and is not on the entry list.")
+    assert rx.declines("Questions about future races fall outside what the qualifying data can show.")
+    assert not rx.declines("Ricciardo qualified P8 with a best lap of 1:19.4.")

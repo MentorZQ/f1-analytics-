@@ -27,6 +27,7 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
       Needs checks on the tool calls (right function, right arguments) and tool results counted as evidence.
 
 ## Evaluation
+- [x] Independent batch written by a fresh model (`evals/questions_heldout_fresh.json`, 60 questions): run, read and fixed; see METRICS.md. (Original note on part 2 follows.)
 - [~] **Held-out set, part 2**: the data-generated half is DONE (`evals/make_heldout.py`, 57 questions, new seed = fresh set). Still to do: the batch written by a fresh model that has not seen the checks. Original note: data-generated questions (ground truth computed from the store) plus a batch written by a
       fresh model that has not seen the checks. Freeze before running; never tune on it. Part 1 (ten user-written
       questions, `evals/questions_heldout_user.json`) is already frozen and was run once: 3 clean, 7 with problems.
@@ -48,3 +49,7 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 
 - [ ] Starting grid after penalties is not available from OpenF1 (`starting_grid` repeats the qualifying classification); answers say "qualified Pn, before any grid penalties". Would need another source (the race results page) to give the true grid.
 - [ ] Run the spot-check again on 15 answers from the main 40-question set and the honesty set (more "why" answers, where the checks are weakest).
+
+- [ ] Corner names exist only for Monza (first chicane, Lesmo, Ascari, Parabolica). Barcelona 2026 and Albert Park names are not written down, so a question that uses them without a number is not understood.
+- [ ] "Fastest down the main straight" is answered by time through the section, not top speed; the speed ranking exists for corners and could be used for straights.
+- [ ] A check for wrong or missing evidence in lookup answers (roughly 7 of 12 real problems on the independent batch were content errors the checks could not see): for example compare the driver named in the answer with the driver the evidence ranks first.

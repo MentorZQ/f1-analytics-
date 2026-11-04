@@ -25,7 +25,8 @@ _DECLINE = re.compile(
     r"outside (?:the )?(?:scope|data)|only (?:covers|contains|includes|has)|"
     r"cannot (?:confirm|tell|verify)|can't (?:confirm|verify)|no data (?:about|on|for)|there is no(?! gap\b)|"
     r"\bcontains? (?:no|nothing)\b|\bno [\w ]{0,40}\bdata\b|\bnot present\b|\bnot (?:recorded|stored|measured)\b|"
-    r"\b(?:cannot|can't|can not) answer\b|\bnot in the (?:retrieved|provided)\b", re.I)
+    r"\b(?:cannot|can't|can not) answer\b|\bnot in the (?:retrieved|provided)\b|"
+    r"\bnot on (?:the|its|this session's) entry list\b|\bdid not take part\b|\bfall(?:s)? outside\b|\boutside what\b", re.I)
 
 
 # Only broad "why / where" questions are expected to touch the pair's biggest-gap sections.

@@ -315,3 +315,37 @@ Frozen (commit 4d18f4a) before the first run. Pair and teammate questions now ex
 - The guess-first habit ("The last driver through to Q3 was Bortoleto's teammate... no, checking the context") appeared in 2 of 3 Haiku runs on that question; Sonnet 4.6, the model the site uses, answered it correctly and concisely 3 of 3 times, so it is recorded as a limit of the measuring model.
 - As before, scoring fixes were made after seeing the answers, so v5 is no longer a clean test of the scoring.
 
+### Independent batch: 60 questions written by claude-opus-5-5 (`evals/questions_heldout_fresh.json`)
+
+A model that had seen none of the checks, answers or data values wrote 60 visitor-style questions from a plain description of the site (the sessions, the drivers and teams, the kinds of data, and what the site does not have); the script and prompt are in `scripts/write_fresh_questions.py`. Frozen by commit (9dbe4b2) before any run. The mix: 14 lookups, 12 comparisons, 8 why/how, 6 corner or straight, 5 team or grid, 5 about the session, 5 unanswerable, 3 false-premise, 2 vague. There are no expected facts (the writer never saw the data), so the checks are the deterministic ones plus the unanswerable/answerable labels the writer gave, and I read every answer from the production model (Sonnet 4.6) myself.
+
+**First run, before any fix (the independent measurement):** the checks flagged 9 of 60 Sonnet answers and 6 of 60 Haiku answers. Reading all 60 Sonnet answers found 12 distinct real problems; the checks had flagged 5 of the 12:
+
+| Real problem | Caught by a check? |
+|---|---|
+| "who was quickest?" answered with the wrong driver (the grid was not retrieved) | yes (refused an answerable question) |
+| "what gear does Russell take in turn 3" and "Piastri min speed in the first chicane": "not in the context" though the data is there (a corner named in a one-driver question was not fetched; "first chicane" not understood) | yes (refused) |
+| "who carried the most speed through Parabolica": answered with a straight (no corner names for Monza; a ranking by time, not speed) | no |
+| "which teams got both cars into Q3": counted five, then wrote "Correction: only four" | yes (self-correction) |
+| "biggest and smallest teammate gap": "only one Red Bull listed" (Verstappen set no time, and no teammate view existed) | no |
+| "who got knocked out in Q1": listed 5; the real count is 6 (Stroll's no-time status was not in the grid) | no |
+| "where did Ricciardo qualify": "likely due to a red flag, mechanical issue, or DNS" (he is not on the 2026 entry list at all) | no |
+| "hulk vs kmag": "kmag" not recognised as Magnussen | yes (driver not retrieved) |
+| "Isack Lindblad" (it is Arvid) and "Bearman (BOR)" (BOR is Bortoleto) | no |
+| "how did Verstappen put his best lap together": used his Q3 lap, not his best (like-for-like logic fired on an inferred comparison driver) | no |
+| "who was fastest down the main straight": compared two drivers, not the field | no |
+| "do you think Antonelli gets pole at the next race" / "why was Verstappen so slow": writer-label mismatches, not system problems (see below) | n/a |
+
+So the checks catch roughly 5 of 12 real problems on questions they were not tuned on; the other 7 were wording-independent content errors (wrong or missing evidence, wrong names, wrong lap) that need either a check for that kind of error or a fix in retrieval.
+
+**What changed:** a stored corner chunk is fetched for a corner named in a one-driver question; Monza corner names (first chicane, Lesmo, Ascari, Parabolica) map to corner numbers (other circuits' names are not written down); a speed-through-the-section ranking (minimum, exit and top speed, all drivers); the grid now lists drivers with no timed lap, teams with both cars (or one car) in Q3, and the largest and smallest teammate gap; "who was quickest", "which teams", "both cars" and "who got knocked out" ask for the grid; like-for-like laps are used only when the question names two drivers; a driver not on the entry list is said not to have taken part; "kmag" is an alias; a new `name_consistency` check flags a first name or code on the wrong surname.
+
+**Second run (same questions, after the fixes, so not a clean test of those fixes):**
+
+| Model | Flagged | What the flags were |
+|---|---|---|
+| Sonnet 4.6 | 5 of 60 | 3 scoring or label mismatches (a correct "not on the entry list" and a correct decline of a prediction were not recognised as declines, the writer labelled "why was Verstappen so slow" unanswerable although he set no lap); 1 real: an unhedged "he was braking earlier" in a section with a data gap; 1 number-grounding flag (298 km/h) |
+| Haiku 5.5 | 6 of 60 | 4 are the guess-first habit ("Pierre Gasly... no, let me check"); 1 is "Liam Lindblad", caught by the new name check; 1 is the same Verstappen label mismatch |
+
+The decline wording is fixed in the scoring (`not on the entry list`, `did not take part`, `fall outside`). The writer's label for "why was Verstappen so slow" cannot be fixed by scoring: his data says he set no lap, so the system's answer is right and the label is wrong. Haiku's guess-first habit appears on questions Sonnet answers cleanly; the site uses Sonnet 4.6.
+
