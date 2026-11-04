@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-QUESTIONS = Path(__file__).resolve().parent / "questions.json"
+QUESTIONS = Path(__file__).resolve().parent / "questions.json"      # --questions chooses another file
 
 _DECLINE = re.compile(
     r"does not (?:contain|include|provide|have)|doesn't (?:contain|include|provide|have)|"
@@ -95,7 +95,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--name", required=True, help="experiment name, e.g. baseline")
     ap.add_argument("--endpoint", default="http://localhost:6006")
-    ap.add_argument("--dataset", default="f1-qualifying-questions-v1")
+    ap.add_argument("--questions", default=str(QUESTIONS), help="question file (default: the main 40-question set)")
+    ap.add_argument("--dataset", help="Phoenix dataset name (default derived from the question file)")
     ap.add_argument("--limit", type=int)
     ap.add_argument("--model", default=None)
     ap.add_argument("--n-chunks", type=int, default=6)
@@ -118,11 +119,13 @@ def main() -> None:
     from phoenix.client import Client
 
     model = args.model or os.environ.get("F1_MODEL", "claude-sonnet-4-6")
-    questions = json.loads(QUESTIONS.read_text())
-    dataset_name = args.dataset
+    questions_path = Path(args.questions)
+    questions = json.loads(questions_path.read_text())
+    dataset_name = args.dataset or ("f1-qualifying-questions-v1" if questions_path == QUESTIONS
+                                    else f"f1-{questions_path.stem.replace('_', '-')}-v1")
     if args.limit:                                            # a smaller dataset of its own, never a cut of the full one
         questions = questions[: args.limit]
-        dataset_name = f"{args.dataset}-first{args.limit}"
+        dataset_name = f"{dataset_name}-first{args.limit}"
     client = Client(base_url=args.endpoint)
     try:
         dataset = client.datasets.get_dataset(dataset=dataset_name)

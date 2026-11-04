@@ -51,8 +51,33 @@ _DRIVER_NAMES: dict[str, str] = {
     "hadjar": "HAD", "isack": "HAD",
     "lawson": "LAW", "liam": "LAW",
     "doohan": "DOO", "jack": "DOO",
-    "max": "VER",
+    "max": "VER", "mad max": "VER",
+    "hulk": "HUL",
 }
+
+_CODES = set(_DRIVER_NAMES.values())
+
+# "Max" is Verstappen, but "max speed" / "max throttle" are not. These words after "max" mean a quantity.
+_MAX_QUANTITY = (r"(?!\s+(?:speed|throttle|brake|braking|rpm|gear|power|downforce|temp\w*|deceleration|acceleration|"
+                 r"lateral|g\b|attack|boost|energy|deployment|velocity|pressure|load|lap|laps|time|times|out))")
+
+_CODE_VS_CODE = re.compile(
+    r"\b([A-Za-z]{3})\s*(?:vs\.?|versus|v\.?|and|against|compared\s+(?:to|with)|&|/)\s*([A-Za-z]{3})\b", re.IGNORECASE)
+
+
+# "max" after one of these is a quantity ("the max", "his max speed", "at max throttle"), not Verstappen.
+_QUANTITY_LEAD = r"(?<!\bthe\s)(?<!\ba\s)(?<!\bhis\s)(?<!\btheir\s)(?<!\bits\s)(?<!\btop\s)(?<!\bat\s)(?<!\bfull\s)"
+
+
+def _name_regex(name: str) -> str:
+    """
+    Pattern for one driver name. "Max" needs context: "Max's speed" is the driver, "max speed" and
+    "the max" are quantities. A possessive is always the driver; otherwise "max" is the driver unless a
+    determiner comes before it or a quantity word (speed, throttle, ...) comes after it.
+    """
+    if name == "max":
+        return rf"(?:\bmax(?=['\u2019]s\b)|{_QUANTITY_LEAD}\bmax\b{_MAX_QUANTITY})"
+    return rf"\b{re.escape(name)}\b"
 
 
 def normalize_query(question: str) -> str:
@@ -69,12 +94,12 @@ def normalize_query(question: str) -> str:
     """
     result = question
     for name, code in sorted(_DRIVER_NAMES.items(), key=lambda x: -len(x[0])):
-        if not re.search(rf'\b{re.escape(name)}\b', result, re.IGNORECASE):
+        if not re.search(_name_regex(name), result, re.IGNORECASE):
             continue
         if re.search(rf'\b{code}\b', result):
             continue  # code already present, skip
         result = re.sub(
-            rf'\b{re.escape(name)}\b',
+            _name_regex(name),
             lambda m: f"{m.group()} {code}",
             result,
             count=1,
@@ -87,8 +112,16 @@ def extract_driver_codes(question: str) -> set[str]:
     """Return the set of 3-letter driver codes mentioned in the question."""
     codes = set()
     for name, code in _DRIVER_NAMES.items():
-        if re.search(rf'\b{re.escape(name)}\b', question, re.IGNORECASE):
+        if re.search(_name_regex(name), question, re.IGNORECASE):
             codes.add(code)
+    # Codes written as codes: "LEC vs HAM". Capitals are trusted anywhere; lower or mixed case only when
+    # two codes are set against each other ("lec vs ham"), since "ham", "had" and "per" are also words.
+    for token in re.findall(r"\b[A-Z]{3}\b", question):
+        if token in _CODES:
+            codes.add(token)
+    for a, b in _CODE_VS_CODE.findall(question):
+        if a.upper() in _CODES and b.upper() in _CODES:
+            codes.update({a.upper(), b.upper()})
     return codes
 
 

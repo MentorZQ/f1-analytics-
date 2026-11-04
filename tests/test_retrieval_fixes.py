@@ -68,3 +68,105 @@ def test_a_missing_driver_is_never_filled_with_a_pair_involving_someone_else():
     final = rr.ensure_drivers_present(ranked, ranked, {"ALO", "HUL"}, n=2)
     assert stroll_pair not in final
     assert any(rr._chunk_drivers(c) == {"ALO"} for c in final)
+
+
+# ── driver names: first names, nicknames and three-letter codes ──
+
+def codes(q):
+    return rr.extract_driver_codes(q)
+
+
+def test_first_names_and_nicknames_resolve():
+    assert codes("Max vs Lewis at Barcelona") == {"VER", "HAM"}
+    assert codes("How did Charles do against Lewis?") == {"LEC", "HAM"}
+    assert codes("Mad Max vs Checo") == {"VER", "PER"}
+    assert codes("Kimi vs George") == {"ANT", "RUS"}
+    assert codes("Hulkenberg versus the Hulk") == {"HUL"}
+
+
+def test_three_letter_codes_resolve():
+    assert codes("LEC vs HAM in Spain") == {"LEC", "HAM"}
+    assert codes("Compare NOR and PIA") == {"NOR", "PIA"}
+    assert codes("Why was BOT slow?") == {"BOT"}
+
+
+def test_lowercase_codes_resolve_only_when_set_against_each_other():
+    assert codes("lec vs ham") == {"LEC", "HAM"}
+    assert codes("ver v nor at monza") == {"VER", "NOR"}
+    assert codes("he had a big lap and a bot of luck") == set()      # ordinary words are not drivers
+    assert codes("lap time per sector") == set()
+
+
+def test_max_is_verstappen_only_when_it_is_a_name():
+    assert codes("What was the max speed through the Lesmos?") == set()
+    assert codes("max throttle application at T12") == set()
+    assert codes("Why was Max slower than Lando?") == {"VER", "NOR"}
+    assert codes("max vs lewis") == {"VER", "HAM"}
+
+
+def test_normalize_query_does_not_attach_a_code_to_max_speed():
+    assert "VER" not in rr.normalize_query("What was the max speed at Monza?")
+    assert "VER" in rr.normalize_query("Why was Max slower?")
+
+
+def test_max_needs_context():
+    # the driver
+    assert codes("Max's speed through the Lesmos") == {"VER"}
+    assert codes("How fast was Max through the Lesmos?") == {"VER"}
+    assert codes("Why was Max slow?") == {"VER"}
+    assert codes("Lewis and max in Spain") == {"HAM", "VER"}
+    assert codes("Max Verstappen's max speed") == {"VER"}
+    # the quantity
+    assert codes("What was the max speed through the Lesmos?") == set()
+    assert codes("Max speed at Monza?") == set()
+    assert codes("his max speed on the straight") == set()
+    assert codes("What was the max?") == set()
+    assert codes("Who was at max throttle longest?") == set()
+    assert codes("Lewis's max speed vs Charles's max speed") == {"HAM", "LEC"}
+
+
+def test_max_speed_and_maxs_speed_mean_different_things_in_the_query_text():
+    assert "VER" in rr.normalize_query("What was Max's speed at Monza?")
+    assert "VER" not in rr.normalize_query("What was the max speed at Monza?")
+
+
+# ── the lap comparison follows the drivers the question is about ──
+
+class FakeCollection:
+    def __init__(self):
+        self.where = None
+
+    def get(self, where=None, include=None):
+        self.where = where
+        return {"metadatas": [], "documents": []}                 # nothing stored for any pair
+
+
+def h2h(a, b):
+    return {"metadata": {"chunk_type": "head_to_head_event", "driver_a": a, "driver_b": b, "event_id": "T1"}}
+
+
+def pair_in(where):
+    flat = str(where)
+    return {code for code in ("VER", "PER", "NOR") if code in flat}
+
+
+def test_the_comparison_is_for_the_wanted_pair_not_whatever_was_retrieved():
+    sys.path.insert(0, str(ROOT))
+    import query
+    col = FakeCollection()
+    assert query.section_deltas(col, [h2h("VER", "PER")], wanted={"VER", "NOR"}) is None   # no stored VER-NOR pair
+    assert pair_in(col.where) == {"VER", "NOR"}                                            # it looked up VER-NOR, not VER-PER
+
+
+def test_no_named_drivers_means_no_comparison_table():
+    import query
+    col = FakeCollection()
+    assert query.section_deltas(col, [h2h("VER", "PER")], wanted=set()) is None
+    assert col.where is None                                                               # nothing was even looked up
+
+
+def test_without_wanted_the_old_behaviour_is_kept():
+    import query
+    col = FakeCollection()
+    query.section_deltas(col, [h2h("VER", "PER")])
+    assert pair_in(col.where) == {"VER", "PER"}

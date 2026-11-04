@@ -877,6 +877,40 @@ def chunk_session_pace_evolution(
 # Main entry point
 # ---------------------------------------------------------------------------
 
+def head_to_head_pairs(fastest: pd.DataFrame, top_n: int) -> list[tuple]:
+    """
+    Which driver pairs get head-to-head section chunks (rows of `fastest`, quickest first):
+      - every pair among the top `top_n` qualifiers,
+      - every pair of teammates,
+      - every pair of neighbours on the grid (P10 v P11, P11 v P12, ...), so "who was just ahead of
+        me" is answerable for the whole grid, not only the front.
+    Each pair appears once, whichever order it is generated in.
+    """
+    rows = [row for _, row in fastest.iterrows()]
+    by_driver = {r["Driver"]: r for r in rows}
+    seen, pairs = set(), []
+
+    def add(a, b):
+        key = tuple(sorted((a["Driver"], b["Driver"])))
+        if a["Driver"] != b["Driver"] and key not in seen:
+            seen.add(key)
+            pairs.append((a, b))
+
+    top = rows[:top_n]
+    for i in range(len(top)):
+        for j in range(i + 1, len(top)):
+            add(top[i], top[j])
+    if "Team" in fastest.columns:
+        for team in fastest["Team"].dropna().unique():
+            mates = [r for r in rows if r.get("Team") == team]
+            for i in range(len(mates)):
+                for j in range(i + 1, len(mates)):
+                    add(mates[i], mates[j])
+    for a, b in zip(rows, rows[1:]):
+        add(a, b)
+    return pairs
+
+
 def build_telemetry_chunks(
     fastf1_data: dict,
     events: list[dict],
@@ -940,42 +974,7 @@ def build_telemetry_chunks(
                 chunks.append(c)
 
     # --- Head-to-head event chunks ---
-    # Top N qualifiers (all pairs)
-    top_n    = fastest.head(head_to_head_top_n)
-    top_rows = [row for _, row in top_n.iterrows()]
-
-    # All teammate pairs (find by team)
-    teammate_pairs = []
-    if "Team" in fastest.columns:
-        for team in fastest["Team"].dropna().unique():
-            team_drivers = fastest[fastest["Team"] == team]
-            if len(team_drivers) >= 2:
-                mates = [row for _, row in team_drivers.iterrows()]
-                for i in range(len(mates)):
-                    for j in range(i + 1, len(mates)):
-                        pair = (mates[i]["Driver"], mates[j]["Driver"])
-                        teammate_pairs.append(pair)
-
-    # Build full pair list (top N combinations + teammates), deduplicated.
-    # Normalize tuple order (alphabetical) before dedup to avoid (A,B) vs (B,A) collisions.
-    seen_pairs = set()
-    all_pairs  = []
-
-    for i in range(len(top_rows)):
-        for j in range(i + 1, len(top_rows)):
-            da, db = top_rows[i]["Driver"], top_rows[j]["Driver"]
-            pair = (da, db) if da < db else (db, da)
-            if pair not in seen_pairs:
-                seen_pairs.add(pair)
-                all_pairs.append((top_rows[i], top_rows[j]))
-
-    for drv_a, drv_b in teammate_pairs:
-        pair = (drv_a, drv_b) if drv_a < drv_b else (drv_b, drv_a)
-        if pair not in seen_pairs:
-            seen_pairs.add(pair)
-            row_a = fastest[fastest["Driver"] == drv_a].iloc[0]
-            row_b = fastest[fastest["Driver"] == drv_b].iloc[0]
-            all_pairs.append((row_a, row_b))
+    all_pairs = head_to_head_pairs(fastest, head_to_head_top_n)
 
     for row_a, row_b in all_pairs:
         tel_a = telemetry.get(row_a["Driver"])

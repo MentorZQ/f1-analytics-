@@ -2,10 +2,10 @@
 
 A retrieval-augmented generation system for analysing F1 qualifying sessions. Ask natural language questions about lap times, sector performance, braking points, and head-to-head driver comparisons — answers are grounded in telemetry data from OpenF1, and where the car data has a gap the system says so instead of guessing.
 
-**Sessions included (pre-built, no re-ingestion needed):**
-- Melbourne 2026 Qualifying — 1402 chunks
-- Barcelona 2026 Qualifying — 1460 chunks
-- Monza 2024 Qualifying — 781 chunks
+**Sessions included (pre-built, no re-ingestion needed; stored head-to-head comparisons cover the top 10, every teammate pair and every pair of grid neighbours):**
+- Melbourne 2026 Qualifying — 1498 chunks
+- Barcelona 2026 Qualifying — 1604 chunks
+- Monza 2024 Qualifying — 1431 chunks
 
 ---
 

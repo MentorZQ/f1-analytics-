@@ -32,7 +32,8 @@ import chromadb
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT / "RAG_data_layers/F1 Project Thoughts"))
 
-from rag_retrieval import smart_retrieve, make_embed_fn, format_prompt
+from rag_retrieval import (smart_retrieve, make_embed_fn, format_prompt,
+                           resolve_context_drivers, extract_driver_codes)
 
 import tracing
 
@@ -212,8 +213,13 @@ def _get_session_context(session_key: str) -> dict:
 _DISTANCE_WINDOW = re.compile(r"Distance window:\s*([\d.]+)m\s*[–-]\s*([\d.]+)m")
 
 
-def section_deltas(collection, chunks: list[dict]) -> dict | None:
+def section_deltas(collection, chunks: list[dict], wanted: set[str] | None = None) -> dict | None:
     """Compare a whole lap for the driver pair most represented in `chunks`.
+
+    `wanted` is the set of drivers the question is about (named or inferred). When given, only a
+    comparison between two of them is returned: a head-to-head chunk that merely happened to be
+    retrieved (a teammate pair surfaced by a "max speed" question) must not become the table the
+    reader sees. A wanted pair with no stored comparison gives None.
 
     Fetches every section for the pair rather than only the retrieved ones, so
     the result covers the full lap and lap_gap_s sums to the real lap gap.
@@ -228,6 +234,10 @@ def section_deltas(collection, chunks: list[dict]) -> dict | None:
         for c in chunks
         if c["metadata"].get("chunk_type") == "head_to_head_event"
     )
+    if wanted is not None:
+        pairs = Counter({pair: n for pair, n in pairs.items() if pair <= wanted})
+        if not pairs and len(wanted) == 2:
+            pairs = Counter({frozenset(wanted): 1})        # nothing retrieved for them: look the pair up directly
     if not pairs:
         return None
     first, second = sorted(pairs.most_common(1)[0][0])
@@ -242,6 +252,9 @@ def section_deltas(collection, chunks: list[dict]) -> dict | None:
         ]},
         include=["documents", "metadatas"],
     )
+
+    if not stored["metadatas"]:
+        return None                                        # this pair has no stored comparison
 
     # Present the higher-qualified driver first, whichever way the pair is stored.
     meta0 = stored["metadatas"][0]
@@ -355,7 +368,8 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
     response = call_llm(prompt, model=model, api_key=api_key)
     t_answered = time.perf_counter()
     usage = _LLM_USAGE.get() or {}
-    deltas = section_deltas(collection, chunks)
+    wanted = resolve_context_drivers(question, extract_driver_codes(question), session_ctx)
+    deltas = section_deltas(collection, chunks, wanted=wanted)
     t_done = time.perf_counter()
     metrics = {
         "retrieve_s": round(t_retrieved - t_start, 3),

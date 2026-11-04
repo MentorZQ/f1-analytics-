@@ -1,0 +1,190 @@
+[
+ {
+  "id": "n01",
+  "question": "Max vs Lewis at Barcelona",
+  "session": "barcelona",
+  "kind": "naming",
+  "expected_drivers": [
+   "VER",
+   "HAM"
+  ],
+  "answerable": true,
+  "note": "first names"
+ },
+ {
+  "id": "n02",
+  "question": "LEC vs HAM in Spain",
+  "session": "barcelona",
+  "kind": "naming",
+  "expected_drivers": [
+   "LEC",
+   "HAM"
+  ],
+  "answerable": true,
+  "note": "three-letter codes"
+ },
+ {
+  "id": "n03",
+  "question": "lec vs ham",
+  "session": "barcelona",
+  "kind": "naming",
+  "expected_drivers": [
+   "LEC",
+   "HAM"
+  ],
+  "answerable": true,
+  "note": "lowercase codes, no circuit named"
+ },
+ {
+  "id": "n04",
+  "question": "How did Charles do against Lewis in Barcelona?",
+  "session": "barcelona",
+  "kind": "naming",
+  "expected_drivers": [
+   "LEC",
+   "HAM"
+  ],
+  "answerable": true,
+  "note": "first names, conversational"
+ },
+ {
+  "id": "n05",
+  "question": "Kimi vs George at Barcelona",
+  "session": "barcelona",
+  "kind": "naming",
+  "expected_drivers": [
+   "ANT",
+   "RUS"
+  ],
+  "answerable": true,
+  "note": "first names (rookie vs teammate-era)"
+ },
+ {
+  "id": "n06",
+  "question": "Checo vs Valtteri in Spain",
+  "session": "barcelona",
+  "kind": "naming",
+  "expected_drivers": [
+   "PER",
+   "BOT"
+  ],
+  "answerable": true,
+  "note": "nicknames; back of the grid"
+ },
+ {
+  "id": "n07",
+  "question": "Oscar or Lando in Australia, who was quicker?",
+  "session": "melbourne",
+  "kind": "naming",
+  "expected_drivers": [
+   "PIA",
+   "NOR"
+  ],
+  "answerable": true,
+  "note": "first names, 'or' phrasing"
+ },
+ {
+  "id": "n08",
+  "question": "ANT vs RUS Melbourne",
+  "session": "melbourne",
+  "kind": "naming",
+  "expected_drivers": [
+   "ANT",
+   "RUS"
+  ],
+  "answerable": true,
+  "note": "codes, terse"
+ },
+ {
+  "id": "n09",
+  "question": "Lewis vs Charles at Albert Park",
+  "session": "melbourne",
+  "kind": "naming",
+  "expected_drivers": [
+   "HAM",
+   "LEC"
+  ],
+  "answerable": true,
+  "note": "circuit nickname"
+ },
+ {
+  "id": "n10",
+  "question": "Max vs Lando at Monza",
+  "session": "monza",
+  "kind": "naming",
+  "expected_drivers": [
+   "VER",
+   "NOR"
+  ],
+  "answerable": true,
+  "note": "needs a stored VER-NOR pair (VER was P7)"
+ },
+ {
+  "id": "n11",
+  "question": "VER v NOR Monza",
+  "session": "monza",
+  "kind": "naming",
+  "expected_drivers": [
+   "VER",
+   "NOR"
+  ],
+  "answerable": true,
+  "note": "codes with 'v'"
+ },
+ {
+  "id": "n12",
+  "question": "Carlos vs Charles at Monza",
+  "session": "monza",
+  "kind": "naming",
+  "expected_drivers": [
+   "SAI",
+   "LEC"
+  ],
+  "answerable": true,
+  "note": "first names, teammates"
+ },
+ {
+  "id": "n13",
+  "question": "Fernando vs Nico at Monza, who had the faster lap?",
+  "session": "monza",
+  "kind": "naming",
+  "expected_drivers": [
+   "ALO",
+   "HUL"
+  ],
+  "answerable": true,
+  "note": "needs a stored ALO-HUL pair (P11 vs P10)"
+ },
+ {
+  "id": "n14",
+  "question": "What was Max's speed through the Lesmos?",
+  "session": "monza",
+  "kind": "naming",
+  "expected_drivers": [
+   "VER"
+  ],
+  "answerable": true,
+  "note": "possessive: the driver, not 'max speed'"
+ },
+ {
+  "id": "n15",
+  "question": "What was the max speed at Monza?",
+  "session": "monza",
+  "kind": "naming",
+  "expected_drivers": [],
+  "answerable": true,
+  "note": "a quantity, not Verstappen; must not draw a VER comparison"
+ },
+ {
+  "id": "n16",
+  "question": "Was Lewis's max speed higher than Charles's in Spain?",
+  "session": "barcelona",
+  "kind": "naming",
+  "expected_drivers": [
+   "HAM",
+   "LEC"
+  ],
+  "answerable": true,
+  "note": "possessives plus 'max speed'"
+ }
+]

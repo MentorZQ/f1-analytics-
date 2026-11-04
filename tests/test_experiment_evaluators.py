@@ -97,3 +97,10 @@ def test_performance_summarises_latency_tokens_and_cost_when_priced():
 def test_percentile_is_inclusive_of_the_slowest_request():
     from evals import compare
     assert compare.percentile([1, 2, 3, 4, 100], 0.95) == 100
+
+
+def test_naming_question_set_is_well_formed():
+    qs = json.loads((ROOT / "evals" / "questions_naming.json").read_text())
+    assert len(qs) >= 10 and len({q["id"] for q in qs}) == len(qs)
+    assert all(q["session"] in {"barcelona", "melbourne", "monza"} and q["kind"] == "naming" for q in qs)
+    assert any(q["question"].startswith("lec vs") for q in qs) and any("Max vs" in q["question"] for q in qs)

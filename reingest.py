@@ -61,7 +61,7 @@ def clean_metadata(metadata: dict) -> dict:
 # ── Sessions to rebuild ───────────────────────────────────────────────────────
 
 SESSIONS = [
-    {"year": 2024, "circuit": "Monza",     "short": "monza",     "h2h_top_n": 5},
+    {"year": 2024, "circuit": "Monza",     "short": "monza",     "h2h_top_n": 10},
     {"year": 2026, "circuit": "Barcelona", "short": "Catalunya", "h2h_top_n": 10},
     {"year": 2026, "circuit": "Melbourne", "short": "Melbourne", "h2h_top_n": 10},
 ]
