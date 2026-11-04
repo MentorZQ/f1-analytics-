@@ -1,0 +1,877 @@
+[
+ {
+  "id": "f01",
+  "question": "what was norris's best lap in Q3 at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_lookup",
+  "expected_drivers": [
+   "NOR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Norris's best Q3 lap time from the 2024 Monza qualifying data."
+ },
+ {
+  "id": "f02",
+  "question": "who got pole in Barca",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_lookup",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must name the driver classified P1 in the 2026 Spanish GP qualifying, ideally with their lap time."
+ },
+ {
+  "id": "f03",
+  "question": "where did Bortoleto qualify in melbourne?",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_lookup",
+  "expected_drivers": [
+   "BOR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Bortoleto's final qualifying position at Albert Park and the session he reached."
+ },
+ {
+  "id": "f04",
+  "question": "fastest through the speed trap at Monza?",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_lookup",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must name the driver with the highest speed-trap reading at Monza 2024 and give the speed."
+ },
+ {
+  "id": "f05",
+  "question": "Lindblad Q1 time aussie gp",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_lookup",
+  "expected_drivers": [
+   "LIN"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Lindblad's best Q1 time in the 2026 Australian GP qualifying."
+ },
+ {
+  "id": "f06",
+  "question": "who was fastest in sector 2 at albert park",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_lookup",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must name the driver with the best sector 2 time in Melbourne qualifying and give that time."
+ },
+ {
+  "id": "f07",
+  "question": "what position did checo end up in barcelona quali",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_lookup",
+  "expected_drivers": [
+   "PER"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must recognise Checo as Perez and give his final classification at Barcelona 2026."
+ },
+ {
+  "id": "f08",
+  "question": "did antonelli make it to Q3 in Spain",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_lookup",
+  "expected_drivers": [
+   "ANT"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must state whether Antonelli reached Q3 at Barcelona and how far he got."
+ },
+ {
+  "id": "f09",
+  "question": "ALO best lap monza 2024",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_lookup",
+  "expected_drivers": [
+   "ALO"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Alonso's best lap time from Monza 2024 qualifying and the session it was set in."
+ },
+ {
+  "id": "f10",
+  "question": "top speed for hadjar at barcelona?",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_lookup",
+  "expected_drivers": [
+   "HAD"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Hadjar's top speed or speed-trap reading from Barcelona qualifying."
+ },
+ {
+  "id": "f11",
+  "question": "who was P10 in australia qualifying",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_lookup",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must name the driver classified tenth in the 2026 Australian GP qualifying."
+ },
+ {
+  "id": "f12",
+  "question": "was leclerc on a new or used set for his final Q3 lap at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_lookup",
+  "expected_drivers": [
+   "LEC"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must state whether Leclerc's best Q3 lap was on a fresh or used tyre set."
+ },
+ {
+  "id": "f13",
+  "question": "Sector 3 time for Gasly at Melbourne",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_lookup",
+  "expected_drivers": [
+   "GAS"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Gasly's sector 3 time from Albert Park qualifying, ideally saying which lap it came from."
+ },
+ {
+  "id": "f14",
+  "question": "who topped Q1 at catalunya",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_lookup",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must name the driver with the fastest Q1 time at Barcelona 2026 and give the time."
+ },
+ {
+  "id": "f15",
+  "question": "piastri vs norris monza quali, whats the gap",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "PIA",
+   "NOR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give both McLaren drivers' best laps and the time gap between them at Monza 2024."
+ },
+ {
+  "id": "f16",
+  "question": "hamilton vs leclerc in barcelona, who was quicker and where on the lap",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "HAM",
+   "LEC"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must say which Ferrari driver was faster and use the section-by-section head-to-head to show where time was gained or lost."
+ },
+ {
+  "id": "f17",
+  "question": "compare bearman and ocon at albert park",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "BEA",
+   "OCO"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must compare the two Haas drivers' positions, best laps and sector or section differences in Melbourne."
+ },
+ {
+  "id": "f18",
+  "question": "how far was Lawson off Lindblad in Melbourne",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "LAW",
+   "LIN"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give the gap between the Racing Bulls teammates and say who was ahead, without assuming Lawson was slower."
+ },
+ {
+  "id": "f19",
+  "question": "sainz vs albon in barca, who won the williams battle",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "SAI",
+   "ALB"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must compare the two Williams drivers' classification and best laps at Barcelona 2026."
+ },
+ {
+  "id": "f20",
+  "question": "russell or antonelli faster in sector 1 in australia?",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "RUS",
+   "ANT"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must compare the two Mercedes drivers' sector 1 times in Melbourne qualifying and give the difference."
+ },
+ {
+  "id": "f21",
+  "question": "max vs hadjar spain quali, where did hadjar lose or gain time",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "VER",
+   "HAD"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must use the head-to-head section data to show where Hadjar was faster or slower than Verstappen."
+ },
+ {
+  "id": "f22",
+  "question": "HUL vs BOR melbourne",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "HUL",
+   "BOR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must compare the two Audi drivers' positions, best laps and the gap between them at Albert Park."
+ },
+ {
+  "id": "f23",
+  "question": "perez or bottas, who was the faster cadillac at barcelona",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "PER",
+   "BOT"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must identify the faster Cadillac driver at Barcelona and give the gap."
+ },
+ {
+  "id": "f24",
+  "question": "colapinto vs albon head to head at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "COL",
+   "ALB"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must compare the Williams teammates at Monza 2024 by position, best lap and section-by-section differences."
+ },
+ {
+  "id": "f25",
+  "question": "leclerc v sainz monza, who braked later into turn 1",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "LEC",
+   "SAI"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must compare both Ferrari drivers' braking points into the first chicane from the telemetry sections."
+ },
+ {
+  "id": "f26",
+  "question": "alonso and stroll gap in Q1 at barcelona",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_comparison",
+  "expected_drivers": [
+   "ALO",
+   "STR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give both Aston Martin drivers' Q1 times at Barcelona and the gap between them."
+ },
+ {
+  "id": "f27",
+  "question": "how did hamilton end up where he did at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_why_how",
+  "expected_drivers": [
+   "HAM"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Hamilton's final position and explain it with his lap times, sectors or telemetry compared to rivals."
+ },
+ {
+  "id": "f28",
+  "question": "how did yuki get on at monza and what held him back",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_why_how",
+  "expected_drivers": [
+   "TSU"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Tsunoda's result and point to the sectors or sections where he lost time, or say if nothing notable held him back."
+ },
+ {
+  "id": "f29",
+  "question": "how did piastri's lap look in melbourne, where was he strong",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_why_how",
+  "expected_drivers": [
+   "PIA"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must break down Piastri's best lap by sector or section and identify his strongest parts relative to the field."
+ },
+ {
+  "id": "f30",
+  "question": "what went wrong for gasly in barca quali, if anything",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_why_how",
+  "expected_drivers": [
+   "GAS"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must report Gasly's result and use lap, sector, race-control or tyre data to say whether anything went wrong, without inventing a problem."
+ },
+ {
+  "id": "f31",
+  "question": "how did verstappen put his best lap together at monza, where was he gaining or losing",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_why_how",
+  "expected_drivers": [
+   "VER"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must analyse Verstappen's best lap by section against nearby rivals or the fastest driver."
+ },
+ {
+  "id": "f32",
+  "question": "what limited lando in australia qualifying",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_why_how",
+  "expected_drivers": [
+   "NOR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must use Norris's lap, sector, telemetry and tyre data to identify any weak areas, and say so if he was not notably limited."
+ },
+ {
+  "id": "f33",
+  "question": "where was bearman strongest on his best lap at barcelona",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_why_how",
+  "expected_drivers": [
+   "BEA"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must break down Bearman's best lap by sector or section and identify where he compared best to others."
+ },
+ {
+  "id": "f34",
+  "question": "what made the difference between hulk and kmag at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_why_how",
+  "expected_drivers": [
+   "HUL",
+   "MAG"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must identify which Haas driver was faster and explain the gap using the section-by-section head-to-head."
+ },
+ {
+  "id": "f35",
+  "question": "who carried the most speed through parabolica at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_corner_straight",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must name the driver with the highest apex or minimum speed in the final corner (Curva Alboreto/Parabolica) and give the speed."
+ },
+ {
+  "id": "f36",
+  "question": "braking point into turn 1 at barcelona for leclerc?",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_corner_straight",
+  "expected_drivers": [
+   "LEC"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Leclerc's braking point into Turn 1 at Barcelona from the telemetry, ideally compared with others."
+ },
+ {
+  "id": "f37",
+  "question": "who was fastest down the main straight at albert park",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_corner_straight",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must name the driver with the highest top speed on the start-finish straight section in Melbourne qualifying."
+ },
+ {
+  "id": "f38",
+  "question": "piastri min speed in the first chicane at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_corner_straight",
+  "expected_drivers": [
+   "PIA"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Piastri's apex or minimum speed through the Turn 1–2 chicane at Monza 2024."
+ },
+ {
+  "id": "f39",
+  "question": "what gear does russell take turn 3 in at barca",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_corner_straight",
+  "expected_drivers": [
+   "RUS"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give Russell's gear through Turn 3 at Barcelona from the corner telemetry."
+ },
+ {
+  "id": "f40",
+  "question": "exit speed out of the last corner in melbourne, antonelli vs russell",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_corner_straight",
+  "expected_drivers": [
+   "ANT",
+   "RUS"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must compare both Mercedes drivers' exit speeds from the final corner at Albert Park."
+ },
+ {
+  "id": "f41",
+  "question": "which teams got both cars into Q3 at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_team_grid",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must list every team with both drivers reaching Q3 at Monza 2024, based on the classification."
+ },
+ {
+  "id": "f42",
+  "question": "how did cadillac go in australia qualifying",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_team_grid",
+  "expected_drivers": [
+   "PER",
+   "BOT"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give both Cadillac drivers' positions and lap times in Melbourne qualifying."
+ },
+ {
+  "id": "f43",
+  "question": "best audi in barcelona qualifying?",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_team_grid",
+  "expected_drivers": [
+   "HUL",
+   "BOR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must identify which of Hulkenberg and Bortoleto qualified higher at Barcelona and give their positions."
+ },
+ {
+  "id": "f44",
+  "question": "biggest and smallest gap between teammates across the grid at albert park",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_team_grid",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must compute teammate gaps from best laps for each team in Melbourne and identify the largest and smallest."
+ },
+ {
+  "id": "f45",
+  "question": "which team was quickest in the speed traps at barcelona",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_team_grid",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must compare speed-trap readings by team at Barcelona and identify the fastest team."
+ },
+ {
+  "id": "f46",
+  "question": "was it wet at all during monza qualifying",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_session",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must report the weather data for Monza 2024 qualifying, including whether any rain was recorded."
+ },
+ {
+  "id": "f47",
+  "question": "any red flags in barcelona quali?",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_session",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must check the race-control messages and say whether any red flags occurred, with causes if so."
+ },
+ {
+  "id": "f48",
+  "question": "who got knocked out in Q1 in melbourne",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_session",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must list the drivers eliminated in Q1 at Albert Park based on the classification."
+ },
+ {
+  "id": "f49",
+  "question": "were any laps deleted for track limits at albert park",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_session",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must list any lap deletions from the race-control messages, with drivers and sessions, or say there were none."
+ },
+ {
+  "id": "f50",
+  "question": "track temp in spain quali",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_session",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must give the track temperature from the Barcelona 2026 weather data, ideally with how it changed over the session."
+ },
+ {
+  "id": "f51",
+  "question": "who won the race at monza 2024",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_unanswerable",
+  "expected_drivers": [],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Race results are not in the data; the site covers qualifying only."
+ },
+ {
+  "id": "f52",
+  "question": "what tyre strategy did mclaren run in the barcelona race",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_unanswerable",
+  "expected_drivers": [
+   "NOR",
+   "PIA"
+  ],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Race tyre strategy and pit stops are not covered, only the tyre set used on qualifying laps."
+ },
+ {
+  "id": "f53",
+  "question": "championship standings after australia 2026?",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_unanswerable",
+  "expected_drivers": [],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Championship standings are not in the data."
+ },
+ {
+  "id": "f54",
+  "question": "who was fastest in FP3 at barca",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_unanswerable",
+  "expected_drivers": [],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Practice sessions are not covered by the site."
+ },
+ {
+  "id": "f55",
+  "question": "do you think antonelli gets pole at the next race?",
+  "session": null,
+  "expected_session": null,
+  "kind": "fresh_unanswerable",
+  "expected_drivers": [
+   "ANT"
+  ],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Predictions about future sessions cannot be answered from the qualifying data."
+ },
+ {
+  "id": "f56",
+  "question": "why was verstappen so slow in melbourne qualifying",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "fresh_false_premise",
+  "expected_drivers": [
+   "VER"
+  ],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Verstappen does not appear in the Melbourne data, so the answer must say there is no data for him there rather than invent a reason."
+ },
+ {
+  "id": "f57",
+  "question": "how did colapinto do in the alpine at monza",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "fresh_false_premise",
+  "expected_drivers": [
+   "COL"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Must correct the premise, since Colapinto drove for Williams at Monza 2024, then report his result."
+ },
+ {
+  "id": "f58",
+  "question": "where did ricciardo qualify at barcelona this year",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "fresh_false_premise",
+  "expected_drivers": [],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "Ricciardo is not in the 2026 Barcelona entry list, so the answer must say so and not give a position."
+ },
+ {
+  "id": "f59",
+  "question": "who was quickest?",
+  "session": null,
+  "expected_session": null,
+  "kind": "fresh_vague",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "No session is named, so the answer should ask which session or give the fastest qualifier for each of the three."
+ },
+ {
+  "id": "f60",
+  "question": "how did the ferraris go",
+  "session": null,
+  "expected_session": null,
+  "kind": "fresh_vague",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [],
+  "author": "written by claude-opus-5-5 (no access to checks, code or data values)",
+  "note": "The session is unclear and the Ferrari line-up differs between 2024 and 2026, so the answer should clarify or cover each session separately."
+ }
+]
