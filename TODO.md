@@ -40,8 +40,8 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [ ] More repetitions for self-consistency (8 questions x 3 runs is a small sample).
 
 ## Housekeeping
-- [ ] Add a documented price for `claude-sonnet-4-6` to `evals/prices.json` (or move the app to a model with a documented price).
-- [ ] Update the 7 stale tests in `tests/test_retrieval.py` (Q3-cutoff and slow-driver cases).
+- [ ] No documented price for `claude-sonnet-4-6` in the API reference, so `evals/prices.json` has none (runs on it report tokens and latency, not cost). Options: leave it, or move the site to Claude Sonnet 5.5 ($2 / $10 per MTok, documented) after measuring it on the safety and held-out sets (it needs thinking handled differently from Haiku).
+- [x] Stale tests: the six Q3-cutoff tests were replaced by `tests/test_q3_boundary.py` (grid view and stage from the committed snapshots); `tests/test_retrieval.py` now passes. Note it opens the committed Chroma store, which rewrites files: `git checkout -- RAG_data_layers/chroma_store` afterwards (it is not in CI).
 - [ ] Push the `openf1-official-corners` branch and deploy (Render blueprint is in `render.yaml`).
 
 - [ ] Re-run the data-generated set with a new seed (`python -m evals.make_heldout --seed N`, then run_experiment with a new `--dataset` name) whenever the checks or retrieval change materially.

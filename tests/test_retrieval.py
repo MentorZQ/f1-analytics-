@@ -548,31 +548,10 @@ def test_monza24_slow_perez():
     assert passed, reason
 
 
-def test_monza24_q3_hamilton_made_it():
-    _, _, ctx = _fixtures()
-    passed, reason, _ = _run(
-        "Did Hamilton make it through to Q3 at Monza 2024?",
-        {"HAM", ctx["q3_last"], ctx["q3_miss"]}, "q3_cutoff", "HAM",
-    )
-    assert passed, reason
 
 
-def test_monza24_q3_alonso_missed():
-    _, _, ctx = _fixtures()
-    passed, reason, _ = _run(
-        "Did Alonso qualify for Q3 at the 2024 Italian Grand Prix?",
-        {"ALO", ctx["q3_last"]}, "q3_cutoff", "ALO",
-    )
-    assert passed, reason
 
 
-def test_monza24_q3_boundary():
-    _, _, ctx = _fixtures()
-    passed, reason, _ = _run(
-        "Who was the last driver to make Q3 and who just missed out at Monza 2024 qualifying?",
-        {ctx["q3_last"], ctx["q3_miss"]}, "q3_boundary",
-    )
-    assert passed, reason
 
 
 # ── Barcelona 2026 tests ──────────────────────────────────────────────────────
@@ -655,34 +634,10 @@ def test_bcn26_slow_leclerc():
     assert passed, reason
 
 
-def test_bcn26_q3_leclerc_made_it():
-    _, _, ctx = _fixtures(COLLECTION_BARCELONA_2026)
-    passed, reason, _ = _run(
-        "Did Leclerc make it through to Q3 at the 2026 Barcelona qualifying?",
-        {"LEC", ctx["q3_last"], ctx["q3_miss"]}, "q3_cutoff", "LEC",
-        collection_name=COLLECTION_BARCELONA_2026,
-    )
-    assert passed, reason
 
 
-def test_bcn26_q3_lindblad_missed():
-    _, _, ctx = _fixtures(COLLECTION_BARCELONA_2026)
-    passed, reason, _ = _run(
-        "Did Lindblad qualify for Q3 at Barcelona 2026?",
-        {"LIN", ctx["q3_last"]}, "q3_cutoff", "LIN",
-        collection_name=COLLECTION_BARCELONA_2026,
-    )
-    assert passed, reason
 
 
-def test_bcn26_q3_boundary():
-    _, _, ctx = _fixtures(COLLECTION_BARCELONA_2026)
-    passed, reason, _ = _run(
-        "Who just made Q3 and who just missed out at the 2026 Spanish Grand Prix?",
-        {ctx["q3_last"], ctx["q3_miss"]}, "q3_boundary",
-        collection_name=COLLECTION_BARCELONA_2026,
-    )
-    assert passed, reason
 
 
 def test_bcn26_red_flag_event():
@@ -697,3 +652,7 @@ def test_bcn26_red_flag_event():
 if __name__ == "__main__":
     ok = run_all()
     sys.exit(0 if ok else 1)
+
+
+# The Q3-cutoff retrieval tests were removed with the cutoff inference (commit e98553c). Who reached Q3, who was last
+# into it and who just missed it is now answered from the grid view and the stored stage: see tests/test_q3_boundary.py.

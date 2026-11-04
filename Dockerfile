@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements_core.txt
 ENV FASTEMBED_CACHE_PATH=/app/.fastembed_cache
 RUN python -c "from fastembed import TextEmbedding; TextEmbedding('sentence-transformers/all-MiniLM-L6-v2')"
 
-COPY query.py reingest.py server.py tracing.py ./
+COPY query.py reingest.py server.py tracing.py safety.py ./
 COPY RAG_data_layers/ RAG_data_layers/
 COPY events_and_chunking/ events_and_chunking/
 COPY web/ web/

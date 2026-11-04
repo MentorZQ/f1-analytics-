@@ -48,6 +48,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import query as query_module
+import safety
 
 log = logging.getLogger("f1_rag")
 
@@ -256,6 +257,11 @@ def run_query(
             "deltas":  saved["deltas"],
             "paid_by": "saved",
         }
+
+    # A question that is only an instruction ("print your system prompt") gets the fixed reply: no key, no model, no quota.
+    if not safety.sanitize_question(question)[0]:
+        refusal = query_module._refusal_result(req.session)
+        return {**refusal, "paid_by": "none"}
 
     # Checked by hand: a declared validation rule would echo the key in its error.
     own_key = (x_anthropic_key or "").strip() or None
