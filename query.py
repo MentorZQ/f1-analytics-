@@ -33,7 +33,7 @@ ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT / "RAG_data_layers/F1 Project Thoughts"))
 
 from rag_retrieval import (smart_retrieve, make_embed_fn, format_prompt,
-                           resolve_context_drivers, extract_driver_codes)
+                           resolve_context_drivers, question_drivers)
 
 import tracing
 
@@ -46,10 +46,11 @@ SESSIONS = {
     "monza":     "f1_qualifying_2024_monza",
 }
 
-# Keywords used to auto-detect session from the question
+# Words used to auto-detect the session from the question. Matched as whole words, so "oz" does not
+# fire inside another word; short nicknames are listed explicitly.
 _SESSION_KEYWORDS = {
-    "barcelona": ["barcelona", "spain", "spanish", "catalunya", "catalan"],
-    "melbourne": ["melbourne", "australia", "australian", "albert park"],
+    "barcelona": ["barcelona", "barca", "barc", "barna", "spain", "spanish", "catalunya", "catalan", "montmelo"],
+    "melbourne": ["melbourne", "australia", "australian", "aussie", "aus", "oz", "albert park", "down under"],
     "monza":     ["monza", "italy", "italian", "2024"],
 }
 
@@ -57,7 +58,8 @@ _SESSION_KEYWORDS = {
 def detect_session(question: str) -> str:
     """Return the most likely session key based on keywords in the question."""
     q = question.lower()
-    scores = {name: sum(kw in q for kw in kws) for name, kws in _SESSION_KEYWORDS.items()}
+    scores = {name: sum(re.search(rf"(?<![a-z0-9]){re.escape(kw)}(?![a-z0-9])", q) is not None for kw in kws)
+              for name, kws in _SESSION_KEYWORDS.items()}
     best = max(scores, key=scores.get)
     # If nothing matched, default to the most recent session
     return best if scores[best] > 0 else "barcelona"
@@ -103,6 +105,39 @@ def load_session_context(collection) -> dict:
         "pole":         standings[0][0] if standings else None,
         "p2":           standings[1][0] if len(standings) > 1 else None,
     }
+
+
+# ── Headline lap comparison ───────────────────────────────────────────────────
+
+def _lap_text(seconds: float) -> str:
+    minutes, rest = divmod(seconds, 60)
+    return f"{int(minutes)}:{rest:06.3f}"
+
+
+def lap_comparison_chunk(deltas: dict | None, session_ctx: dict) -> dict | None:
+    """
+    The one fact every two-driver answer needs: the two best laps and the gap between them. Section chunks
+    explain where time was won, but never state the total, so answers to "why didn't X get pole?" never
+    said by how much.
+    """
+    if not deltas:
+        return None
+    a, b = deltas["driver_a"], deltas["driver_b"]
+    info = session_ctx.get("drivers", {})
+    ia, ib = info.get(a), info.get(b)
+    if not ia or not ib or not ia.get("lap_time_seconds") or not ib.get("lap_time_seconds"):
+        return None
+    ta, tb = ia["lap_time_seconds"], ib["lap_time_seconds"]
+    pa, pb = ia.get("qualifying_position"), ib.get("qualifying_position")
+    quicker, slower = (a, b) if ta <= tb else (b, a)
+    lines = [f"Lap comparison: {a} vs {b}",
+             f"{a}: best lap {_lap_text(ta)}, classified P{pa}",
+             f"{b}: best lap {_lap_text(tb)}, classified P{pb}",
+             f"Over the lap {quicker} was {abs(ta - tb):.3f}s quicker than {slower}."]
+    if pa and pb and (pa < pb) != (ta < tb):
+        lines.append("Note: the classification order differs from the best-lap order for these two drivers.")
+    return {"chunk_id": f"lap_comparison:{a}-{b}", "text": "\n".join(lines), "distance": 0.0, "rank": 0,
+            "metadata": {"chunk_type": "lap_comparison", "driver_a": a, "driver_b": b}}
 
 
 # ── LLM call ─────────────────────────────────────────────────────────────────
@@ -368,19 +403,22 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
         print()
 
     t_retrieved = time.perf_counter()
-    prompt   = format_prompt(question, chunks, max_chunks=n_chunks, session_ctx=session_ctx)
+    wanted = resolve_context_drivers(question, question_drivers(question, session_ctx), session_ctx)
+    deltas = section_deltas(collection, chunks, wanted=wanted)
+    headline = lap_comparison_chunk(deltas, session_ctx)
+    t_prepared = time.perf_counter()
+    prompt_chunks = [headline] + chunks if headline else chunks
+    prompt   = format_prompt(question, prompt_chunks, max_chunks=len(prompt_chunks) if headline else n_chunks, session_ctx=session_ctx)
     _LLM_USAGE.set(None)
     t_llm = time.perf_counter()
     response = call_llm(prompt, model=model, api_key=api_key)
     t_answered = time.perf_counter()
     usage = _LLM_USAGE.get() or {}
-    wanted = resolve_context_drivers(question, extract_driver_codes(question), session_ctx)
-    deltas = section_deltas(collection, chunks, wanted=wanted)
     t_done = time.perf_counter()
     metrics = {
         "retrieve_s": round(t_retrieved - t_start, 3),
+        "deltas_s": round(t_prepared - t_retrieved, 3),
         "llm_s": round(t_answered - t_llm, 3),
-        "deltas_s": round(t_done - t_answered, 3),
         "total_s": round(t_done - t_start, 3),
         "input_tokens": usage.get("input_tokens"),
         "output_tokens": usage.get("output_tokens"),
@@ -401,7 +439,7 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
                 ],
                 "text":       c["text"],
             }
-            for c in chunks
+            for c in prompt_chunks
         ],
         "deltas":  deltas,
         "metrics": metrics,

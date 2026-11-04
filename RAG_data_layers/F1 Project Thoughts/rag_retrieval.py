@@ -125,6 +125,44 @@ def extract_driver_codes(question: str) -> set[str]:
     return codes
 
 
+# Team names people use ("the ferraris", "mclaren lock out"). Keys are matched against the team name stored
+# with each driver; the pattern is matched against the question.
+TEAM_ALIASES: dict[str, str] = {
+    "mercedes": r"\bmercedes?\b|\bmerc\b",
+    "ferrari": r"\bferraris?\b",
+    "mclaren": r"\bmclarens?\b",
+    "red bull": r"\bred ?bulls?\b",
+    "racing bulls": r"\bracing bulls?\b|\bvcarb\b",
+    "haas": r"\bhaas\b",
+    "aston": r"\baston\b",
+    "williams": r"\bwilliams\b",
+    "alpine": r"\balpine\b",
+    "audi": r"\baudi\b",
+    "sauber": r"\bsauber\b",
+    "cadillac": r"\bcadillac\b",
+}
+
+
+def team_drivers(question: str, session_ctx: dict | None) -> set[str]:
+    """Drivers of every team the question names, as stored for this session ("the ferraris" -> LEC, HAM)."""
+    if not session_ctx:
+        return set()
+    found: set[str] = set()
+    for code, info in session_ctx.get("drivers", {}).items():
+        team = (info.get("team") or "").lower()
+        for key, pattern in TEAM_ALIASES.items():
+            if key in team and re.search(pattern, question, re.IGNORECASE):
+                found.add(code)
+        if team == "rb" and re.search(r"\bvcarb\b|\brb\b(?=\s+(?:team|cars?|drivers?))", question, re.IGNORECASE):
+            found.add(code)
+    return found
+
+
+def question_drivers(question: str, session_ctx: dict | None = None) -> set[str]:
+    """Drivers the question is about: named by surname, first name or code, or through their team."""
+    return extract_driver_codes(question) | team_drivers(question, session_ctx)
+
+
 def build_driver_where(codes: set[str]) -> dict | None:
     """
     Build a Chroma where-filter for the detected driver codes.
@@ -220,6 +258,15 @@ def detect_query_intent(question: str) -> str:
     return "general"
 
 
+def _position(info: dict) -> int:
+    """Qualifying position under either key the session context uses."""
+    return info.get("position") or info.get("qualifying_position") or 99
+
+
+def _lap_time(info: dict) -> float:
+    return info.get("lap_time_s") or info.get("lap_time_seconds") or 999
+
+
 def resolve_context_drivers(
     question: str,
     named_codes: set[str],
@@ -261,7 +308,7 @@ def resolve_context_drivers(
 
     driver   = next(iter(named_codes))
     info     = drivers_info.get(driver, {})
-    pos      = info.get("position", 99)
+    pos      = _position(info)
     teammate = session_ctx.get("teammate_of", {}).get(driver)
 
     if intent == "pole":
@@ -270,8 +317,8 @@ def resolve_context_drivers(
 
     if intent == "slowness" and teammate:
         tm_info = drivers_info.get(teammate, {})
-        tm_pos  = tm_info.get("position", 99)
-        gap     = abs(info.get("lap_time_s", 999) - tm_info.get("lap_time_s", 999))
+        tm_pos  = _position(tm_info)
+        gap     = abs(_lap_time(info) - _lap_time(tm_info))
         if pos > tm_pos and gap > teammate_gap_threshold:
             return {driver, teammate}
 
@@ -450,7 +497,7 @@ def smart_retrieve(
 
     Without session_ctx, falls back to auto_filter behaviour of retrieve_chunks.
     """
-    named_codes = extract_driver_codes(question)
+    named_codes = question_drivers(question, session_ctx)
     if session_ctx is not None:
         all_codes = resolve_context_drivers(question, named_codes, session_ctx)
     else:

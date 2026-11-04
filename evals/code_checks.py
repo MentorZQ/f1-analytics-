@@ -311,7 +311,7 @@ def number_grounding(answer: str, sources: list[dict], deltas: dict | None = Non
 # A total can be wrong even when its digits appear in the evidence (0.122s is also one section's
 # gain). So a claimed total is recomputed from the section gains of the sections the answer discusses.
 
-LAP_LEVEL_CHUNKS = {"driver_lap_summary", "head_to_head", "driver_sector", "session_pace_evolution"}
+LAP_LEVEL_CHUNKS = {"driver_lap_summary", "head_to_head", "driver_sector", "session_pace_evolution", "lap_comparison"}
 _STRONG_TOTAL = re.compile(r"\b(total|net|combined|altogether|in sum)\b|across (?:these|all|the|those)\b[^.]*\bsections?", re.I)
 _WEAK_TOTAL = re.compile(r"\b(overall|together)\b", re.I)
 
