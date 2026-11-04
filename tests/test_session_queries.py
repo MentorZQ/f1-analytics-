@@ -411,3 +411,32 @@ def test_the_cut_is_applied_to_one_fact_questions_only(monkeypatch):
     monkeypatch.setattr(query, "call_llm", lambda prompt, **k: long)
     assert query.answer_with_sources("What was Bearman's best qualifying lap at Melbourne?", model="m")["answer"] == "First fact. Second fact."
     assert query.answer_with_sources("Compare Russell and Hamilton at Barcelona.", model="m")["answer"] == long
+
+
+# ── spot-check items 9 to 13 ──
+
+def test_two_drivers_with_the_best_lap_from_the_same_session_are_told_which_session():
+    ctx = {"drivers": {"LIN": {"lap_time_seconds": 79.971, "qualifying_position": 9, "stage": "Q3", "session_times": {1: 80.409, 2: 79.971, 3: 81.247}},
+                       "BOR": {"lap_time_seconds": 80.221, "qualifying_position": 10, "stage": "Q3", "session_times": {1: 80.495, 2: 80.221}}}}
+    text = query.lap_comparison_chunk({"driver_a": "LIN", "driver_b": "BOR"}, ctx)["text"]
+    assert "Both best laps are from Q2." in text and "like-for-like" not in text
+
+
+def test_the_driver_who_got_quicker_in_a_later_session_is_said_to_have_improved():
+    ctx = {"drivers": {"ALO": {"lap_time_seconds": 80.421, "qualifying_position": 11, "stage": "Q2", "session_times": {1: 80.617, 2: 80.421}},
+                       "STR": {"lap_time_seconds": 81.013, "qualifying_position": 17, "stage": "Q1", "session_times": {1: 81.013}}}}
+    text = query.lap_comparison_chunk({"driver_a": "ALO", "driver_b": "STR"}, ctx)["text"]
+    assert "Compare them in Q1, the last session in which both set a time: ALO 1:20.617, STR 1:21.013; ALO was 0.396s quicker." in text
+    assert "ALO improved on his Q1 lap in Q2: 1:20.421, 0.196s quicker." in text
+
+
+def test_grid_position_questions_say_qualified_before_penalties_and_get_one_sentence(monkeypatch):
+    assert query.lookup_sentence_limit("What was Ocon's grid position at the Spanish GP?") == 1
+    assert query.lookup_sentence_limit("Who recorded the highest speed trap reading?") == 1
+    assert query.lookup_sentence_limit("Which driver only just made it into Q3?") == 2
+    assert query.lookup_sentence_limit("How far apart were the two Aston Martin drivers?") == 3
+    seen = {}
+    monkeypatch.setattr(query, "call_llm", lambda prompt, **k: seen.setdefault("p", prompt) and "Ocon qualified P17, before any grid penalties. Extra.")
+    result = query.answer_with_sources("What was Ocon's grid position at the Spanish GP?", model="m")
+    assert "qualified P17, before any grid penalties" in seen["p"] and "do not say he started from it" in seen["p"]
+    assert result["answer"] == "Ocon qualified P17, before any grid penalties."

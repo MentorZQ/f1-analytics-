@@ -42,7 +42,7 @@ from events_and_chunking import session_snapshot as snap  # noqa: E402
 from rag_retrieval import _DRIVER_NAMES  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "questions_heldout_data.json"
-SEED = 20261106        # v3 20261105; v4 uses like-for-like sections for corner questions (the pair is compared in the last session both ran)
+SEED = 20261107        # v3 20261105; v4 20261106 (like-for-like corners); v5 expects the like-for-like gap for pair and teammate questions
 
 SESSIONS = {
     "monza": ("f1_qualifying_2024_monza", ["Monza", "the Italian GP", "the Italian Grand Prix"]),
@@ -224,11 +224,18 @@ def build(session_key: str, data: dict, rng: random.Random, next_id) -> list[dic
         a, b = pick(2)
         if a != b and (a, b) not in pairs and (b, a) not in pairs:
             pairs.append((a, b))
+    def gap_between(a: str, b: str) -> tuple[float, str]:
+        """a minus b: in the last session both set a time when the best laps come from different sessions, else best laps."""
+        focus = snap.focus_session(drivers[a].get("times") or {}, drivers[b].get("times") or {})
+        if focus:
+            return drivers[a]["times"][focus] - drivers[b]["times"][focus], f"Q{focus} laps"
+        return drivers[a]["time"] - drivers[b]["time"], "best laps"
+
     for a, b in pairs:
-        gap = drivers[a]["time"] - drivers[b]["time"]
+        gap, basis = gap_between(a, b)
         quicker = a if gap < 0 else b
         add("data_pair_gap", f"How far apart were {display(a, rng)} and {display(b, rng)} in qualifying at {circuit()}?", [a, b],
-            [gap_text(gap)], f"{a} {drivers[a]['time']:.3f}s, {b} {drivers[b]['time']:.3f}s; {quicker} quicker by {abs(gap):.3f}s")
+            [gap_text(gap)], f"{a} {drivers[a]['time']:.3f}s, {b} {drivers[b]['time']:.3f}s; {quicker} quicker by {abs(gap):.3f}s on the {basis}")
     corners = corner_sections(data["snapshot"])
     made = 0
     attempts = 0
@@ -254,9 +261,9 @@ def build(session_key: str, data: dict, rng: random.Random, next_id) -> list[dic
     rng.shuffle(full_teams)
     for team in full_teams[:2]:
         a, b = teams[team]
-        gap = drivers[a]["time"] - drivers[b]["time"]
+        gap, basis = gap_between(a, b)
         add("data_teammate_gap", f"How far apart were the two {team} drivers in qualifying at {circuit()}?", [a, b], [gap_text(gap)],
-            f"{a} {drivers[a]['time']:.3f}s, {b} {drivers[b]['time']:.3f}s")
+            f"{a} {drivers[a]['time']:.3f}s, {b} {drivers[b]['time']:.3f}s; gap on the {basis}")
     staged = [c for c in codes if drivers[c].get("stage")]
     for c in pick(2, exclude=[x for x in codes if x not in staged]):
         stage = drivers[c]["stage"]

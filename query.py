@@ -165,8 +165,13 @@ _LOOKUP = re.compile(
     r"\bdid\b[^?]{0,30}\bmake (?:it )?(?:into )?q[123]\b|\bwho (?:was|were) (?:the )?(?:last|first)\b", re.I)
 _NOT_LOOKUP = re.compile(r"\bwhy\b|\bcompare\b|\bexplain\b|\bhow did\b|\bvs\.?\b|\bversus\b|\bstack up\b|\badvantage\b|\blose\b|\blost\b|\bgain|\bcorners?\b|\bturns?\b|(?<![\w-])T\d+\b|\bstraights?\b|\bsections?\b|\bthrough\b", re.I)
 CONCISE_STYLE = ("this question asks for one fact. Answer in one or two sentences: the fact and the figure it rests on "
-                 "(name the sessions if the context says the laps come from different ones). Do not add other drivers, "
-                 "sectors, corners or comparisons, and do not say what the context lacks.")
+                 "(name the session each lap comes from). Do not add other drivers, sectors, corners or comparisons, and do not "
+                 "say what the context lacks. When the context gives a like-for-like comparison, lead with it, then say that "
+                 "driver improved on, or was slower than, his lap in that session; give the best-lap gap only if the question asks "
+                 "for the best laps.")
+_GRID_POSITION = re.compile(r"\bgrid\b|\bstart(?:ed|ing)?\b|\bline[d]? up\b", re.I)
+GRID_STYLE = ("the data has the qualifying classification, not the final starting grid after penalties. Answer in one sentence "
+              "as 'X qualified P17, before any grid penalties' (use his real position); do not say he started from it.")
 CONCISE_MAX_TOKENS = 300
 
 
@@ -180,7 +185,11 @@ def limit_sentences(text: str, n: int) -> str:
 
 def lookup_sentence_limit(question: str) -> int:
     """Two sentences for a one-fact answer; three where the sessions of the two laps need naming too."""
-    return 3 if re.search(r"\bhow far (?:apart|off|behind|from)\b|\bgap\b", question, re.I) else 2
+    if re.search(r"\bhow far (?:apart|off|behind|from)\b|\bgap\b", question, re.I):
+        return 3
+    if _GRID_POSITION.search(question) or re.search(r"speed[- ]?trap|\b(?:fastest|quickest) sector\b|\bwhere did\b[^?]{0,30}\bqualify\b", question, re.I):
+        return 1                                              # one fact, nothing to add to it
+    return 2
 
 
 def is_lookup_question(question: str | None) -> bool:
@@ -212,9 +221,9 @@ def _like_for_like(a: str, b: str, ia: dict, ib: dict) -> list[str]:
     if not ta or not tb:
         return []
     n = focus_session(ta, tb)
-    if n is None:
-        return []
     best_a, best_b = min(ta, key=ta.get), min(tb, key=tb.get)
+    if n is None:
+        return [f"Both best laps are from Q{best_a}."] if best_a == best_b else []
     shared = sorted(set(ta) & set(tb))
     faster = a if ta[n] <= tb[n] else b
     lines = [f"Their best laps are from different sessions ({a}'s from Q{best_a}, {b}'s from Q{best_b}), "
@@ -223,7 +232,9 @@ def _like_for_like(a: str, b: str, ia: dict, ib: dict) -> list[str]:
              f"{faster} was {abs(ta[n] - tb[n]):.3f}s quicker."]
     for code, times in ((a, ta), (b, tb)):
         best = min(times, key=times.get)
-        if best != n and times[n] > times[best]:
+        if best > n:                                          # he got quicker in a later session: "ALO improved on his Q1 lap in Q2"
+            lines.append(f"{code} improved on his Q{n} lap in Q{best}: {_lap_text(times[best])}, {times[n] - times[best]:.3f}s quicker.")
+        elif best != n and times[n] > times[best]:
             lines.append(f"{code}'s Q{n} lap was {times[n] - times[best]:.3f}s slower than his Q{best} lap ({_lap_text(times[best])}).")
     earlier = [(c, st) for c, st in ((a, ia.get("stage")), (b, ib.get("stage"))) if st and st < max(ia.get("stage") or "", ib.get("stage") or "")]
     for code, st in earlier:
@@ -272,7 +283,7 @@ def lap_comparison_chunk(deltas: dict | None, session_ctx: dict, question: str |
                 "metadata": {"chunk_type": "lap_comparison", "driver_a": a, "driver_b": b}}
     like = _like_for_like(a, b, ia, ib)
     lines += like
-    if like:
+    if like and focus_session(ia.get("session_times") or {}, ib.get("session_times") or {}):
         session = (deltas.get("lap_session") or "")
         lines.append(f"The head-to-head sections below compare their {session} laps, so their gaps add up to the {session} gap."
                      if session else
@@ -325,6 +336,8 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None 
         "driver who reached Q3 and set no lap there. "
         "When the context says a driver's lap in the comparison session was slower or quicker than his best lap, include that "
         "as a sentence (for example 'Sainz's Q3 lap was 0.682s quicker than his Q1 lap'). "
+        "When the context gives a like-for-like comparison, lead with it, then the sentence about the driver who improved or was "
+        "slower in another session; give the best-lap gap only when the question asks for the best laps or the gap to pole. "
         "Answer only what was asked. A question for one fact gets that fact and the figure it rests on, and nothing else: no other "
         "drivers, sectors or corners, and no remarks about what the context lacks. "
         "Do not attribute differences to car or engine characteristics (power unit, aero, downforce): the data cannot show them. "
@@ -732,7 +745,7 @@ def _answer_after_filter(question, session_key, n_chunks, model, api_key, verbos
     prompt_chunks = [headline] + chunks if headline else chunks
     lookup = is_lookup_question(question)
     prompt   = format_prompt(question, prompt_chunks, max_chunks=len(prompt_chunks) if headline else n_chunks, session_ctx=session_ctx,
-                             answer_style=CONCISE_STYLE if lookup else None)
+                             answer_style=((GRID_STYLE if _GRID_POSITION.search(question) else CONCISE_STYLE) if lookup else None))
     _LLM_USAGE.set(None)
     t_llm = time.perf_counter()
     response = call_llm(prompt, model=model, api_key=api_key, **({"max_tokens": CONCISE_MAX_TOKENS} if lookup else {}))
