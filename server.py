@@ -42,6 +42,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import anthropic
+from fastapi.responses import JSONResponse
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -212,8 +213,12 @@ class QueryRequest(BaseModel):
 
 
 @app.get("/health")
-def health() -> dict:
-    return {"status": "ok"}
+def health():
+    """200 only if every session's pair-comparison snapshot loads. Without it, two-driver questions lose their
+    sections, so a deploy in that state must fail its health check instead of quietly serving thinner answers."""
+    snapshots = {key: query_module._get_snapshot(key) is not None for key in query_module.SESSIONS}
+    ok = all(snapshots.values())
+    return JSONResponse({"status": "ok" if ok else "degraded", "snapshots": snapshots}, status_code=200 if ok else 503)
 
 
 @app.get("/api/sessions")

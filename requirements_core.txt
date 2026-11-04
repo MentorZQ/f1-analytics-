@@ -4,6 +4,7 @@ fastembed>=0.3.0
 fastf1>=3.4.0
 numpy>=1.26.0
 pandas>=2.0.0
+scipy>=1.11.0
 requests>=2.31.0
 requests-cache>=1.2.0
 fastapi>=0.110.0

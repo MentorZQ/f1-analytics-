@@ -309,7 +309,6 @@ def test_sessions_endpoint_lists_every_session_with_a_label(client):
 
 def test_api_docs_are_not_exposed(client):
     assert client.get("/docs").status_code == 404
-    assert client.get("/health").json() == {"status": "ok"}
 
 
 # ── CLI compatibility ────────────────────────────────────────────────────────
@@ -341,3 +340,12 @@ def test_haiku_is_called_with_thinking_disabled(monkeypatch):
     captured.clear()
     query_module.call_llm("prompt", model="claude-sonnet-4-6")
     assert "thinking" not in captured
+
+
+def test_health_is_ok_only_when_every_snapshot_loads(client, monkeypatch):
+    ok = client.get("/health")
+    assert ok.status_code == 200 and ok.json()["status"] == "ok"
+    assert set(ok.json()["snapshots"]) == set(query_module.SESSIONS) and all(ok.json()["snapshots"].values())
+    monkeypatch.setattr(query_module, "_get_snapshot", lambda key: None)
+    bad = client.get("/health")
+    assert bad.status_code == 503 and bad.json()["status"] == "degraded" and not any(bad.json()["snapshots"].values())
