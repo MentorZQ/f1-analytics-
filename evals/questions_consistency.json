@@ -1,0 +1,98 @@
+[
+ {
+  "id": "q01",
+  "question": "Why did Russell take pole at Barcelona 2026?",
+  "session": "barcelona",
+  "kind": "pole",
+  "expected_drivers": [
+   "RUS",
+   "HAM"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q02",
+  "question": "Where did Hamilton lose time to Russell at Barcelona?",
+  "session": "barcelona",
+  "kind": "pair",
+  "expected_drivers": [
+   "HAM",
+   "RUS"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q11",
+  "question": "Who braked later into the final chicane, Russell or Hamilton?",
+  "session": "barcelona",
+  "kind": "braking",
+  "expected_drivers": [
+   "RUS",
+   "HAM"
+  ],
+  "answerable": true,
+  "note": "a braking claim the data may not resolve"
+ },
+ {
+  "id": "q14",
+  "question": "Why did the pole sitter beat the field in Spain?",
+  "session": "barcelona",
+  "kind": "nameless",
+  "expected_drivers": [
+   "RUS"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q26",
+  "question": "How did Norris beat Piastri at Monza?",
+  "session": "monza",
+  "kind": "pole",
+  "expected_drivers": [
+   "NOR",
+   "PIA"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "q33",
+  "question": "Where did Alonso lose time compared to Hulkenberg at Monza?",
+  "session": "monza",
+  "kind": "pair",
+  "expected_drivers": [
+   "ALO",
+   "HUL"
+  ],
+  "answerable": true,
+  "note": ""
+ },
+ {
+  "id": "n01",
+  "question": "Max vs Lewis at Barcelona",
+  "session": "barcelona",
+  "kind": "naming",
+  "expected_drivers": [
+   "VER",
+   "HAM"
+  ],
+  "answerable": true,
+  "note": "first names"
+ },
+ {
+  "id": "h05",
+  "question": "Why did Russell take pole at Monza in 2024?",
+  "session": "monza",
+  "kind": "false_premise",
+  "expected_drivers": [
+   "RUS"
+  ],
+  "answerable": false,
+  "false_premise": true,
+  "must_include": [],
+  "note": "Norris took pole at Monza 2024"
+ }
+]

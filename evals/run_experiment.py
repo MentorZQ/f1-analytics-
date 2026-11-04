@@ -37,19 +37,29 @@ def git_commit() -> str:
         return "unknown"
 
 
+_CORRECTION = re.compile(r"\w,\s*not\s+\w+(?:\s+\w+)?,|\bactually\b|\bin fact\b|\bnot\b[^.]{0,50}\bbut\b|\brather than\b|\binstead\b|\bwas set by\b|"
+                         r"\bwas (?:on|in|from)\b[^.]{0,30}\bnot\b|\bnot (?:the|on|in|at)\b", re.I)
+
+
 def declines(answer: str) -> bool:
     return bool(_DECLINE.search(answer[:900].replace("*", "").replace("_", " ")))
 
 
 def build_evaluators():
+    from evals import claim_checks
     from evals.code_checks import run_all
 
     def code_check(name):
-        def evaluator(output, expected=None, metadata=None):
+        def evaluator(output, input=None, expected=None, metadata=None):
             if not output or "answer" not in output:
                 return {"score": 0.0, "label": "fail", "explanation": "no answer produced"}
-            results = {r.name: r for r in run_all(output["answer"], output["sources"], output.get("deltas"))}
+            question = (input or {}).get("question")
+            session = (input or {}).get("session") or output.get("session")
+            results = {r.name: r for r in run_all(output["answer"], output["sources"], output.get("deltas"), question, session)}
             r = results[name]
+            unanswerable = (expected or {}).get("answerable") is False
+            if name in {"completeness", "reversed_winner", "numbers_on_right_driver", "overclaiming"} and unanswerable:
+                return {"label": "n/a", "explanation": "unanswerable question"}
             if name.endswith("coverage"):
                 if (expected or {}).get("answerable") is False:
                     return {"label": "n/a", "explanation": "unanswerable question"}
@@ -85,9 +95,31 @@ def build_evaluators():
         return {"score": 0.0 if refused else 1.0, "label": "fail" if refused else "pass",
                 "explanation": "refused an answerable question" if refused else "gave a substantive answer"}
 
+    def challenges_false_premise(output, expected=None):
+        """Questions built on a wrong or unrecorded premise must be challenged, not explained."""
+        if not (expected or {}).get("false_premise"):
+            return {"label": "n/a", "explanation": "the question's premise is sound"}
+        text = output.get("answer", "")[:1100].replace("*", "").replace("_", " ")
+        ok = bool(claim_checks._CHALLENGE.search(text) or _CORRECTION.search(text) or declines(text))
+        return {"score": 1.0 if ok else 0.0, "label": "pass" if ok else "fail",
+                "explanation": "challenges or corrects the premise" if ok else "went along with a premise the data does not support"}
+
+    def states_expected_facts(output, expected=None):
+        """Known facts from the stored data that a correct answer must contain (case-insensitive)."""
+        must = (expected or {}).get("must_include") or []
+        if not must:
+            return {"label": "n/a", "explanation": "no required facts"}
+        text = output.get("answer", "").lower().replace("*", "")
+        missing = [m for m in must if m.lower() not in text]
+        return {"score": 1 - len(missing) / len(must), "label": "pass" if not missing else "fail",
+                "explanation": "contains all required facts" if not missing else f"missing: {', '.join(missing)}"}
+
     names = ["uncertainty_compliance", "number_grounding", "total_consistency", "inference_rate",
-             "retrieval_coverage", "answer_coverage"]
-    fns = [code_check(n) for n in names] + [drivers_retrieved, handles_unanswerable, answers_when_answerable]
+             "retrieval_coverage", "answer_coverage",
+             "reversed_winner", "self_correction", "wrong_driver_or_session", "numbers_on_right_driver",
+             "completeness", "false_premise", "overclaiming"]
+    fns = [code_check(n) for n in names] + [drivers_retrieved, handles_unanswerable, answers_when_answerable,
+                                            challenges_false_premise, states_expected_facts]
     return fns
 
 
@@ -100,6 +132,7 @@ def main() -> None:
     ap.add_argument("--limit", type=int)
     ap.add_argument("--model", default=None)
     ap.add_argument("--n-chunks", type=int, default=6)
+    ap.add_argument("--repetitions", type=int, default=1, help="run every question this many times (for self-consistency)")
     ap.add_argument("--chroma-path", help="evaluate a different Chroma store (e.g. the old one)")
     args = ap.parse_args()
 
@@ -133,7 +166,9 @@ def main() -> None:
         dataset = client.datasets.create_dataset(
             name=dataset_name,
             inputs=[{"question": q["question"], "session": q["session"]} for q in questions],
-            outputs=[{"drivers": q["expected_drivers"], "answerable": q["answerable"]} for q in questions],
+            outputs=[{"drivers": q["expected_drivers"], "answerable": q["answerable"],
+                      "false_premise": q.get("false_premise", False), "must_include": q.get("must_include", [])}
+                     for q in questions],
             metadata=[{"id": q["id"], "kind": q["kind"], "note": q["note"]} for q in questions],
             dataset_description="F1 qualifying RAG questions (answerable and unanswerable)",
         )
@@ -146,7 +181,8 @@ def main() -> None:
 
     client.experiments.run_experiment(
         dataset=dataset, task=task, evaluators=build_evaluators(), experiment_name=args.name,
-        experiment_metadata={"model": model, "n_chunks": args.n_chunks, "commit": git_commit(),
+        repetitions=args.repetitions,
+        experiment_metadata={"name": args.name, "model": model, "repetitions": args.repetitions, "n_chunks": args.n_chunks, "commit": git_commit(),
                              "chroma_path": args.chroma_path or "RAG_data_layers/chroma_store"},
     )
 

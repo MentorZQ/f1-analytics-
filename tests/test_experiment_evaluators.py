@@ -20,7 +20,7 @@ OUT = {"answer": "Russell was 0.125s faster in T12.", "sources": [{"drivers": ["
 
 def test_every_evaluator_has_its_own_name():
     names = [f.__name__ for f in rx.build_evaluators()]
-    assert len(names) == len(set(names)) == 9
+    assert len(names) == len(set(names)) == 18
 
 
 def test_drivers_retrieved_passes_and_fails():
@@ -49,7 +49,7 @@ def test_answerable_questions_must_not_be_refused():
 
 
 def test_code_check_evaluators_return_phoenix_results():
-    r = by_name()["number_grounding"](OUT, {"answerable": True})
+    r = by_name()["number_grounding"](OUT, expected={"answerable": True})
     assert r["label"] in {"pass", "fail", "n/a"} and "explanation" in r
 
 
@@ -75,9 +75,9 @@ def test_coverage_only_applies_to_broad_questions():
     out = {**OUT, "deltas": {"lap_gap_s": 0.06, "sections": [{"section": "T1", "gain_s": 0.3, "retrieved": False},
                                                               {"section": "T2", "gain_s": 0.2, "retrieved": False},
                                                               {"section": "T3", "gain_s": 0.1, "retrieved": False}]}}
-    assert ev(out, {"answerable": True}, {"kind": "pair"})["label"] == "fail"
-    assert ev(out, {"answerable": True}, {"kind": "section"})["label"] == "n/a"
-    assert ev(out, {"answerable": False}, {"kind": "unanswerable"})["label"] == "n/a"
+    assert ev(out, expected={"answerable": True}, metadata={"kind": "pair"})["label"] == "fail"
+    assert ev(out, expected={"answerable": True}, metadata={"kind": "section"})["label"] == "n/a"
+    assert ev(out, expected={"answerable": False}, metadata={"kind": "unanswerable"})["label"] == "n/a"
 
 
 # ── latency and token tracking ──
@@ -104,3 +104,40 @@ def test_naming_question_set_is_well_formed():
     assert len(qs) >= 10 and len({q["id"] for q in qs}) == len(qs)
     assert all(q["session"] in {"barcelona", "melbourne", "monza"} and q["kind"] == "naming" for q in qs)
     assert any(q["question"].startswith("lec vs") for q in qs) and any("Max vs" in q["question"] for q in qs)
+
+
+def test_claim_checks_receive_the_question_through_the_evaluator():
+    ev = by_name()["completeness"]
+    out = {**OUT, "answer": "Russell was quick through T4."}
+    assert ev(out, input={"question": "Russell vs Hamilton", "session": "barcelona"}, expected={"answerable": True})["label"] == "fail"
+    assert ev(out, input={"question": "Russell vs Hamilton", "session": "barcelona"}, expected={"answerable": False})["label"] == "n/a"
+
+
+def test_false_premise_questions_must_be_challenged_or_corrected():
+    ev = by_name()["challenges_false_premise"]
+    went_along = {**OUT, "answer": "Hamilton took a five-place grid penalty for impeding Norris, which cost him track position."}
+    challenged = {**OUT, "answer": "The retrieved data does not show any grid penalty for Hamilton."}
+    corrected = {**OUT, "answer": "Norris, not Russell, took pole at Monza: Russell was third."}
+    assert ev(went_along, {"false_premise": True})["label"] == "fail"
+    assert ev(challenged, {"false_premise": True})["label"] == "pass"
+    assert ev(corrected, {"false_premise": True})["label"] == "pass"
+    assert ev(went_along, {"false_premise": False})["label"] == "n/a"
+
+
+def test_known_facts_must_appear():
+    ev = by_name()["states_expected_facts"]
+    good = {**OUT, "answer": "Track temperature fell from **48.4°C** to 46.4°C."}
+    bad = {**OUT, "answer": "Track temperature fell a little."}
+    assert ev(good, {"must_include": ["48.4", "46.4"]})["label"] == "pass"
+    r = ev(bad, {"must_include": ["48.4", "46.4"]})
+    assert r["label"] == "fail" and "48.4" in r["explanation"]
+    assert ev(good, {})["label"] == "n/a"
+
+
+def test_honesty_question_set_is_well_formed():
+    qs = json.loads((ROOT / "evals" / "questions_honesty.json").read_text())
+    kinds = {q["kind"] for q in qs}
+    assert {"false_premise", "near_miss", "tricky"} <= kinds
+    assert all(q["answerable"] is False for q in qs if q["kind"] in {"false_premise", "near_miss"})
+    assert all(q["must_include"] for q in qs if q["kind"] == "tricky")
+    assert len({q["id"] for q in qs}) == len(qs)

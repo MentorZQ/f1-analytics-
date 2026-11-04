@@ -163,7 +163,10 @@ def test_the_saved_examples_run_cleanly():
     import json
     for ex in json.loads((ROOT / "web" / "examples.json").read_text()):
         results = cc.run_all(ex["answer"], ex["sources"], ex.get("deltas"))
-        assert {r.name for r in results} == {"uncertainty_compliance", "number_grounding", "total_consistency", "inference_rate", "retrieval_coverage", "answer_coverage"}
+        assert {r.name for r in results} == {"uncertainty_compliance", "number_grounding", "total_consistency", "inference_rate",
+                                             "retrieval_coverage", "answer_coverage", "reversed_winner", "self_correction",
+                                             "wrong_driver_or_session", "numbers_on_right_driver", "completeness",
+                                             "false_premise", "overclaiming"}
         assert all(r.label in {"pass", "fail", "info", "n/a"} for r in results)
 
 

@@ -127,12 +127,13 @@ def _parts(answer: str) -> list[tuple[list[str] | None, str]]:
     return parts
 
 
-def _claim_belongs_to(sentence: str, section_id: str, default_refs: list[str] | None = None) -> bool:
+def _claim_belongs_to(sentence: str, section_id: str, default_refs: list[str] | None = None, claim_test=None) -> bool:
     """
     Is the firm braking claim in this sentence about `section_id`? A sentence can talk about
     several sections ("faster at T1-T2 on braking, and at T4 on apex speed"), so each clause is
     attributed to the section it names, or to the last section named before it.
     """
+    claim_test = claim_test or (lambda clause: bool(_FIRM_BRAKING.search(clause)))
     current: list[str] | None = default_refs
     seen: list[str] = []                                # every section named so far in this sentence
     for clause in _CLAUSE_SPLIT.split(_norm(sentence)):
@@ -140,7 +141,7 @@ def _claim_belongs_to(sentence: str, section_id: str, default_refs: list[str] | 
         if refs:
             current = refs
             seen += refs
-        if _FIRM_BRAKING.search(clause):
+        if claim_test(clause):
             if refs:                                     # the clause names its own section(s)
                 if section_id in [_norm(r) for r in refs]:
                     return True
@@ -418,9 +419,12 @@ def coverage(answer: str, sources: list[dict], deltas: dict | None, top_n: int =
             result("answer_coverage", mentioned, "are discussed in the answer")]
 
 
-def run_all(answer: str, sources: list[dict], deltas: dict | None = None) -> list[CheckResult]:
+def run_all(answer: str, sources: list[dict], deltas: dict | None = None, question: str | None = None,
+            session: str | None = None) -> list[CheckResult]:
+    from evals import claim_checks                       # imported here: claim_checks builds on this module
     return [uncertainty_compliance(answer, sources, deltas),
             number_grounding(answer, sources, deltas),
             total_consistency(answer, sources, deltas),
             inference_rate(answer, sources, deltas),
-            *coverage(answer, sources, deltas)]
+            *coverage(answer, sources, deltas),
+            *claim_checks.run_all(answer, sources, deltas, question, session)]

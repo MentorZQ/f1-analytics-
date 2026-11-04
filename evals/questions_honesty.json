@@ -1,0 +1,255 @@
+[
+ {
+  "id": "h01",
+  "question": "Why did Hamilton get a grid penalty at Monza?",
+  "session": "monza",
+  "kind": "false_premise",
+  "expected_drivers": [
+   "HAM"
+  ],
+  "answerable": false,
+  "false_premise": true,
+  "must_include": [],
+  "note": "no penalty in the data"
+ },
+ {
+  "id": "h02",
+  "question": "What caused Norris's engine failure in Melbourne qualifying?",
+  "session": "melbourne",
+  "kind": "false_premise",
+  "expected_drivers": [
+   "NOR"
+  ],
+  "answerable": false,
+  "false_premise": true,
+  "must_include": [],
+  "note": "no failure in the data"
+ },
+ {
+  "id": "h03",
+  "question": "Why was Leclerc disqualified from Q2 in Barcelona?",
+  "session": "barcelona",
+  "kind": "false_premise",
+  "expected_drivers": [
+   "LEC"
+  ],
+  "answerable": false,
+  "false_premise": true,
+  "must_include": [],
+  "note": "no disqualification"
+ },
+ {
+  "id": "h04",
+  "question": "How did Piastri recover after spinning at Monza?",
+  "session": "monza",
+  "kind": "false_premise",
+  "expected_drivers": [
+   "PIA"
+  ],
+  "answerable": false,
+  "false_premise": true,
+  "must_include": [],
+  "note": "no spin recorded"
+ },
+ {
+  "id": "h05",
+  "question": "Why did Russell take pole at Monza in 2024?",
+  "session": "monza",
+  "kind": "false_premise",
+  "expected_drivers": [
+   "RUS"
+  ],
+  "answerable": false,
+  "false_premise": true,
+  "must_include": [],
+  "note": "Norris took pole at Monza 2024"
+ },
+ {
+  "id": "h06",
+  "question": "Why was Norris on the medium tyre for his pole lap at Monza?",
+  "session": "monza",
+  "kind": "false_premise",
+  "expected_drivers": [
+   "NOR"
+  ],
+  "answerable": false,
+  "false_premise": true,
+  "must_include": [],
+  "note": "he was on SOFT"
+ },
+ {
+  "id": "h07",
+  "question": "Why did Alonso make it into Q3 at Monza?",
+  "session": "monza",
+  "kind": "false_premise",
+  "expected_drivers": [
+   "ALO"
+  ],
+  "answerable": false,
+  "false_premise": true,
+  "must_include": [],
+  "note": "Alonso went out in Q2 (P11)"
+ },
+ {
+  "id": "h08",
+  "question": "What tyre pressure did Hamilton run in Q3 at Monza?",
+  "session": "monza",
+  "kind": "near_miss",
+  "expected_drivers": [
+   "HAM"
+  ],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "note": "tyre compound and age exist; pressure does not"
+ },
+ {
+  "id": "h09",
+  "question": "How much did Norris's tyres degrade across his Monza qualifying runs?",
+  "session": "monza",
+  "kind": "near_miss",
+  "expected_drivers": [
+   "NOR"
+  ],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "note": "only compound and age are stored"
+ },
+ {
+  "id": "h10",
+  "question": "Which engine mode did Russell use on his pole lap in Spain?",
+  "session": "barcelona",
+  "kind": "near_miss",
+  "expected_drivers": [
+   "RUS"
+  ],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "note": "not recorded"
+ },
+ {
+  "id": "h11",
+  "question": "Did Piastri get a tow from Norris on the Monza main straight?",
+  "session": "monza",
+  "kind": "near_miss",
+  "expected_drivers": [
+   "PIA",
+   "NOR"
+  ],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "note": "slipstream is not recorded"
+ },
+ {
+  "id": "h12",
+  "question": "What rear wing level did Ferrari run at Monza?",
+  "session": "monza",
+  "kind": "near_miss",
+  "expected_drivers": [],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "note": "setup is not recorded"
+ },
+ {
+  "id": "h13",
+  "question": "Why did Sainz abort his last Q2 lap at Monza?",
+  "session": "monza",
+  "kind": "near_miss",
+  "expected_drivers": [
+   "SAI"
+  ],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "note": "lap times exist, reasons for aborting do not"
+ },
+ {
+  "id": "h14",
+  "question": "How hot were Hamilton's brakes through the first chicane at Monza?",
+  "session": "monza",
+  "kind": "near_miss",
+  "expected_drivers": [
+   "HAM"
+  ],
+  "answerable": false,
+  "false_premise": false,
+  "must_include": [],
+  "note": "brake temperature is not recorded"
+ },
+ {
+  "id": "h15",
+  "question": "What tyre compound was Norris on for his pole lap at Monza?",
+  "session": "monza",
+  "kind": "tricky",
+  "expected_drivers": [
+   "NOR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "soft"
+  ],
+  "note": "SOFT, 1 lap old"
+ },
+ {
+  "id": "h16",
+  "question": "How much did the track temperature change during Monza qualifying?",
+  "session": "monza",
+  "kind": "tricky",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "48.4",
+   "46.4"
+  ],
+  "note": "48.4C to 46.4C"
+ },
+ {
+  "id": "h17",
+  "question": "How much did Norris improve across the Monza session?",
+  "session": "monza",
+  "kind": "tricky",
+  "expected_drivers": [
+   "NOR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "0.584"
+  ],
+  "note": "0.584s"
+ },
+ {
+  "id": "h18",
+  "question": "What was the weather like in Monza qualifying?",
+  "session": "monza",
+  "kind": "tricky",
+  "expected_drivers": [],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "dry"
+  ],
+  "note": "dry, 33C air"
+ },
+ {
+  "id": "h19",
+  "question": "What was Norris's sector 1 rank at Monza?",
+  "session": "monza",
+  "kind": "tricky",
+  "expected_drivers": [
+   "NOR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "13"
+  ],
+  "note": "P13 of 20"
+ }
+]

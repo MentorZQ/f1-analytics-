@@ -19,7 +19,7 @@ def main() -> None:
     args = ap.parse_args()
     rows = []
     for ex in json.loads(Path(args.examples).read_text()):
-        for r in run_all(ex["answer"], ex["sources"], ex.get("deltas")):
+        for r in run_all(ex["answer"], ex["sources"], ex.get("deltas"), ex["question"], ex.get("session")):
             rows.append({"question": ex["question"], **r.as_dict()})
     names = list(dict.fromkeys(r["name"] for r in rows))
     print(f"{'question':48s} " + " ".join(f"{n[:19]:19s}" for n in names))

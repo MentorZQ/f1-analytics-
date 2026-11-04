@@ -39,7 +39,7 @@ def main() -> None:
             deltas = json.loads(deltas)
         if not answer or not sources:
             continue
-        for r in run_all(answer, sources, deltas):
+        for r in run_all(answer, sources, deltas, row.get("attributes.input.value"), f1.get("session")):
             rows.append({"span_id": span_id, "name": r.name, "annotator_kind": "CODE", "label": r.label,
                          "score": r.score, "explanation": r.explanation})
     if not rows:
