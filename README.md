@@ -200,12 +200,19 @@ python -m evals.run_experiment --name my-change                      # run the 4
 | Check | Fails when |
 |---|---|
 | `uncertainty_compliance` | a chunk says it cannot tell who braked later (a gap in the car data) and the answer states it anyway |
-| `number_grounding` | a number with a unit (km/h, s, m) is not in the retrieved chunks or the lap comparison, or a difference / sum of numbers that are |
+| `overclaiming` | "clearly" / "definitely" / "proves" about braking in a section the data could not resolve |
+| `number_grounding` | a number with a unit (km/h, s, m) is not in the retrieved chunks, or a difference / sum of numbers that are; "about 0.2s" must show the exact figure beside it |
 | `total_consistency` | a claimed total is not the net of the sections discussed, or one driver's gains |
+| `reversed_winner` | the answer names the slower driver as faster in a section, judged against the stored times |
+| `numbers_on_right_driver` | a speed is attached to a driver whose chunk gives it to the other driver |
+| `wrong_driver_or_session` | a driver, circuit or year appears that is not in the question or the evidence |
+| `completeness` | a driver or corner the question names ("T12", "first corner", "final corner") is never addressed |
+| `false_premise` | the question assumes a crash, penalty or failure no chunk mentions, and the answer explains it instead of saying so |
+| `self_correction` | the answer revises itself in the text ("wait, corrected: ...") |
 | `retrieval_coverage`, `answer_coverage` | fewer than two of the three biggest-gap sections were retrieved / discussed |
 | `inference_rate` | not pass/fail: the share of sentences using causal wording (reported as a trend) |
 
-The experiment adds three more: the expected drivers were retrieved, unanswerable questions (race results, tyre degradation, fuel load) are declined, and answerable ones are not refused. Questions are in `evals/questions.json`. Each experiment is stored next to earlier ones in Phoenix, so a change to the prompt, chunk format or data is compared question by question.
+The experiment adds: expected drivers retrieved, unanswerable questions declined, answerable ones not refused, false premises challenged or corrected, and known facts present in the answer. Question sets are in `evals/`: `questions.json` (40 general), `questions_naming.json` (first names, codes, nicknames), `questions_honesty.json` (false premises, near-miss unanswerables, tricky answerables) and `questions_consistency.json` (8 questions, run 3 times: `python -m evals.run_experiment --repetitions 3`, then `python -m evals.consistency`). Each experiment records latency and token use; `python -m evals.compare` prints them beside the check results. Each experiment is stored next to earlier ones in Phoenix, so a change to the prompt, chunk format or data is compared question by question.
 
 ---
 

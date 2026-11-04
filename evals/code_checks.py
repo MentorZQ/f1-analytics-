@@ -230,11 +230,12 @@ TOL = {"s": 0.0015, "km/h": 0.06, "m": 0.6}
 MAX_SUM_TERMS = {"s": 4, "km/h": 2, "m": 2}
 
 
-_MIN_SEC = re.compile(r"(?<![\d:])(\d{1,2}):(\d{2}(?:\.\d+)?)(?![\d:])")
+_MIN_SEC = re.compile(r"(?<![\d:])(\d{1,2}):(\d{2}(?:\.\d+)?)(?:\s*s\b)?(?![\d:])")
 
 
 def numbers_with_units(text: str) -> list[tuple[float, str]]:
-    t = _MIN_SEC.sub(lambda m: f"{int(m.group(1)) * 60 + float(m.group(2)):.3f}", _norm(text))
+    # 1:19.911 is a lap time in seconds even when no "s" follows (chunks write "Lap 1: 1:19.911")
+    t = _MIN_SEC.sub(lambda m: f"{int(m.group(1)) * 60 + float(m.group(2)):.3f}s", _norm(text))
     out = []
     for m in _NUM.finditer(t):
         value, unit = float(m.group(1).replace(",", "")), m.group(2)
@@ -316,6 +317,7 @@ _WEAK_TOTAL = re.compile(r"\b(overall|together)\b", re.I)
 
 
 MAX_TOTAL_S = 1.0
+_SINGLE_SECTION_CUE = re.compile(r"\b(?:largest|biggest|greatest|single|one section|that section|this section|that one)\b", re.I)
 
 
 def _next_to_section_ref(sentence: str, value: float) -> bool:
@@ -352,6 +354,8 @@ def total_consistency(answer: str, sources: list[dict], deltas: dict | None = No
     for value, sent, strong in claims:
         if value >= MAX_TOTAL_S:                           # section and lap times (6.442s, 80.4s) are not gap totals
             continue
+        if _SINGLE_SECTION_CUE.search(sent) and any(abs(value - g) <= TOL["s"] for g in single):
+            continue                                       # "the largest margin ... 0.456s": one section's own gain
         if _next_to_section_ref(sent, value):              # "gained 0.092s at T1-T2": one section's gain, stated as such
             continue
         # a weak word ("overall") often means "through this section overall": one section's own gain is fine

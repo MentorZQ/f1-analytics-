@@ -141,3 +141,9 @@ def test_honesty_question_set_is_well_formed():
     assert all(q["answerable"] is False for q in qs if q["kind"] in {"false_premise", "near_miss"})
     assert all(q["must_include"] for q in qs if q["kind"] == "tricky")
     assert len({q["id"] for q in qs}) == len(qs)
+
+
+def test_a_correction_of_a_false_premise_is_not_penalised_as_answering_the_unanswerable():
+    ans = {**OUT, "answer": "Alonso did not make Q3: he was eliminated in Q2, so the premise is incorrect."}
+    assert by_name()["handles_unanswerable"](ans, {"answerable": False, "false_premise": True})["label"] == "n/a"
+    assert by_name()["challenges_false_premise"](ans, {"answerable": False, "false_premise": True})["label"] == "pass"

@@ -312,3 +312,19 @@ def test_a_made_up_or_two_decimal_figure_is_not_a_rounding():
     chunk = [{"section": None, "text": "Gap to pole: +0.186s"}]
     assert cc.number_grounding("Roughly 0.5s (0.186s) off the front.", chunk).label == "fail"
     assert cc.number_grounding("A gap of 0.21s.", chunk).label == "fail"
+
+
+def test_the_largest_margin_is_a_single_section_gain_not_a_total():
+    ans = SIX_ANSWER + "The speed advantage translated into a 0.125s time gain, the largest margin across the sections analysed."
+    assert cc.total_consistency(ans, [], SIX).label == "pass"
+    wrong = SIX_ANSWER + "Russell's net advantage across the sections analysed was 0.122s."
+    assert cc.total_consistency(wrong, [], SIX).label == "fail"                    # still caught
+
+
+def test_bare_lap_times_count_as_seconds_so_lap_to_lap_differences_are_grounded():
+    chunk = [{"section": None, "text": "Lap 1: 1:19.911 <- personal best\n  Lap 3: 1:19.727 <- personal best\n  Lap 5: 1:19.401"}]
+    assert cc.numbers_with_units("Lap 1: 1:19.911") == [(79.911, "s")]
+    assert cc.numbers_with_units("best lap 1:20.421s") == [(80.421, "s")]                  # with an "s": still one number
+    ans = "He went from 1:19.911 to 1:19.727 (-0.184s) and on to 1:19.401 (-0.326s from Lap 3)."
+    assert cc.number_grounding(ans, chunk).label == "pass"
+    assert cc.number_grounding("He improved by 0.9s between runs.", chunk).label == "fail"

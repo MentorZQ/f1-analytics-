@@ -83,6 +83,8 @@ def build_evaluators():
 
     def handles_unanswerable(output, expected=None):
         answerable = (expected or {}).get("answerable", True)
+        if (expected or {}).get("false_premise"):
+            return {"label": "n/a", "explanation": "false-premise question: judged by challenges_false_premise"}
         said_no = declines(output.get("answer", ""))
         if answerable:
             return {"label": "n/a", "explanation": "answerable question"}

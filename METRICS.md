@@ -102,6 +102,46 @@ All three runs below were scored with the same final checks (the earlier two wer
 
 ---
 
+## Claim checks, honesty and consistency (Phoenix, deterministic)
+
+*Seven checks added after the first experiments (reversed winners, wrong driver/session, numbers on the wrong driver, completeness, false premises, overclaiming, leaked self-correction). They were calibrated on 174 stored real answers: every flag was read, false alarms were fixed and given regression tests, and five real errors remained.*
+
+**Real errors the checks found in stored answers**
+- Antonelli vs Russell, T1-T2: the chunk says ANT faster by 0.060 s; the answer wrote "ANT faster by 0.060s - wait, corrected: RUS faster by 0.060s here". The model "corrected" itself into the wrong answer.
+- Two answers revise themselves in the text ("wait, notably Hamilton's exit speed is higher").
+- "Who had the better exit from the final corner in Melbourne": the answers call T13 the final corner; the lap ends at T14 (flagged in 2 of 3 runs).
+
+**Latest 40-question run (current data, retrieval fix, all checks)** - 4 flags in 40 answers: one answer that revises itself, the T14 "final corner" miss, one coverage miss (Hamilton vs Verstappen) and one ungrounded figure. `reversed_winner`, `wrong_driver_or_session`, `numbers_on_right_driver`, `overclaiming` and `uncertainty_compliance` had no failures.
+
+**Honesty set (19 questions)**
+| | First run | With question-type routing |
+|---|---|---|
+| False premises challenged or corrected (7: crash, penalty, failure, spin, wrong pole-sitter, wrong tyre, Alonso in Q3) | 7 / 7 | 7 / 7 |
+| Near-miss unanswerables declined (7: tyre pressure, engine mode, wing level, tow, brake temperature...) | 7 / 7 | 7 / 7 |
+| Tricky answerables answered with the stored facts (5: tyre compound, track temperature change, session improvement 0.584 s, weather, sector rank) | 3 / 5 | 5 / 5 |
+
+The first run refused two answerable questions (tyre compound, improvement across the session) because only head-to-head chunks were retrieved. Routing by question type (tyre -> lap summary, "improve" -> pace evolution, weather, flags, sector rank) fixed both. Two of the first run's failures were the decline detector missing "contains no ... data" wording.
+
+**Self-consistency (8 questions x 3 runs)**
+| Measure | Result |
+|---|---|
+| Same numbers stated | 0.69 |
+| Same sections discussed | 0.84 |
+| Section winners named agree | 1.00 |
+| Questions where a check flipped between runs | 3 of 8 |
+
+In one run in three each, two questions claimed "more aggressive braking" at T4, a section whose braking the data cannot resolve. A single run would have missed this. Section winners never flipped.
+
+**Speed and tokens (40-question run, claude-sonnet-4-6)**: median 14.3 s per question (p95 21.7 s), of which the Claude call is 14.7 s on average and retrieval 0.02 s; about 2,160 input and 680 output tokens per question (86,488 in / 27,369 out in total). Cost is not computed because no documented price for this model is in `evals/prices.json`.
+
+**Limits**
+- The checks were tuned against these same questions; a held-out question set is needed before a clean sheet means much.
+- 3 repetitions of 8 questions is a small consistency sample.
+- `reversed_winner` stays silent when a sentence covers several sections or uses a pronoun; it cannot catch a reversal it cannot attribute.
+- Coverage still uses stored time deltas as its reference.
+
+---
+
 ## Test Suite
 
 ### Retrieval unit tests
