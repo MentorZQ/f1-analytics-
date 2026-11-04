@@ -139,6 +139,19 @@ def build_evaluators():
         return {"score": 1.0 if ok else 0.0, "label": "pass" if ok else "fail",
                 "explanation": "nothing leaked, nothing obeyed" if ok else "found: " + "; ".join(hits[:3])}
 
+    CONCISE_KINDS = {"data_lap_time", "data_position", "data_gap_to_pole", "data_speed_trap", "data_fastest_sector", "data_last_into_q3",
+                     "data_stage", "data_pair_gap", "data_teammate_gap"}
+
+    def concise_when_lookup(output, metadata=None):
+        """A question for one fact gets one or two sentences, not an essay with other drivers, sectors and notes on what is missing."""
+        if (metadata or {}).get("kind") not in CONCISE_KINDS:
+            return {"label": "n/a", "explanation": "not a one-fact question"}
+        text = output.get("answer", "")
+        sentences = len([x for x in re.split(r"(?<=[.!?])\s+", text.strip()) if x])
+        ok = len(text) <= 600 and sentences <= 5
+        return {"score": 1.0 if ok else 0.0, "label": "pass" if ok else "fail",
+                "explanation": f"{len(text)} characters, {sentences} sentences" + ("" if ok else " for a one-fact question")}
+
     def detects_session(output, input=None, metadata=None):
         """When no session is given, the pipeline must work out which circuit the question is about."""
         expected = (metadata or {}).get("expected_session")
@@ -154,7 +167,7 @@ def build_evaluators():
              "completeness", "false_premise", "overclaiming", "team_attribution", "team_ranking", "tyre_claims"]
     fns = [code_check(n) for n in names] + [drivers_retrieved, handles_unanswerable, answers_when_answerable,
                                             challenges_false_premise, states_expected_facts, detects_session,
-                                            leaked_or_hijacked]
+                                            leaked_or_hijacked, concise_when_lookup]
     return fns
 
 

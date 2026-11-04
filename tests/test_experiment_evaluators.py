@@ -20,7 +20,7 @@ OUT = {"answer": "Russell was 0.125s faster in T12.", "sources": [{"drivers": ["
 
 def test_every_evaluator_has_its_own_name():
     names = [f.__name__ for f in rx.build_evaluators()]
-    assert len(names) == len(set(names)) == 23
+    assert len(names) == len(set(names)) == 24
 
 
 def test_drivers_retrieved_passes_and_fails():
@@ -203,3 +203,12 @@ def test_a_decline_phrase_late_in_a_substantive_answer_is_not_a_refusal():
               "The context does not contain any information about a grid penalty.")
     assert ev["answers_when_answerable"]({"answer": answer}, {"answerable": True})["label"] == "pass"
     assert ev["answers_when_answerable"]({"answer": "The context does not contain that."}, {"answerable": True})["label"] == "fail"
+
+
+def test_a_long_answer_to_a_one_fact_question_fails_the_concise_check():
+    ev = {f.__name__: f for f in rx.build_evaluators()}
+    meta = {"kind": "data_last_into_q3"}
+    short = "BOR (Audi), with a Q2 time of 1:20.221. He had the slowest Q2 time among the 10 drivers who reached Q3."
+    assert ev["concise_when_lookup"]({"answer": short}, meta)["label"] == "pass"
+    assert ev["concise_when_lookup"]({"answer": short + " Also, " + "more detail. " * 60}, meta)["label"] == "fail"
+    assert ev["concise_when_lookup"]({"answer": "x" * 2000}, {"kind": "data_corner_winner"})["label"] == "n/a"

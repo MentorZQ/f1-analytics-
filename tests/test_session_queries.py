@@ -363,3 +363,51 @@ def test_the_field_wide_fastest_sectors_are_in_the_grid():
 @pytest.mark.parametrize("question", ["Who set the quickest sector 2 time in qualifying at Albert Park?", "Who had the fastest sector 3?"])
 def test_fastest_sector_questions_ask_for_the_grid(question):
     assert sq.plan(question, [], True)["grid"]
+
+
+# ── one-fact questions get short answers ──
+
+@pytest.mark.parametrize("question", ["What was Bearman's best qualifying lap at Melbourne?", "Which driver only just made it into Q3 at Melbourne?",
+                                      "Who recorded the highest speed trap reading at Monza?", "How far off pole was Oscar at Monza?",
+                                      "How far did Hülkenberg get in qualifying at Melbourne?", "How far apart were Bortoleto and Lindblad?",
+                                      "Where did Ocon qualify?", "What was Lawson's grid position at Melbourne?"])
+def test_one_fact_questions_get_the_short_style(question):
+    assert query.is_lookup_question(question)
+
+
+@pytest.mark.parametrize("question", ["Why was Verstappen so bad in Monza?", "Compare Isack and Max during Aussie quali",
+                                      "Who was faster through the first corner, Russell or Hamilton?", "Which driver carried more speed through the slowest corner?",
+                                      "Who was quicker through T11, Stroll or Fernando?", "How did Stroll stack up against Sainz?",
+                                      "Where did each team have an advantage in Melbourne?"])
+def test_analysis_questions_keep_the_full_answer(question):
+    assert not query.is_lookup_question(question)
+
+
+def test_a_one_fact_question_asks_for_a_short_answer_and_a_small_token_budget(monkeypatch):
+    seen = {}
+
+    def fake(prompt, **kw):
+        seen.update(kw, prompt=prompt)
+        return "Hulkenberg."
+    monkeypatch.setattr(query, "call_llm", fake)
+    query.answer_with_sources("What was Bearman's best qualifying lap at Melbourne?", model="m")
+    assert seen["max_tokens"] == query.CONCISE_MAX_TOKENS and "Answer style: this question asks for one fact" in seen["prompt"]
+    seen.clear()
+    query.answer_with_sources("Compare Russell and Hamilton at Barcelona.", model="m")
+    assert "max_tokens" not in seen and "Answer style" not in seen["prompt"]
+
+
+def test_a_one_fact_answer_is_cut_to_its_first_sentences():
+    answer = ("BOR (Audi), with a Q2 time of 1:20.221. The context lists him as the slowest Q2 time among the 10 drivers who reached Q3. "
+              "He set no Q3 time. The next-quickest was HUL at 1:20.303.")
+    assert query.limit_sentences(answer, 2) == ("BOR (Audi), with a Q2 time of 1:20.221. The context lists him as the slowest Q2 time "
+                                                "among the 10 drivers who reached Q3.")
+    assert query.limit_sentences("Piastri was 0.109s off pole: 1:19.436 vs 1:19.327.", 3) == "Piastri was 0.109s off pole: 1:19.436 vs 1:19.327."
+    assert query.lookup_sentence_limit("How far off pole was Oscar?") == 3 and query.lookup_sentence_limit("What was his best lap?") == 2
+
+
+def test_the_cut_is_applied_to_one_fact_questions_only(monkeypatch):
+    long = "First fact. Second fact. Third fact. Fourth fact."
+    monkeypatch.setattr(query, "call_llm", lambda prompt, **k: long)
+    assert query.answer_with_sources("What was Bearman's best qualifying lap at Melbourne?", model="m")["answer"] == "First fact. Second fact."
+    assert query.answer_with_sources("Compare Russell and Hamilton at Barcelona.", model="m")["answer"] == long

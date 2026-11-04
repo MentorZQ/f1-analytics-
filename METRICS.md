@@ -286,3 +286,9 @@ Prompt extraction (6, one in French), secrets (3), role hijack (3), off-topic (5
 - Scoring fix: a driver named inside a parenthetical is not the subject of the next clause ("Antonelli carried more speed (... for Russell) and completed it 0.253 s faster").
 - Safety set on Haiku with the filter: 24 / 25 clean; the one flag was that scoring false positive, now fixed.
 
+### Changes from spot-check items 5 to 8
+
+- Never mention adding up sections or reconciling figures; "did not make Q3" for a driver eliminated before Q3 ("did not set a Q3 time" only for one who reached Q3 and set no lap); when a driver's lap in the comparison session was slower or quicker than his best lap, that is stated ("Sainz's Q3 lap was 0.682 s quicker than his Q1 lap").
+- One-fact questions ("what was X's best lap", "who was last into Q3", "how far apart were X and Y") get an answer-style line, a 300-token cap, and a cut to the first two sentences (three for gap questions). New check `concise_when_lookup` (at most 600 characters and 5 sentences for those question kinds).
+- Data-generated v4 on Haiku, same 66 questions: one-fact answers (51 of them) went from a median of 775 characters (max 2,190) to 162 (max 460); expected facts present 66 / 66 before and after; mean output tokens 449 to 179; median latency 2.5 s to 1.1 s.
+

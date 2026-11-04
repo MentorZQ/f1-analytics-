@@ -155,6 +155,38 @@ def load_session_context(collection) -> dict:
     }
 
 
+# A question for a single fact ("what was X's best lap", "who was last into Q3") gets a one-or-two-sentence answer.
+_LOOKUP = re.compile(
+    r"\bwhat (?:was|is|were)\b[^?]{0,40}\b(?:best (?:qualifying )?lap|lap time|grid position|qualifying position|gap to pole|speed trap|top speed)\b|"
+    r"\bwhat lap time\b|\bhow fast was\b|\bwhere did\b[^?]{0,30}\bqualify\b|\bwhat position\b|"
+    r"\bhow far (?:off|behind|from)\b[^?]{0,15}\bpole\b|\bhow far did\b[^?]{0,40}\bget\b|\bhow far apart\b|"
+    r"\bwho (?:was|set|recorded|made|got|had|took)\b[^?]{0,40}\b(?:fastest|quickest|highest|slowest|last|first|top|pole)\b|"
+    r"\bwhich driver\b[^?]{0,60}\b(?:only just|last|slowest|fastest|quickest|highest)\b|"
+    r"\bdid\b[^?]{0,30}\bmake (?:it )?(?:into )?q[123]\b|\bwho (?:was|were) (?:the )?(?:last|first)\b", re.I)
+_NOT_LOOKUP = re.compile(r"\bwhy\b|\bcompare\b|\bexplain\b|\bhow did\b|\bvs\.?\b|\bversus\b|\bstack up\b|\badvantage\b|\blose\b|\blost\b|\bgain|\bcorners?\b|\bturns?\b|(?<![\w-])T\d+\b|\bstraights?\b|\bsections?\b|\bthrough\b", re.I)
+CONCISE_STYLE = ("this question asks for one fact. Answer in one or two sentences: the fact and the figure it rests on "
+                 "(name the sessions if the context says the laps come from different ones). Do not add other drivers, "
+                 "sectors, corners or comparisons, and do not say what the context lacks.")
+CONCISE_MAX_TOKENS = 300
+
+
+def limit_sentences(text: str, n: int) -> str:
+    """The first n sentences of the answer. A one-fact answer is the fact and the figure behind it; the model's habit of
+    adding other drivers and remarks about missing data after it is not wanted (the prompt asks, this makes sure)."""
+    parts = re.split(r"(?<=[.!?])\s+(?=[A-Z*\"'(])", text.strip())
+    paragraphs_first = parts[:n]
+    return " ".join(paragraphs_first).strip()
+
+
+def lookup_sentence_limit(question: str) -> int:
+    """Two sentences for a one-fact answer; three where the sessions of the two laps need naming too."""
+    return 3 if re.search(r"\bhow far (?:apart|off|behind|from)\b|\bgap\b", question, re.I) else 2
+
+
+def is_lookup_question(question: str | None) -> bool:
+    return bool(question and _LOOKUP.search(question) and not _NOT_LOOKUP.search(question))
+
+
 # "What was Nico's gap to pole?" asks for the best lap against the pole lap, whatever session each came from.
 _POLE_GAP = re.compile(r"\b(?:gap|delta|off|behind|adrift|far (?:off|from|behind))\b[^.?!]{0,25}\bpole\b|\bpole\b[^.?!]{0,20}\bgap\b", re.I)
 
@@ -251,7 +283,7 @@ def lap_comparison_chunk(deltas: dict | None, session_ctx: dict, question: str |
 
 # ── LLM call ─────────────────────────────────────────────────────────────────
 
-def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None = None) -> str:
+def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None = None, max_tokens: int = 1024) -> str:
     """Send the prompt to the Anthropic API and return the response text.
 
     api_key overrides ANTHROPIC_API_KEY for this call only; it is never stored.
@@ -287,7 +319,14 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None 
         "Then keep explaining: build the answer from what the data does show (time deltas, entry, apex, "
         "minimum and exit speeds, throttle application, top speed) and say what those measurements imply. "
         "A missing detail is never a reason to skip the explanation of a section. "
-        "Do not add up sections or compute new totals unless the context gives the total; quote the figures as given. "
+        "Do not compute new totals; quote the figures as given. Never mention adding up sections, whether sections sum to a "
+        "total, or reconciling figures: if the context gives no total, simply leave it out. "
+        "Say 'did not make Q3' (or 'was out in Q2') for a driver eliminated before Q3; 'did not set a Q3 time' is only for a "
+        "driver who reached Q3 and set no lap there. "
+        "When the context says a driver's lap in the comparison session was slower or quicker than his best lap, include that "
+        "as a sentence (for example 'Sainz's Q3 lap was 0.682s quicker than his Q1 lap'). "
+        "Answer only what was asked. A question for one fact gets that fact and the figure it rests on, and nothing else: no other "
+        "drivers, sectors or corners, and no remarks about what the context lacks. "
         "Do not attribute differences to car or engine characteristics (power unit, aero, downforce): the data cannot show them. "
         "Report the differences the data shows and stop: do not add a sentence saying the data does not show what caused them. "
         "Where a corner or section says no braking was detected, or gives no throttle data, say 'no braking data was found' "
@@ -314,7 +353,7 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None 
         extra["thinking"] = {"type": "disabled"}
     message = client.messages.create(
         model=model,
-        max_tokens=1024,
+        max_tokens=max_tokens,
         system=system,
         messages=[{"role": "user", "content": prompt}],
         **extra,
@@ -691,10 +730,14 @@ def _answer_after_filter(question, session_key, n_chunks, model, api_key, verbos
     headline = lap_comparison_chunk(deltas, session_ctx, question)
     t_prepared = time.perf_counter()
     prompt_chunks = [headline] + chunks if headline else chunks
-    prompt   = format_prompt(question, prompt_chunks, max_chunks=len(prompt_chunks) if headline else n_chunks, session_ctx=session_ctx)
+    lookup = is_lookup_question(question)
+    prompt   = format_prompt(question, prompt_chunks, max_chunks=len(prompt_chunks) if headline else n_chunks, session_ctx=session_ctx,
+                             answer_style=CONCISE_STYLE if lookup else None)
     _LLM_USAGE.set(None)
     t_llm = time.perf_counter()
-    response = call_llm(prompt, model=model, api_key=api_key)
+    response = call_llm(prompt, model=model, api_key=api_key, **({"max_tokens": CONCISE_MAX_TOKENS} if lookup else {}))
+    if lookup:
+        response = limit_sentences(response, lookup_sentence_limit(question))
     t_answered = time.perf_counter()
     usage = _LLM_USAGE.get() or {}
     t_done = time.perf_counter()
