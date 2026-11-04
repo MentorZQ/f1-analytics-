@@ -331,6 +331,57 @@ def rerank_by_significance(
     return sorted(chunks, key=adjusted)
 
 
+# Which kind of chunk answers which kind of question. Head-to-head chunks dominate retrieval for any
+# question that names a driver, so "what tyre was Norris on?" would otherwise never see the lap summary.
+CHUNK_TYPE_ROUTES: list[tuple[str, str, bool]] = [
+    # (pattern, chunk_type, chunks are per driver)
+    (r"\b(?:tyres?|tires?|compound|softs?|mediums?|hards?|fresh set|used set|speed trap)\b", "driver_lap_summary", True),
+    (r"\b(?:improv\w*|across the session|through the session|during the session|progress\w*|evolution|lap[- ]by[- ]lap|"
+     r"each run|his runs|their runs|how many laps|out[- ]?lap|push lap|flying laps?)\b", "session_pace_evolution", True),
+    (r"\bsector\s*[123]\b|\bsector (?:time|rank|ranking)s?\b", "driver_sector", True),
+    (r"\b(?:weather|temperature|temp|rain\w*|dry|wet|wind\w*|humid\w*|track evolution|conditions)\b", "session_weather", False),
+    (r"\b(?:red flags?|yellow flags?|flags?|safety car|deleted|track limits|investigat\w*|race control|incidents?|stoppages?)\b",
+     "race_control_event", False),
+]
+
+
+def detect_chunk_types(question: str) -> list[tuple[str, bool]]:
+    """Chunk types the question is asking about, as (chunk_type, per_driver), in route order."""
+    q = question.lower()
+    seen, out = set(), []
+    for pattern, chunk_type, per_driver in CHUNK_TYPE_ROUTES:
+        if re.search(pattern, q) and chunk_type not in seen:
+            seen.add(chunk_type)
+            out.append((chunk_type, per_driver))
+    return out
+
+
+def ensure_chunk_types_present(final: list[dict], pool: list[dict], types: list[str], needed_drivers: set[str], n: int) -> list[dict]:
+    """
+    Make sure each requested chunk type is represented in `final`, swapping out the lowest-ranked chunk that
+    is neither the only chunk for a needed driver nor the only chunk of another requested type.
+    """
+    final = list(final)
+    for chunk_type in types:
+        if any(c.get("metadata", {}).get("chunk_type") == chunk_type for c in final):
+            continue
+        candidate = next((c for c in pool if c.get("metadata", {}).get("chunk_type") == chunk_type), None)
+        if candidate is None:
+            continue
+        for i in range(len(final) - 1, -1, -1):
+            rest = final[:i] + final[i + 1:]
+            drivers_left = {d for c in rest for d in _chunk_drivers(c)}
+            types_left = {c.get("metadata", {}).get("chunk_type") for c in rest}
+            if (_chunk_drivers(final[i]) & needed_drivers) <= drivers_left \
+                    and (final[i].get("metadata", {}).get("chunk_type") not in types or final[i].get("metadata", {}).get("chunk_type") in types_left):
+                final[i] = candidate
+                break
+        else:
+            if len(final) < n:
+                final.append(candidate)
+    return final
+
+
 def _chunk_drivers(chunk: dict) -> set[str]:
     meta = chunk.get("metadata", {})
     return {meta[k] for k in ("driver", "driver_a", "driver_b") if meta.get(k)}
@@ -471,8 +522,23 @@ def smart_retrieve(
                 chunks.append(chunk)
                 seen_ids.add(chunk["chunk_id"])
 
+    # Route by what is being asked: tyres -> lap summary, weather -> weather, "improve" -> pace evolution, ...
+    routes = detect_chunk_types(question)
+    for chunk_type, per_driver in routes:
+        if any(c["metadata"].get("chunk_type") == chunk_type for c in chunks):
+            continue
+        route_where: dict = {"chunk_type": chunk_type}
+        if per_driver and all_codes:
+            route_where = {"$and": [{"chunk_type": chunk_type}, {"driver": {"$in": sorted(all_codes)}}]}
+        for chunk in retrieve_chunks(collection, question, embed_fn, n_results=2, where=route_where,
+                                     normalize=normalize, auto_filter=False):
+            if chunk["chunk_id"] not in seen_ids:
+                chunks.append(chunk)
+                seen_ids.add(chunk["chunk_id"])
+
     ranked = rerank_by_significance(chunks)
-    return ensure_drivers_present(ranked, ranked, all_codes, n_results)
+    final = ensure_drivers_present(ranked, ranked, all_codes, n_results)
+    return ensure_chunk_types_present(final, ranked, [t for t, _ in routes], all_codes, n_results)
 
 
 def retrieve_chunks(

@@ -170,3 +170,49 @@ def test_without_wanted_the_old_behaviour_is_kept():
     col = FakeCollection()
     query.section_deltas(col, [h2h("VER", "PER")])
     assert pair_in(col.where) == {"VER", "PER"}
+
+
+# ── routing by question type ──
+
+def types(q):
+    return [t for t, _ in rr.detect_chunk_types(q)]
+
+
+def test_questions_route_to_the_chunk_type_that_holds_the_answer():
+    assert types("What tyre compound was Norris on for his pole lap?") == ["driver_lap_summary"]
+    assert types("How much did Norris improve across the Monza session?") == ["session_pace_evolution"]
+    assert types("What was the weather like in qualifying?") == ["session_weather"]
+    assert types("Were there any red flags during qualifying?") == ["race_control_event"]
+    assert types("What was Norris's sector 1 rank?") == ["driver_sector"]
+    assert types("Who had the fastest speed trap?") == ["driver_lap_summary"]
+
+
+def test_plain_comparison_questions_are_not_routed():
+    assert types("Where did Hamilton lose time to Russell?") == []
+    assert types("Why did Russell take pole at Barcelona 2026?") == []
+    assert types("Max vs Lewis at Barcelona") == []
+
+
+def test_a_routed_type_is_swapped_in_without_dropping_the_only_chunk_of_a_needed_driver():
+    """Both drivers stay represented after the swap (here PIA through the head-to-head chunks)."""
+    pair = [chunk(["NOR", "PIA"], 0.1, "head_to_head_event", 0.2), chunk(["NOR", "PIA"], 0.2, "head_to_head_event", 0.1),
+            chunk(["NOR"], 0.3, "telemetry_corner_event"), chunk(["PIA"], 0.4, "telemetry_corner_event")]
+    summary = chunk(["NOR"], 0.9, "driver_lap_summary")
+    pool = pair + [summary]
+    final = rr.ensure_chunk_types_present(pair, pool, ["driver_lap_summary"], {"NOR", "PIA"}, n=4)
+    assert summary in final and len(final) == 4
+    assert any("PIA" in rr._chunk_drivers(c) for c in final)          # PIA is still represented
+
+
+def test_nothing_changes_when_the_type_is_already_there_or_does_not_exist():
+    summary = chunk(["NOR"], 0.9, "driver_lap_summary")
+    final = [chunk(["NOR"], 0.1), summary]
+    assert rr.ensure_chunk_types_present(final, final, ["driver_lap_summary"], {"NOR"}, n=2) == final
+    assert rr.ensure_chunk_types_present(final, final, ["session_weather"], {"NOR"}, n=2) == final
+
+
+def test_a_routed_type_is_not_forced_in_when_it_would_drop_a_needed_driver():
+    final = [chunk(["NOR"], 0.1), chunk(["PIA"], 0.2)]
+    summary = chunk(["NOR"], 0.9, "driver_lap_summary")
+    out = rr.ensure_chunk_types_present(final, final + [summary], ["driver_lap_summary"], {"NOR", "PIA"}, n=2)
+    assert summary not in out and {d for c in out for d in rr._chunk_drivers(c)} == {"NOR", "PIA"}

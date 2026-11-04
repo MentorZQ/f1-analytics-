@@ -23,7 +23,9 @@ _DECLINE = re.compile(
     r"not (?:available|included|contained|provided|in the (?:context|data|retrieved))|no (?:information|data|record)|"
     r"cannot (?:be answered|determine|say)|can't (?:be answered|say)|unable to|isn't (?:in|available)|"
     r"outside (?:the )?(?:scope|data)|only (?:covers|contains|includes|has)|"
-    r"cannot (?:confirm|tell|verify)|can't (?:confirm|verify)|no data (?:about|on|for)|there is no", re.I)
+    r"cannot (?:confirm|tell|verify)|can't (?:confirm|verify)|no data (?:about|on|for)|there is no|"
+    r"\bcontains? (?:no|nothing)\b|\bno [\w ]{0,40}\bdata\b|\bnot present\b|\bnot (?:recorded|stored|measured)\b|"
+    r"\b(?:cannot|can't|can not) answer\b|\bnot in the (?:retrieved|provided)\b", re.I)
 
 
 # Only broad "why / where" questions are expected to touch the pair's biggest-gap sections.
