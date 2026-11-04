@@ -363,9 +363,15 @@ def total_consistency(answer: str, sources: list[dict], deltas: dict | None = No
             continue                                       # a sum written out without a result is a list of terms, not a claimed total
         if re.search(r"\bsectors?\b", sent, re.I):         # sector figures are not in the section list this check recomputes from
             continue
-        strong = bool(_STRONG_TOTAL.search(sent))
-        if strong or _WEAK_TOTAL.search(sent):
-            claims += [(v, sent.strip(), strong) for v, u in numbers_with_units(sent) if u == "s"]
+        word = _STRONG_TOTAL.search(sent)
+        strong = bool(word)
+        word = word or _WEAK_TOTAL.search(sent)
+        if word:
+            # only the figure the word is about is a claimed total; the others in "net 0.205s (0.120s and 0.122s ahead, ...)" are its parts
+            after = [v for v, u in numbers_with_units(sent[word.end():]) if u == "s"]
+            before = [v for v, u in numbers_with_units(sent[:word.start()]) if u == "s"]
+            chosen = after[:1] or before[-1:]
+            claims += [(v, sent.strip(), strong) for v in chosen]
     if wrong_sums:
         return CheckResult("total_consistency", "fail", 0.0,
                            f"{len(wrong_sums)} written-out sum(s) do not add up: the terms give {wrong_sums[0]['terms_sum']:g}s, the answer says {wrong_sums[0]['stated']:g}s",

@@ -130,7 +130,8 @@ def test_the_committed_corner_questions_are_checkable_from_the_snapshots_alone()
         snapshot = snap.load_snapshot(ROOT / "RAG_data_layers" / "session_snapshots" / f"{query.SESSIONS[key]}.npz")
         a, b = q["expected_drivers"]
         section = re.search(r"through (\S+(?: \S+)*?) \(turn", q["note"]).group(1)
-        winner, gap = mh.section_gap(snapshot, a, b, section)
+        rows = {d: snap.session_times_of(snap.driver_row(snapshot, d)) for d in (a, b)}
+        winner, gap = mh.section_gap(snapshot, a, b, section, snap.focus_session(rows[a], rows[b]))
         assert f"{gap:.3f}" in q["must_include"] and q["note"].endswith(f"{winner} quicker by {gap:.3f}s")
 
 

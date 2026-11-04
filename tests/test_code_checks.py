@@ -381,3 +381,14 @@ def test_a_single_section_gain_after_across_the_section_is_not_a_total():
     deltas = {"lap_gap_s": 0.317, "sections": [{"section": "T3", "start_m": 1383.0, "gain_s": -0.020}, {"section": "T1-T2", "start_m": 715.0, "gain_s": 0.087}]}
     answer = "GAS was quicker through T3. The 0.020s gain comes from the distribution of speed across the section."
     assert cc.total_consistency(answer, [], deltas).label != "fail"
+
+
+def test_figures_in_a_net_sentence_other_than_the_net_are_its_parts():
+    deltas = {"lap_gap_s": 0.205, "sections": [{"section": "Main straight", "start_m": 0.0, "gain_s": -0.120},
+                                               {"section": "T1-T2", "start_m": 715.0, "gain_s": -0.122},
+                                               {"section": "T3", "start_m": 1024.0, "gain_s": 0.131},
+                                               {"section": "T4", "start_m": 1500.0, "gain_s": 0.091}]}
+    answer = "The sections sum to the Q1 gap as stated (COL ahead 0.120s and 0.122s, MAG ahead 0.131s and 0.091s, net 0.205s for MAG)."
+    assert cc.total_consistency(answer, [], deltas).label != "fail"
+    wrong = "The sections sum to a net 0.300s for MAG."
+    assert cc.total_consistency(wrong, [], deltas).label == "fail"

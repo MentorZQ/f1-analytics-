@@ -102,7 +102,8 @@ def build_evaluators():
         if not (expected or {}).get("answerable", True):
             return {"label": "n/a", "explanation": "unanswerable question"}
         text = output.get("answer", "")
-        refused = declines(text) and len(text) < 500
+        first = re.split(r"(?<=[.!?])\s", text.strip(), maxsplit=1)[0]
+        refused = declines(first) and len(text) < 500            # a real refusal opens with it; "no information about a penalty" later on is not one
         return {"score": 0.0 if refused else 1.0, "label": "fail" if refused else "pass",
                 "explanation": "refused an answerable question" if refused else "gave a substantive answer"}
 

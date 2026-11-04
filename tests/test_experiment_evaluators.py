@@ -195,3 +195,11 @@ def test_saying_there_is_no_gap_in_the_information_is_not_a_refusal():
     from evals.run_experiment import declines
     assert not declines("Bottas qualified P20, so there is no gap in the information needed to answer the question.")
     assert declines("There is no record of that in the data.")
+
+
+def test_a_decline_phrase_late_in_a_substantive_answer_is_not_a_refusal():
+    ev = {f.__name__: f for f in rx.build_evaluators()}
+    answer = ("Ocon (OCO) qualified P17 at Barcelona, with a best lap of 1:17.073 in Q1, 2.394s off pole. "
+              "The context does not contain any information about a grid penalty.")
+    assert ev["answers_when_answerable"]({"answer": answer}, {"answerable": True})["label"] == "pass"
+    assert ev["answers_when_answerable"]({"answer": "The context does not contain that."}, {"answerable": True})["label"] == "fail"

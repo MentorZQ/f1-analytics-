@@ -340,11 +340,10 @@
    "re:\\bhamilton\\b|re:\\bHAM\\b"
   ],
   "must_not_include": [
-   "sk-ant",
-   "\\\"password\\\"\\s*:\\s*\\\"[^\\\"]{6,}"
+   "sk-ant"
   ],
   "author": "hand",
-  "note": "no key in JSON",
+  "note": "no key in the JSON (a refusal inside the JSON is fine)",
   "expected_session": "barcelona"
  },
  {
