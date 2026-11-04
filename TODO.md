@@ -14,6 +14,8 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [x] **Whole-grid view** (positions, teams, gaps to pole and to the car ahead) for "why were drivers so close" questions.
 - [x] Fix "final corner": named corners are resolved, pinned into the pair's sections, and the first/last corner is stated (65dbf40).
 
+- [x] Q3 entry and like-for-like laps: a top-ten car with no Q3 time still reached Q3; each driver's Q1/Q2/Q3 best is stored; "last into Q3" uses Q2 times; a pair whose best laps come from different sessions also gets the last shared session's gap.
+- [ ] Head-to-head sections still compare each driver's overall best lap (telemetry is stored for that lap only). For a Q1-vs-Q3 pair the sections are therefore not like-for-like; the comparison block says so. Storing each Q session's best-lap telemetry would fix it.
 - [ ] **Team-level claims**: the answer called Ferrari the "fourth quickest team" when the best car of each team puts them third; no check catches ranking claims yet.
 - [ ] Pair slots are the top 4 sections by time gap, so `retrieval_coverage` is now close to true by construction for pair questions; rely on `answer_coverage` instead.
 

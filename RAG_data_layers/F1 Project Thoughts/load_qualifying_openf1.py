@@ -509,17 +509,29 @@ def load_qualifying_session_openf1(
         fastest_rows.append(grp.loc[grp["LapTime"].idxmin()])
     fastest = pd.DataFrame(fastest_rows).reset_index(drop=True)
 
+    Q3_CARS = 10        # ten cars take part in Q3 in every format since 2014
+
     def classification(num: int):
+        """(position, last session entered, best time in Q1, Q2, Q3, crashed/stopped). A car classified in the top ten took
+        part in Q3 even when it set no time there (a crash on the out-lap or the first run), so the stage cannot be read
+        from the times alone: that recorded Leclerc, P10 at Barcelona 2026, as out in Q2."""
         r = results.get(num)
         if not r:
-            return None, None
+            return None, None, (None, None, None), False
         times = r.get("duration") or []
-        reached = max((i for i, v in enumerate(times) if v), default=0) + 1 if isinstance(times, list) else None
-        return r.get("position"), f"Q{reached}" if reached else None
+        times = list(times) if isinstance(times, list) else []
+        times += [None] * (3 - len(times))
+        timed = max((i for i, v in enumerate(times[:3]) if v), default=0) + 1
+        position = r.get("position")
+        reached = 3 if (position is not None and position <= Q3_CARS) else timed
+        return position, f"Q{max(reached, timed)}", tuple(times[:3]), bool(r.get("dnf"))
 
-    pos_q = fastest["_num"].map(classification)
-    fastest["QualifyingPosition"] = [p for p, _ in pos_q]
-    fastest["QSessionReached"] = [q for _, q in pos_q]
+    info = fastest["_num"].map(classification)
+    fastest["QualifyingPosition"] = [i[0] for i in info]
+    fastest["QSessionReached"] = [i[1] for i in info]
+    for n in range(3):
+        fastest[f"Q{n + 1}Time"] = [i[2][n] if i[2][n] else np.nan for i in info]
+    fastest["QCrashed"] = [i[3] for i in info]
     if fastest["QualifyingPosition"].isna().any():      # no official result: rank by time
         order = fastest["LapTime"].rank(method="first").astype(int)
         fastest["QualifyingPosition"] = fastest["QualifyingPosition"].fillna(order)
@@ -612,14 +624,15 @@ def load_qualifying_session_openf1(
 
     keep = ["Driver", "DriverNumber", "Team", "LapTime", "Sector1Time", "Sector2Time", "Sector3Time",
             "SpeedI1", "SpeedI2", "SpeedST", "Compound", "TyreLife", "FreshTyre",
-            "LapStartTime", "LapNumber", "IsPersonalBest", "QualifyingPosition", "QSessionReached"]
+            "LapStartTime", "LapNumber", "IsPersonalBest", "QualifyingPosition", "QSessionReached",
+            "Q1Time", "Q2Time", "Q3Time", "QCrashed"]
     log(f"  Loaded {len(fastest)} drivers, {len(all_laps)} timed laps, "
         f"{len(all_laps_full) - len(all_laps)} deleted; telemetry for {len(telemetry)}")
 
     return {
         "session_info": session_info,
         "driver_fastest_laps": fastest[keep],
-        "all_laps": all_laps[[c for c in keep if c not in ("QualifyingPosition", "QSessionReached")]],
+        "all_laps": all_laps[[c for c in keep if c not in ("QualifyingPosition", "QSessionReached", "Q1Time", "Q2Time", "Q3Time", "QCrashed")]],
         "weather": weather,
         "telemetry": telemetry,
         "dnq_drivers": dnq,

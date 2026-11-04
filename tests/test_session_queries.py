@@ -211,7 +211,7 @@ def test_the_grid_shows_each_cars_speed_trap_and_stage():
 def test_the_grid_states_the_highest_speed_traps_and_the_qualifying_progression():
     text = sq.grid_text(STAGED)
     assert "Highest speed-trap readings: BBB 353 km/h, CCC 350 km/h, DDD 345 km/h (of 5 drivers)" in text
-    assert "3 reached Q3 (last of them: CCC)" in text and "1 went out in Q2 (the best of them: DDD)" in text and "1 went out in Q1" in text
+    assert "3 reached Q3" in text and "1 went out in Q2" in text and "1 went out in Q1" in text
 
 
 def test_a_grid_without_those_fields_is_unchanged():
@@ -241,3 +241,64 @@ def test_the_prompt_tells_the_model_which_code_a_first_name_means():
     assert rr.driver_key_note("Who was fastest?") is None
     prompt = rr.format_prompt("What was Sergio's grid position?", [], session_ctx=None)
     assert "[NOTE] Names in the question: 'Sergio' means PER (Perez)." in prompt
+
+
+# ── who reached Q3, last into Q3, and like-for-like comparisons ──
+
+def _timed(**kw):
+    base = {"AAA": (80.0, 1, "Q3", {1: 81.0, 2: 80.5, 3: 80.0}), "BBB": (80.6, 2, "Q3", {1: 81.2, 2: 80.9, 3: 80.6}),
+            "CCC": (80.4, 10, "Q3", {1: 81.5, 2: 80.4})}                                  # CCC: P10, crashed in Q3, no Q3 time
+    base.update(kw)
+    return {"drivers": {c: {"lap_time_seconds": t, "qualifying_position": p, "team": c, "stage": st, "session_times": ts}
+                        for c, (t, p, st, ts) in base.items()}}
+
+
+def test_a_top_ten_car_with_no_q3_time_is_shown_as_having_reached_q3():
+    text = sq.grid_text(_timed())
+    assert "CCC" in text and "reached Q3 but set no Q3 time" in text
+
+
+def test_last_into_q3_comes_from_the_q2_times_not_the_classification():
+    # BBB is P2 on the Q3 order but CCC (P10) has the quicker Q2 time; the slowest Q2 time among the advancers is BBB's 1:20.900
+    text = sq.grid_text(_timed())
+    assert "the slowest Q2 time among them: BBB 1:20.900" in text
+    assert "decided by the Q2 times" in text
+
+
+def test_the_grid_warns_that_gaps_to_pole_mix_sessions_when_cars_went_out_early():
+    text = sq.grid_text(_timed(DDD=(82.0, 20, "Q1", {1: 82.0})))
+    assert "mixes sessions" in text and "went out in Q1" in text
+
+
+def test_session_times_are_parsed_from_the_lap_summary():
+    doc = "Qualifying progression: Qualified for Q3 (set no time in Q3; recorded as a DNF)\nBest time in each session: Q1 1:15.964; Q2 1:15.281; Q3 no time set\n"
+    assert query.parse_stage(doc) == "Q3"
+    assert query.parse_session_times(doc) == {1: pytest.approx(75.964), 2: pytest.approx(75.281)}
+    assert query.parse_session_times("nothing") == {}
+
+
+def test_a_comparison_across_sessions_also_gives_the_like_for_like_gap():
+    ctx = {"drivers": {"LEC": {"lap_time_seconds": 75.281, "qualifying_position": 10, "session_times": {1: 75.964, 2: 75.281}},
+                       "ALO": {"lap_time_seconds": 78.815, "qualifying_position": 22, "session_times": {1: 78.815}}}}
+    text = query.lap_comparison_chunk({"driver_a": "LEC", "driver_b": "ALO"}, ctx)["text"]
+    assert "from different sessions (LEC's from Q2, ALO's from Q1)" in text and "not like-for-like" in text
+    assert "in Q1" in text and "LEC 1:15.964, ALO 1:18.815" in text and "LEC was 2.851s quicker" in text
+
+
+def test_a_comparison_within_one_session_is_unchanged():
+    ctx = {"drivers": {"AAA": {"lap_time_seconds": 80.0, "qualifying_position": 1, "session_times": {1: 81.0, 3: 80.0}},
+                       "BBB": {"lap_time_seconds": 80.6, "qualifying_position": 2, "session_times": {1: 81.2, 3: 80.6}}}}
+    text = query.lap_comparison_chunk({"driver_a": "AAA", "driver_b": "BBB"}, ctx)["text"]
+    assert "like-for-like" not in text
+
+
+def test_the_lap_summary_states_entry_to_q3_and_the_time_set_in_each_session():
+    from events_and_chunking.chunk_driver import progression_lines
+    crashed = pd.Series({"QSessionReached": "Q3", "Q1Time": 75.964, "Q2Time": 75.281, "Q3Time": float("nan"), "QCrashed": True})
+    assert progression_lines(crashed) == ["Qualifying progression: Qualified for Q3 (set no time in Q3; recorded as a DNF)",
+                                          "Best time in each session: Q1 1:15.964; Q2 1:15.281; Q3 no time set"]
+    out_q1 = pd.Series({"QSessionReached": "Q1", "Q1Time": 78.815, "Q2Time": float("nan"), "Q3Time": float("nan"), "QCrashed": False})
+    assert progression_lines(out_q1)[0].startswith("Qualifying progression: Eliminated at end of Q1")
+    assert progression_lines(out_q1)[1] == "Best time in each session: Q1 1:18.815"
+    # a source without per-session times (the FastF1 path) keeps the plain status line
+    assert progression_lines(pd.Series({"QSessionReached": "Q3"})) == ["Qualifying progression: Qualified for Q3"]

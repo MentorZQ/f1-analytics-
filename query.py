@@ -92,6 +92,16 @@ def parse_stage(summary: str) -> str | None:
     return f"Q{out.group(1)}" if out else None
 
 
+def parse_session_times(summary: str) -> dict[int, float]:
+    """Best time in each qualifying session ({1: seconds, 2: seconds, 3: seconds}; a session with no time is absent)."""
+    m = re.search(r"Best time in each session:\s*([^\n]+)", summary or "")
+    out = {}
+    if m:
+        for n, minutes, seconds in re.findall(r"Q([123]) (\d+):(\d+\.\d+)", m.group(1)):
+            out[int(n)] = int(minutes) * 60 + float(seconds)
+    return out
+
+
 def load_session_context(collection) -> dict:
     """Build session context from driver_lap_summary chunks stored in the collection."""
     results = collection.get(
@@ -108,6 +118,7 @@ def load_session_context(collection) -> dict:
             "team":                m.get("team", ""),
             "speed_trap_kmh":      parse_speed_trap(doc),
             "stage":               parse_stage(doc),
+            "session_times":       parse_session_times(doc),
         }
 
     standings = sorted(drivers.items(), key=lambda x: x[1]["qualifying_position"] or 99)
@@ -141,6 +152,26 @@ def _lap_text(seconds: float) -> str:
     return f"{int(minutes)}:{rest:06.3f}"
 
 
+def _like_for_like(a: str, b: str, ia: dict, ib: dict) -> list[str]:
+    """
+    A best lap can come from different sessions: a driver out in Q1 has only a Q1 lap, a Q3 driver's best is usually a Q3
+    lap on a later, faster track. When the two best laps come from different sessions the gap between them is not
+    like-for-like, so also give the gap in the last session in which both set a time.
+    """
+    ta, tb = ia.get("session_times") or {}, ib.get("session_times") or {}
+    if not ta or not tb:
+        return []
+    best_a, best_b = min(ta, key=ta.get), min(tb, key=tb.get)
+    shared = sorted(set(ta) & set(tb))
+    if best_a == best_b or not shared:
+        return []
+    n = shared[-1]
+    return [f"Their best laps are from different sessions ({a}'s from Q{best_a}, {b}'s from Q{best_b}), "
+            f"so the gap between them is not like-for-like.",
+            f"Like-for-like, in Q{n} (the last session in which both set a time): {a} {_lap_text(ta[n])}, {b} {_lap_text(tb[n])}; "
+            f"{a if ta[n] <= tb[n] else b} was {abs(ta[n] - tb[n]):.3f}s quicker."]
+
+
 def lap_comparison_chunk(deltas: dict | None, session_ctx: dict) -> dict | None:
     """
     The one fact every two-driver answer needs: the two best laps and the gap between them. Section chunks
@@ -163,6 +194,7 @@ def lap_comparison_chunk(deltas: dict | None, session_ctx: dict) -> dict | None:
              f"Over the lap {quicker} was {abs(ta - tb):.3f}s quicker than {slower}."]
     if pa and pb and (pa < pb) != (ta < tb):
         lines.append("Note: the classification order differs from the best-lap order for these two drivers.")
+    lines += _like_for_like(a, b, ia, ib)
     return {"chunk_id": f"lap_comparison:{a}-{b}", "text": "\n".join(lines), "distance": 0.0, "rank": 0,
             "metadata": {"chunk_type": "lap_comparison", "driver_a": a, "driver_b": b}}
 

@@ -49,7 +49,13 @@ def grid_text(ctx: dict, session_label: str = "") -> str | None:
         if info.get("speed_trap_kmh"):
             extra += f"; speed trap {info['speed_trap_kmh']:g} km/h"
         if info.get("stage"):
-            extra += "; reached Q3" if info["stage"] == "Q3" else f"; out in {info['stage']}"
+            if info["stage"] == "Q3":
+                extra += "; reached Q3" if 3 in (info.get("session_times") or {3: 0}) else "; reached Q3 but set no Q3 time"
+            else:
+                extra += f"; out in {info['stage']}"
+        st = info.get("session_times") or {}
+        if st:
+            extra += "; " + ", ".join(f"Q{n} {lap_text(st[n])}" for n in sorted(st))
         lines.append(f"  P{info['qualifying_position']} {code} ({info.get('team', '')}) {lap_text(t)}  +{t - pole_time:.3f}s to pole{ahead}{extra}")
         prev_time = t
     times = sorted(i["lap_time_seconds"] for _, i in rows)
@@ -71,12 +77,24 @@ def grid_text(ctx: dict, session_label: str = "") -> str | None:
         q3 = [c for c, st in staged.items() if st == "Q3"]
         q2 = [c for c, st in staged.items() if st == "Q2"]
         q1 = [c for c, st in staged.items() if st == "Q1"]
-        parts = [f"{len(q3)} reached Q3 (last of them: {q3[-1]})"] if q3 else []
+        q2_time = lambda c: (dict(rows)[c].get("session_times") or {}).get(2)             # noqa: E731
+        parts = []
+        if q3:
+            via_q2 = sorted((q2_time(c), c) for c in q3 if q2_time(c))
+            tail = f" (the slowest Q2 time among them: {via_q2[-1][1]} {lap_text(via_q2[-1][0])})" if via_q2 else ""
+            parts.append(f"{len(q3)} reached Q3{tail}")
         if q2:
-            parts.append(f"{len(q2)} went out in Q2 (the best of them: {q2[0]})")
+            slowest_in = sorted((q2_time(c), c) for c in q2 if q2_time(c))
+            tail = f" (the quickest of them in Q2: {slowest_in[0][1]} {lap_text(slowest_in[0][0])})" if slowest_in else ""
+            parts.append(f"{len(q2)} went out in Q2{tail}")
         if q1:
             parts.append(f"{len(q1)} went out in Q1")
         lines.append("Qualifying progression, from each driver's record: " + "; ".join(parts))
+        lines.append("Who was last into Q3 is decided by the Q2 times (the slowest of the cars that advanced), not by the final "
+                     "classification, which is set by Q3 laps. A driver classified in the top ten who set no Q3 time still reached Q3.")
+        if q1 or q2:
+            lines.append("Each gap to pole above compares the driver's best lap, which for a driver out in Q1 or Q2 is from that "
+                         "earlier session, so it mixes sessions.")
     out_of_order = [c for (c, i), (_, j) in zip(rows, rows[1:]) if i["lap_time_seconds"] > j["lap_time_seconds"]]
     if out_of_order:
         lines.append("Classification order differs from best-lap order around: " + ", ".join(out_of_order))

@@ -12,10 +12,12 @@ file and committed BEFORE the first run; they are for measuring, not for tuning 
 Question families (per session): best lap, grid position, gap to pole, speed-trap leader, fastest sector, gap between
 two drivers, who was quicker through a corner, gap between teammates, and how far a driver got in qualifying.
 
-History: the first set (seed 20261103) asked "which driver was last into Q3?" and took P10 as the answer. The stored
-progression says only 9 cars reached Q3 at Barcelona and Melbourne (the classified P10 car is recorded as out in Q2), so
-two of those three expected answers were wrong. The family now asks about one named driver and reads the stored
-progression text, which has no such ambiguity.
+History: the first set (seed 20261103) asked "which driver was last into Q3?" and took P10 as the answer; the second set
+(seed 20261104) read each driver's recorded stage instead. Both were wrong in a way the data hid: the P10 car at Barcelona
+(Leclerc) crashed in Q3 and set no time, so the loader recorded him as out in Q2 and only 9 cars appeared to reach Q3. The
+loader now counts a top-ten car as having entered Q3, and "last into Q3" is the slowest Q2 time among the ten cars that
+advanced (the classification is decided by Q3 laps). Two families were added: that one, and a pair where one driver went
+out in Q1 and the other reached Q3, whose like-for-like gap is the Q1 gap.
 """
 
 from __future__ import annotations
@@ -40,7 +42,7 @@ from events_and_chunking import session_snapshot as snap  # noqa: E402
 from rag_retrieval import _DRIVER_NAMES  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "questions_heldout_data.json"
-SEED = 20261104        # 20261103 was the first set (v1); its "last into Q3" family assumed P10 = last into Q3, which the data contradicts
+SEED = 20261105        # v1 20261103 and v2 20261104 mis-stated who reached Q3 (see the module docstring); v3 uses the corrected stage and times
 
 SESSIONS = {
     "monza": ("f1_qualifying_2024_monza", ["Monza", "the Italian GP", "the Italian Grand Prix"]),
@@ -127,8 +129,11 @@ def load_session(client, collection: str, snapshot_path: Path) -> dict:
         progression = re.search(r"Qualifying progression:\s*([^\n]+)", doc)
         line = progression.group(1) if progression else ""
         stage = "Q3" if "Qualified for Q3" in line else (f"Q{m.group(1)}" if (m := re.search(r"Eliminated at end of Q([12])", line)) else None)
+        times_line = re.search(r"Best time in each session:\s*([^\n]+)", doc)
+        times = {int(n): int(mm) * 60 + float(ss) for n, mm, ss in re.findall(r"Q([123]) (\d+):(\d+\.\d+)", times_line.group(1))} if times_line else {}
         drivers[meta["driver"]] = {"time": meta["lap_time_seconds"], "position": int(meta["qualifying_position"]),
-                                   "team": meta.get("team", ""), "trap": float(trap.group(1)) if trap else None, "stage": stage}
+                                   "team": meta.get("team", ""), "trap": float(trap.group(1)) if trap else None, "stage": stage,
+                                   "times": times}
     fastest_sector = {}
     for doc in col.get(where={"chunk_type": "driver_sector"}, include=["documents"])["documents"]:
         m = re.search(r"Fastest sector (\d) in session:\s*([\d.]+)s \((\w{3})\)", doc)
@@ -253,6 +258,25 @@ def build(session_key: str, data: dict, rng: random.Random, next_id) -> list[dic
                                "Did {d} make it into Q3 at {c}, or was {d} knocked out earlier?"])
         add("data_stage", template.format(d=display(c, rng), c=circuit()), [c], [STAGE_ALTERNATIVES[stage]],
             f"{c} progression: {stage if stage != 'Q3' else 'qualified for Q3'} (driver lap summary)")
+    advanced = [c for c in codes if drivers[c].get("stage") == "Q3" and (drivers[c].get("times") or {}).get(2)]
+    if len(advanced) >= 10:
+        last = max(advanced, key=lambda c: drivers[c]["times"][2])
+        template = rng.choice(["Who was the last driver to get through to Q3 at {c}?",
+                               "Which driver only just made it into Q3 at {c}, getting through with the slowest Q2 time?"])
+        add("data_last_into_q3", template.format(c=circuit()), [last], [name_alternatives(last)],
+            f"{last} had the slowest Q2 time ({drivers[last]['times'][2]:.3f}s) of the {len(advanced)} cars that advanced to Q3")
+    out_q1 = [c for c in codes if drivers[c].get("stage") == "Q1" and (drivers[c].get("times") or {}).get(1)]
+    in_q3 = [c for c in codes if drivers[c].get("stage") == "Q3" and (drivers[c].get("times") or {}).get(1)]
+    for _ in range(2):
+        if not out_q1 or not in_q3:
+            break
+        low = rng.choice([c for c in out_q1 if c not in COMMON] or out_q1)
+        high = rng.choice([c for c in in_q3 if c not in COMMON] or in_q3)
+        gap = drivers[low]["times"][1] - drivers[high]["times"][1]
+        template = rng.choice(["Compare {a} and {b} in qualifying at {c}.", "How did {a} stack up against {b} in qualifying at {c}?"])
+        add("data_like_for_like", template.format(a=display(low, rng), b=display(high, rng), c=circuit()), [low, high],
+            [gap_text(gap)], f"{low} out in Q1, {high} reached Q3: like-for-like is Q1, {low} {drivers[low]['times'][1]:.3f}s "
+                             f"vs {high} {drivers[high]['times'][1]:.3f}s = {abs(gap):.3f}s")
     return questions
 
 

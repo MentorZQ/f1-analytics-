@@ -159,3 +159,29 @@ def test_a_speed_trap_tie_names_every_tied_driver(synthetic):
     trap = next(q for q in qs if q["kind"] == "data_speed_trap")
     assert sorted(trap["expected_drivers"]) == sorted(synthetic["drivers"]) and "tied" not in trap["note"] and " and " in trap["note"]
     assert matches(trap["must_include"][0], "Aaa and Bbb both recorded it") or matches(trap["must_include"][0], "AAA was highest")
+
+
+# ── like-for-like pair: one driver out in Q1, the other in Q3 ──
+
+def test_a_pair_split_across_sessions_expects_the_q1_gap(synthetic):
+    drivers = {c: dict(i, times={1: 81.0 + n * 0.2, 2: 80.5 + n * 0.2, 3: 80.0 + n * 0.2} if i["stage"] == "Q3" else {1: 81.0 + n * 0.2})
+               for n, (c, i) in enumerate(synthetic["drivers"].items())}
+    data = dict(synthetic, drivers=drivers)
+    qs = [q for q in make(data, 7) if q["kind"] == "data_like_for_like"]
+    assert qs
+    for q in qs:
+        low, high = q["expected_drivers"]
+        assert drivers[low]["stage"] == "Q1" and drivers[high]["stage"] == "Q3"
+        assert q["must_include"] == [f"{abs(drivers[low]['times'][1] - drivers[high]['times'][1]):.3f}"]
+
+
+def test_last_into_q3_is_the_slowest_q2_time_among_the_cars_that_advanced():
+    codes = [f"C{n:02d}" for n in range(12)]
+    # classification order is the reverse of the Q2 order for the first two, to catch an answer read off the classification
+    drivers = {c: {"time": 80.0 + n * 0.1, "position": n + 1, "team": "T", "trap": None, "stage": "Q3" if n < 10 else "Q2",
+                   "times": {1: 81.0, 2: 80.5 + (0.9 if n == 1 else 0.01 * n)}} for n, c in enumerate(codes)}
+    data = {"drivers": drivers, "fastest_sector": {}, "snapshot": None}
+    import types
+    data["snapshot"] = types.SimpleNamespace(events=[])
+    qs = [q for q in make(data, 3) if q["kind"] == "data_last_into_q3"]
+    assert len(qs) == 1 and qs[0]["expected_drivers"] == ["C01"]

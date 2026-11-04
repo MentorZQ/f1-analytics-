@@ -26,6 +26,37 @@ from .chunk_types import Chunk, make_chunk_id, format_timedelta, format_delta
 # DNQ / did-not-set-time status chunk
 # ---------------------------------------------------------------------------
 
+def progression_lines(driver_row) -> list[str]:
+    """
+    How far the driver got and the best time set in each session. A top-ten car took part in Q3 whether or not it set
+    a time there (a crash or a stop), so the stage and the times are stated separately.
+    """
+    stage = driver_row.get("QSessionReached", None)
+    if stage not in ("Q1", "Q2", "Q3"):
+        return []
+    times = [driver_row.get(f"Q{n}Time", None) for n in (1, 2, 3)]
+    known = any(t is not None and not pd.isna(t) for t in times)      # sources without per-session times (FastF1 path)
+    ran = int(stage[1])
+    if stage == "Q3":
+        status = "Qualified for Q3"
+        if known and (times[2] is None or pd.isna(times[2])):
+            status += " (set no time in Q3" + ("; recorded as a DNF)" if driver_row.get("QCrashed") else ")")
+    elif stage == "Q2":
+        status = "Eliminated at end of Q2 — did not qualify for Q3"
+    else:
+        status = "Eliminated at end of Q1 — did not reach Q2 or Q3"
+    lines = [f"Qualifying progression: {status}"]
+    if not known:
+        return lines
+    shown = []
+    for n in range(ran):
+        t = times[n]
+        shown.append(f"Q{n + 1} {format_timedelta(pd.Timedelta(seconds=float(t)))}" if t is not None and not pd.isna(t)
+                     else f"Q{n + 1} no time set")
+    lines.append("Best time in each session: " + "; ".join(shown))
+    return lines
+
+
 def chunk_driver_dnq_status(dnq_info: dict, session_info: dict) -> Chunk:
     """
     One chunk per driver who participated in qualifying but set no valid lap time.
@@ -99,23 +130,12 @@ def chunk_driver_lap_summary(
         if col in driver_row.index and not pd.isna(driver_row[col]):
             sectors[s] = driver_row[col]
 
-    q_session = driver_row.get("QSessionReached", None)
-    if q_session == "Q3":
-        q_status = "Qualified for Q3"
-    elif q_session == "Q2":
-        q_status = "Eliminated at end of Q2 — did not qualify for Q3"
-    elif q_session == "Q1":
-        q_status = "Eliminated at end of Q1 — did not reach Q2 or Q3"
-    else:
-        q_status = None
-
     lines = [
         f"Qualifying Lap Summary: {driver} ({team})",
         f"Event: {circuit} {year} Qualifying",
         f"Qualifying position: P{pos}",
     ]
-    if q_status:
-        lines.append(f"Qualifying progression: {q_status}")
+    lines += progression_lines(driver_row)
     lines += [
         f"Best lap time: {format_timedelta(lap_time)}",
         f"Gap to pole: {format_delta(gap) if pos > 1 else 'POLE POSITION'}",
