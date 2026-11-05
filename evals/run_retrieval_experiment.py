@@ -93,6 +93,7 @@ def main() -> None:
     ap.add_argument("--name", required=True)
     ap.add_argument("--only", help="comma-separated sets: " + ", ".join(SETS))
     ap.add_argument("--endpoint", default="http://localhost:6006")
+    ap.add_argument("--trace-only", action="store_true", help="only the traced pass (implies --trace): no experiments")
     ap.add_argument("--trace", action="store_true", help="also record f1.query / f1.retrieve spans (project f1-rag-retrieval)")
     args = ap.parse_args()
 
@@ -109,7 +110,9 @@ def main() -> None:
     query.call_llm = lambda prompt, **kw: "[context only: no model was called]"
     client = Client(base_url=args.endpoint)
     keys = [k.strip() for k in args.only.split(",")] if args.only else list(SETS)
-    for key in keys:
+    if args.trace_only:
+        args.trace = True
+    for key in ([] if args.trace_only else keys):
         filename, dataset_name = SETS[key]
         questions = json.loads((EVALS / filename).read_text())
         try:
@@ -149,6 +152,41 @@ def traced_pass(keys: list[str], endpoint: str) -> None:
             n += 1
     time.sleep(3)
     print(f"traced pass: {n} questions recorded in the Phoenix project 'f1-rag-retrieval'")
+    annotate_context_scores(keys, endpoint)
+
+
+def annotate_context_scores(keys: list[str], endpoint: str) -> None:
+    """Attach the context scores (drivers in the evidence, facts in the evidence) to each question's trace as annotations."""
+    import pandas as pd
+    from phoenix.client import Client
+    expected_by_question = {}
+    for key in keys:
+        for q in json.loads((EVALS / SETS[key][0]).read_text()):
+            expected_by_question[q["question"].strip()] = ({"drivers": q["expected_drivers"], "answerable": q["answerable"],
+                                                            "must_include": q.get("must_include", [])}, {"expected_session": q.get("expected_session")},
+                                                           {"question": q["question"], "session": q["session"]})
+    client = Client(base_url=endpoint)
+    spans = client.spans.get_spans_dataframe(project_name="f1-rag-retrieval", limit=10000)
+    spans = spans[spans["name"] == "f1.query"]
+    evaluators = {f.__name__: f for f in build_evaluators()}
+    rows = []
+    for span_id, row in spans.iterrows():
+        entry = expected_by_question.get(str(row.get("attributes.input.value", "")).strip())
+        f1 = row.get("attributes.f1")
+        sources = f1.get("sources") if isinstance(f1, dict) else None
+        if entry is None or not sources:
+            continue
+        expected, metadata, inputs = entry
+        output = {"sources": json.loads(sources) if isinstance(sources, str) else sources, "session": f1.get("session")}
+        for name, args in (("drivers_in_context", (output, expected)), ("facts_in_context", (output, expected)),
+                           ("pair_sections_present", (output, expected))):
+            r = evaluators[name](*args)
+            if r["label"] in ("pass", "fail"):
+                rows.append({"span_id": span_id, "name": name, "annotator_kind": "CODE", "label": r["label"], "score": r.get("score"),
+                             "explanation": r.get("explanation", "")})
+    if rows:
+        client.spans.log_span_annotations_dataframe(dataframe=pd.DataFrame(rows), sync=True)
+    print(f"annotated: {len(rows)} context scores on {spans.shape[0]} traces")
 
 
 if __name__ == "__main__":

@@ -797,7 +797,9 @@ def _refusal_result(session_key: str | None) -> dict:
 
 
 def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbose) -> dict:
-    question, removed = safety.sanitize_question(question)
+    with tracing.span("f1.sanitize_question", "TOOL", input_value=question) as sp:
+        question, removed = safety.sanitize_question(question)
+        tracing.set_attrs(sp, **{"f1.sentences_removed": len(removed), "f1.removed": removed, "output.value": question or "(nothing left)"})
     if not question:
         return _refusal_result(session_key or detect_session(""))
     result = _answer_after_filter(question, session_key, n_chunks, model, api_key, verbose)
@@ -815,14 +817,27 @@ def _answer_after_filter(question, session_key, n_chunks, model, api_key, verbos
     session_ctx = _get_session_context(session_key)
 
     t_start = time.perf_counter()
-    wanted = resolve_context_drivers(question, question_drivers(question, session_ctx), session_ctx)
-    available = extra_context(question, session_key, session_ctx)
-    pins = pinned_sections(question, session_key)
-    # Like-for-like laps only when the question names both drivers: with one driver named, the comparison driver is inferred
-    # (pole, teammate) and the question is about his own best lap, so best laps are compared.
-    explicit_pair = len(question_drivers(question, session_ctx)) >= 2
-    like = explicit_pair and not is_pole_gap_question(question)
-    pair_all = top_pair_sections(session_key, wanted, pin=pins, like_for_like=like)
+    with tracing.span("f1.understand_question", "CHAIN", input_value=question) as sp:
+        named = question_drivers(question, session_ctx)
+        wanted = resolve_context_drivers(question, named, session_ctx)
+        pins = pinned_sections(question, session_key)
+        # Like-for-like laps only when the question names both drivers: with one driver named, the comparison driver is inferred
+        # (pole, teammate) and the question is about his own best lap, so best laps are compared.
+        explicit_pair = len(named) >= 2
+        like = explicit_pair and not is_pole_gap_question(question)
+        tracing.set_attrs(sp, **{"f1.session": session_key, "f1.drivers_named": sorted(named), "f1.drivers_used": sorted(wanted),
+                                 "f1.explicit_pair": explicit_pair, "f1.pole_gap_question": is_pole_gap_question(question),
+                                 "f1.one_fact_question": is_lookup_question(question), "f1.corners_named": list(pins),
+                                 "f1.like_for_like": like})
+    with tracing.span("f1.session_views", "TOOL", input_value=question) as sp:
+        available = extra_context(question, session_key, session_ctx)
+        tracing.set_attrs(sp, **{"f1.views": [c["metadata"]["chunk_type"] for c in available], "output.value": ", ".join(
+            c["metadata"]["chunk_type"] for c in available) or "none"})
+    with tracing.span("f1.pair_sections", "TOOL", input_value=" vs ".join(sorted(wanted))) as sp:
+        pair_all = top_pair_sections(session_key, wanted, pin=pins, like_for_like=like)
+        tracing.set_attrs(sp, **{"f1.sections_generated": len(pair_all), "f1.like_for_like": like,
+                                 "f1.top_sections": [c["metadata"].get("event_id") for c in pair_all[:PAIR_SECTIONS]],
+                                 "f1.lap_session": (pair_all[0]["metadata"].get("lap_session") if pair_all else None)})
     if pins and wanted and not pair_all:
         available = available + driver_corner_chunks(collection, wanted, pins)
     n_extras, n_pair, _ = split_budget(n_chunks, len(available), bool(pair_all))
@@ -851,20 +866,33 @@ def _answer_after_filter(question, session_key, n_chunks, model, api_key, verbos
         print()
 
     t_retrieved = time.perf_counter()
-    deltas = section_deltas(collection, chunks, wanted=wanted, session_key=session_key, like_for_like=like)
-    headline = lap_comparison_chunk(deltas, session_ctx, question, like_for_like=like)
-    if deltas:
-        deltas["lap_gap_exact_s"] = exact_lap_gap(deltas, session_ctx)           # the chart shows this, not the sum of interpolated sections
+    with tracing.span("f1.lap_comparison", "TOOL", input_value=" vs ".join(sorted(wanted))) as sp:
+        deltas = section_deltas(collection, chunks, wanted=wanted, session_key=session_key, like_for_like=like)
+        headline = lap_comparison_chunk(deltas, session_ctx, question, like_for_like=like)
+        if deltas:
+            deltas["lap_gap_exact_s"] = exact_lap_gap(deltas, session_ctx)           # the chart shows this, not the sum of interpolated sections
+        tracing.set_attrs(sp, **{"f1.has_comparison": bool(deltas), "f1.lap_gap_exact_s": (deltas or {}).get("lap_gap_exact_s"),
+                                 "f1.sections_compared": len((deltas or {}).get("sections", [])),
+                                 "output.value": (headline or {}).get("text", "no two-driver comparison")})
     t_prepared = time.perf_counter()
     prompt_chunks = [headline] + chunks if headline else chunks
     lookup = is_lookup_question(question)
-    prompt   = format_prompt(question, prompt_chunks, max_chunks=len(prompt_chunks) if headline else n_chunks, session_ctx=session_ctx,
-                             answer_style=((GRID_STYLE if _GRID_POSITION.search(question) else CONCISE_STYLE) if lookup else None))
+    with tracing.span("f1.build_prompt", "CHAIN", input_value=question) as sp:
+        prompt   = format_prompt(question, prompt_chunks, max_chunks=len(prompt_chunks) if headline else n_chunks, session_ctx=session_ctx,
+                                 answer_style=((GRID_STYLE if _GRID_POSITION.search(question) else CONCISE_STYLE) if lookup else None))
+        tracing.set_attrs(sp, **{"f1.evidence_blocks": len(prompt_chunks), "f1.prompt_chars": len(prompt),
+                                 "f1.answer_style": ("grid position" if lookup and _GRID_POSITION.search(question) else "one fact") if lookup else "full"})
     _LLM_USAGE.set(None)
     t_llm = time.perf_counter()
-    response = call_llm(prompt, model=model, api_key=api_key, **({"max_tokens": CONCISE_MAX_TOKENS} if lookup else {}))
+    with tracing.span("f1.generate", "LLM", input_value=prompt) as sp:
+        response = call_llm(prompt, model=model, api_key=api_key, **({"max_tokens": CONCISE_MAX_TOKENS} if lookup else {}))
+        tracing.set_attrs(sp, **{"llm.model_name": model, "output.value": response, "f1.max_tokens": CONCISE_MAX_TOKENS if lookup else 1024})
     if lookup:
-        response = limit_sentences(response, lookup_sentence_limit(question))
+        with tracing.span("f1.limit_answer", "TOOL", input_value=response) as sp:
+            before = response
+            response = limit_sentences(response, lookup_sentence_limit(question))
+            tracing.set_attrs(sp, **{"f1.sentences_allowed": lookup_sentence_limit(question), "f1.characters_cut": len(before) - len(response),
+                                     "output.value": response})
     t_answered = time.perf_counter()
     usage = _LLM_USAGE.get() or {}
     t_done = time.perf_counter()

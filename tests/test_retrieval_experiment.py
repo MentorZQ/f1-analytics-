@@ -43,3 +43,40 @@ def test_the_spot_check_file_is_consistent_and_the_agreement_numbers_add_up():
     assert (a["answers"], a["flagged"], a["flags_right"], a["clean_ok"]) == (13, 2, 2, 1)
     assert a["human_wanted_a_change"] == 12 and a["of_those_flagged"] == 2
     assert a["correctness_problems"] == 4 and a["correctness_flagged"] == 2
+
+
+def test_every_pipeline_stage_is_a_span_with_its_facts(monkeypatch):
+    import contextlib
+
+    import query
+    import tracing
+
+    recorded = []
+
+    class FakeSpan:
+        def __init__(self, name):
+            self.name, self.attrs = name, {}
+            recorded.append(self)
+
+        def set_attribute(self, key, value):
+            self.attrs[key] = value
+
+    class FakeTracer:
+        @contextlib.contextmanager
+        def start_as_current_span(self, name):
+            yield FakeSpan(name)
+
+    monkeypatch.setattr(tracing, "_tracer", FakeTracer())
+    monkeypatch.setattr(tracing, "_initialised", True)
+    monkeypatch.setattr(query, "call_llm", lambda prompt, **kw: "First fact. Second fact. Third fact.")
+    query.answer_with_sources("What was Bearman's best qualifying lap at Melbourne?", model="m")
+    names = [s.name for s in recorded]
+    assert names == ["f1.query", "f1.sanitize_question", "f1.understand_question", "f1.session_views", "f1.pair_sections",
+                     "f1.retrieve", "f1.lap_comparison", "f1.build_prompt", "f1.generate", "f1.limit_answer"] or \
+        [n for n in names if n != "f1.query"] == ["f1.sanitize_question", "f1.understand_question", "f1.session_views", "f1.pair_sections",
+                                                  "f1.retrieve", "f1.lap_comparison", "f1.build_prompt", "f1.generate", "f1.limit_answer"]
+    by = {s.name: s.attrs for s in recorded}
+    assert by["f1.understand_question"]["openinference.span.kind"] == "CHAIN" and by["f1.generate"]["openinference.span.kind"] == "LLM"
+    assert "BEA" in by["f1.understand_question"]["f1.drivers_used"] and by["f1.understand_question"]["f1.one_fact_question"] is True
+    assert by["f1.build_prompt"]["f1.answer_style"] == "one fact" and by["f1.limit_answer"]["f1.characters_cut"] > 0
+    assert by["f1.generate"]["llm.model_name"] == "m"

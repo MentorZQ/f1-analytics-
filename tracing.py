@@ -6,10 +6,17 @@ Optional Phoenix / OpenTelemetry tracing. Off unless PHOENIX_COLLECTOR_ENDPOINT 
 
     PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006 python query.py "..."
 
-Each question becomes one trace:
-    f1.query        (CHAIN)      question in, answer out, plus the evidence as JSON attributes
-      f1.retrieve   (RETRIEVER)  the chunks with rank, distance and metadata
-      Anthropic call             captured by the OpenInference Anthropic instrumentor
+Each question becomes one trace, with a span for every stage:
+    f1.query                (CHAIN)      question in, answer out, plus the evidence as JSON attributes
+      f1.sanitize_question  (TOOL)       instruction-like sentences removed from the question
+      f1.understand_question(CHAIN)      session, drivers named and used, one-fact or pole-gap question, corners named
+      f1.session_views      (TOOL)       the whole-session blocks chosen (grid, team, section ranking, notes)
+      f1.pair_sections      (TOOL)       the two-driver section comparisons generated, and which laps they compare
+      f1.retrieve           (RETRIEVER)  the chunks with rank, distance and metadata
+      f1.lap_comparison     (TOOL)       the headline block and section tally for the pair
+      f1.build_prompt       (CHAIN)      number of evidence blocks, prompt size, answer style
+      f1.generate           (LLM)        the model call (the Anthropic instrumentor's span nests inside it)
+      f1.limit_answer       (TOOL)       a one-fact answer cut to its first sentences
 
 The API key is never put on a span: it is only passed to the Anthropic client, and the
 instrumentor records messages and model parameters, not credentials.
