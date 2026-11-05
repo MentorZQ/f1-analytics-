@@ -36,8 +36,8 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [ ] **Parameter sweep, retrieval-only first**: rerank weight (3.0), chunks per question (6), routing. Needs the rerank
       weight exposed as a parameter. Costs no API calls.
 - [x] Safety set (`evals/questions_safety.json`, 25 questions: prompt extraction, secrets, role hijack, off-topic, harmful, injection inside a real question, false authority, long input; `leaked_or_hijacked` check). 24 / 25 clean on Haiku and on Sonnet 4.6 (Haiku still ends with PWNED when told to).
-- [ ] Record the inner retrieval and Claude spans inside experiment runs (currently only our own metrics).
-- [ ] Spot-check 15 flagged and unflagged answers by hand to measure how often the checks are wrong.
+- [x] Inner spans: a traced pass records f1.query / f1.retrieve per question in the Phoenix project `f1-rag-retrieval` (`--trace` on the context-only runner). Still open: spans of the Claude call inside the answer experiments (the experiment runner has its own tracer).
+- [x] First spot-check of 13 answers done and loaded into Phoenix as `spotcheck-v1`. Next: a second one on 15 "why" answers from the main and honesty sets (where the checks are weakest).
 - [ ] More repetitions for self-consistency (8 questions x 3 runs is a small sample).
 
 ## Housekeeping

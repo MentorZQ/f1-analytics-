@@ -382,3 +382,22 @@ Fixed afterwards: the grid now says who was quickest in each of Q1, Q2 and Q3, a
 
 The lap summaries and race-control messages do not say why a driver set no time, and the stewards' messages for Barcelona never name Leclerc. `scripts/build_no_lap_notes.py` (free, OpenF1 only) now works it out for every driver and session with no time, from laps and car data: laps that did not count, no laps recorded, or a last lap that was not completed with its speed trace. Results: Leclerc at Barcelona Q3 stopped on track (244 km/h, braked to 0 km/h 28 s into the lap, did not move again; a red flag 18 s later); Verstappen at Melbourne Q1 the same (306 km/h, 0 km/h 5 s in, red flag 15 s later, which matches the public account of his crash); Sainz and Stroll have no laps recorded at all for Melbourne Q1, and Bortoleto none in Q3. The notes (`RAG_data_layers/session_notes/`) are shown in the grid and in the context when a question names the driver. The wording never says "crashed": the data shows that the car stopped, not why.
 
+### Context-only experiments, traces and the spot-check in Phoenix (all local, no model call)
+
+`python -m evals.run_retrieval_experiment --name NAME [--only SET] [--trace]` runs the retrieval and context-building half of the pipeline for every question set with the model removed (the API key is deleted from the environment before the pipeline is imported), and scores what the model would be given: are the expected drivers in it, and is every expected fact (a lap time, a gap, a position, a driver code) in it? A fact missing from the context cannot be in a correct answer, so this is an upper bound on answer quality that costs nothing. The experiments sit on the same datasets as the answer experiments.
+
+| Set | Questions | Expected drivers in the context | Expected facts in the context |
+|---|---|---|---|
+| Main | 40 | 38 / 38 | n/a (no expected facts) |
+| Naming | 16 | 15 / 15 | n/a |
+| Honesty | 19 | 16 / 16 | 5 / 5 |
+| Consistency | 8 | 8 / 8 | n/a |
+| User-written ten | 10 | 8 / 8 | 7 / 8 (the miss is a scoring artifact: the check wants the word "Russell", the context has the code RUS) |
+| Generated v7 | 66 | 66 / 66 | 66 / 66 |
+| Independent batch | 60 | 39 / 39 | n/a |
+| Safety | 25 | 6 / 6 | 5 / 5 |
+
+So retrieval is not the bottleneck: what is left to fix is the model's wording and the checks, not missing evidence. (Two "no pair sections" flags are artifacts: Verstappen set no time at Melbourne so there is nothing to compare, and the speed-trap tie lists two drivers as expected.) With `--trace`, a plain pass over the same questions records each one as a trace in the Phoenix project `f1-rag-retrieval` (`f1.query` containing `f1.retrieve`; the experiment runner has its own tracer and swallows the pipeline's spans, so the traced pass is separate). Measured on 66 traced questions: the whole pipeline without the model takes about 10 ms per question (retrieval alone about 6 ms), so almost all of the 1 to 8 s a visitor waits is the model call.
+
+The 13 hand-checked answers are the Phoenix dataset `spotcheck-v1` (`evals/spotcheck_verdicts.json`, loaded by `python -m evals.upload_spotcheck`), with the human verdict beside what the checks said. Agreement: 2 of 2 flags were right; the human wanted a change to 12 of 13 answers and the checks had flagged 2 of those 12; of 4 correctness problems (a contradictory hedge, a "started from" overclaim, the hijack, a guessed name) the checks caught 2. The other 8 were wording and length, which the checks are not built to see.
+
