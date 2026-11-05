@@ -168,7 +168,9 @@ function renderChart(deltas) {
   chart.style.marginInline = "0";
   chart.style.marginBottom = "0";
 
-  const { driver_a: a, driver_b: b, lap_gap_s: gap, sections } = deltas;
+  const { driver_a: a, driver_b: b, sections } = deltas;
+  // The exact lap-time gap when the server gives it; the sum of the interpolated sections can differ by a thousandth.
+  const gap = deltas.lap_gap_exact_s ?? deltas.lap_gap_s;
   const leader = gap >= 0 ? a : b;
   chart.append(
     el("figcaption", "chart-title", `${leader} ${seconds(gap)} faster over the lap (${a} vs ${b})`)

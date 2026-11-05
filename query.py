@@ -255,6 +255,34 @@ def _like_for_like(a: str, b: str, ia: dict, ib: dict) -> list[str]:
     return lines
 
 
+def section_tally_lines(deltas: dict) -> list[str]:
+    """How many sections each driver won, and each driver's three biggest wins: the facts a model needs not to generalise."""
+    sections = deltas.get("sections") or []
+    if not sections:
+        return []
+    a, b = deltas["driver_a"], deltas["driver_b"]
+    wins_a = sorted((x for x in sections if x["gain_s"] > 0), key=lambda x: -x["gain_s"])
+    wins_b = sorted((x for x in sections if x["gain_s"] < 0), key=lambda x: x["gain_s"])
+    top = lambda wins: ", ".join(f"{x['section']} {abs(x['gain_s']):.3f}s" for x in wins[:3]) or "none"       # noqa: E731
+    return [f"Section tally over {len(sections)} sections: {a} quicker in {len(wins_a)}, {b} quicker in {len(wins_b)}, "
+            f"{len(sections) - len(wins_a) - len(wins_b)} level.",
+            f"{a}'s biggest wins: {top(wins_a)}. {b}'s biggest wins: {top(wins_b)}."]
+
+
+def exact_lap_gap(deltas: dict | None, session_ctx: dict) -> float | None:
+    """Driver A's lap-time advantage over B (positive when A was quicker), from the laps themselves, in the session compared."""
+    if not deltas:
+        return None
+    info = session_ctx.get("drivers", {})
+    ia, ib = info.get(deltas["driver_a"]), info.get(deltas["driver_b"])
+    if not ia or not ib:
+        return None
+    n = deltas.get("lap_session")
+    ta = (ia.get("session_times") or {}).get(int(n[1])) if n else ia.get("lap_time_seconds")
+    tb = (ib.get("session_times") or {}).get(int(n[1])) if n else ib.get("lap_time_seconds")
+    return round(tb - ta, 3) if ta and tb else None
+
+
 def lap_comparison_chunk(deltas: dict | None, session_ctx: dict, question: str | None = None, like_for_like: bool = True) -> dict | None:
     """
     The one fact every two-driver answer needs: the two best laps and the gap between them. Section chunks
@@ -289,6 +317,7 @@ def lap_comparison_chunk(deltas: dict | None, session_ctx: dict, question: str |
                      + (f" (Q{best_session(ipole)})" if ipole.get("session_times") else "")
                      + f" is {abs(ta - tb):.3f}s. Give this as the gap to pole.")
         lines.append("The head-to-head sections below compare the two best laps.")
+        lines += section_tally_lines(deltas)
         return {"chunk_id": f"lap_comparison:{a}-{b}", "text": "\n".join(lines), "distance": 0.0, "rank": 0,
                 "metadata": {"chunk_type": "lap_comparison", "driver_a": a, "driver_b": b}}
     if not like_for_like:                                     # one driver named: his best lap against the inferred driver's best lap
@@ -297,6 +326,7 @@ def lap_comparison_chunk(deltas: dict | None, session_ctx: dict, question: str |
             lines.append(f"Best laps are from {a}'s Q{min(sa, key=sa.get)} and {b}'s Q{min(sb, key=sb.get)}: call them best laps, "
                          f"not a like-for-like comparison.")
         lines.append("The head-to-head sections below compare the two best laps.")
+        lines += section_tally_lines(deltas)
         return {"chunk_id": f"lap_comparison:{a}-{b}", "text": "\n".join(lines), "distance": 0.0, "rank": 0,
                 "metadata": {"chunk_type": "lap_comparison", "driver_a": a, "driver_b": b}}
     like = _like_for_like(a, b, ia, ib)
@@ -306,6 +336,7 @@ def lap_comparison_chunk(deltas: dict | None, session_ctx: dict, question: str |
         lines.append(f"The head-to-head sections below compare their {session} laps, so their gaps add up to the {session} gap."
                      if session else
                      "The head-to-head sections below compare each driver's overall best lap, so they are not like-for-like for this pair.")
+    lines += section_tally_lines(deltas)
     return {"chunk_id": f"lap_comparison:{a}-{b}", "text": "\n".join(lines), "distance": 0.0, "rank": 0,
             "metadata": {"chunk_type": "lap_comparison", "driver_a": a, "driver_b": b}}
 
@@ -325,7 +356,9 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None 
             "Prompt that would have been sent:\n\n" + prompt
         )
 
-    api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+    # A key pasted into a dashboard often carries a trailing newline, a space or quote marks; any of them makes the HTTP
+    # client refuse to send the request, which shows up as "APIConnectionError". Keys never contain those characters.
+    api_key = (api_key or os.environ.get("ANTHROPIC_API_KEY") or "").strip().strip("\"'").strip()
     if not api_key:
         return (
             "[ANTHROPIC_API_KEY not set — add it to .env or export it]\n\n"
@@ -356,6 +389,10 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None 
         "as a sentence (for example 'Sainz's Q3 lap was 0.682s quicker than his Q1 lap'). "
         "When the context gives a like-for-like comparison, lead with it, then the sentence about the driver who improved or was "
         "slower in another session; give the best-lap gap only when the question asks for the best laps or the gap to pole. "
+        "Do not say which sector a corner or straight belongs to: the context gives no sector boundaries. "
+        "When the context gives a section tally, use it: never say a driver was quicker 'consistently', 'everywhere' or 'in every "
+        "corner' unless the tally says so, list a section under the driver who was quicker there, and end with the net result and "
+        "the biggest wins on each side, not a sweeping explanation. "
         "Answer only what was asked. A question for one fact gets that fact and the figure it rests on, and nothing else: no other "
         "drivers, sectors or corners, and no remarks about what the context lacks. "
         "Do not attribute differences to car or engine characteristics (power unit, aero, downforce): the data cannot show them. "
@@ -792,6 +829,8 @@ def _answer_after_filter(question, session_key, n_chunks, model, api_key, verbos
     t_retrieved = time.perf_counter()
     deltas = section_deltas(collection, chunks, wanted=wanted, session_key=session_key, like_for_like=like)
     headline = lap_comparison_chunk(deltas, session_ctx, question, like_for_like=like)
+    if deltas:
+        deltas["lap_gap_exact_s"] = exact_lap_gap(deltas, session_ctx)           # the chart shows this, not the sum of interpolated sections
     t_prepared = time.perf_counter()
     prompt_chunks = [headline] + chunks if headline else chunks
     lookup = is_lookup_question(question)

@@ -484,3 +484,20 @@ def test_a_speed_question_asks_for_the_speed_ranking_and_it_ranks_by_minimum_spe
     snapshot = type("S", (), {"telemetry": tel})()
     text = sq.section_speed_text(snapshot, {"id": "T9", "start": 40.0, "end": 160.0}, {"drivers": {}})
     assert text.index("1. BBB") < text.index("2. AAA") and "minimum 160.0 km/h, exit 240.0 km/h, top 240.0 km/h" in text
+
+
+def test_the_comparison_block_carries_the_section_tally_and_the_biggest_wins():
+    deltas = {"driver_a": "RUS", "driver_b": "HAM", "lap_session": None,
+              "sections": [{"section": "T12", "gain_s": 0.125}, {"section": "T4", "gain_s": -0.122}, {"section": "Finish", "gain_s": 0.113},
+                           {"section": "T1-T2", "gain_s": -0.092}, {"section": "T3", "gain_s": 0.0}]}
+    ctx = {"drivers": {"RUS": {"lap_time_seconds": 74.679, "qualifying_position": 1}, "HAM": {"lap_time_seconds": 74.743, "qualifying_position": 2}}}
+    text = query.lap_comparison_chunk(deltas, ctx)["text"]
+    assert "Section tally over 5 sections: RUS quicker in 2, HAM quicker in 2, 1 level." in text
+    assert "RUS's biggest wins: T12 0.125s, Finish 0.113s. HAM's biggest wins: T4 0.122s, T1-T2 0.092s." in text
+
+
+def test_the_exact_lap_gap_comes_from_the_laps_and_not_from_the_interpolated_sections():
+    ctx = {"drivers": {"RUS": {"lap_time_seconds": 74.679, "session_times": {3: 74.679}},
+                       "HAM": {"lap_time_seconds": 74.743, "session_times": {3: 74.743}}}}
+    assert query.exact_lap_gap({"driver_a": "RUS", "driver_b": "HAM", "lap_session": None}, ctx) == 0.064
+    assert query.exact_lap_gap({"driver_a": "HAM", "driver_b": "RUS", "lap_session": "Q3"}, ctx) == -0.064

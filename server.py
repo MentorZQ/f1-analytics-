@@ -296,7 +296,8 @@ def run_query(
         if isinstance(exc, HTTPException):
             raise
         # Only the exception type is logged: messages can quote request details.
-        log.warning("Query failed: %s", type(exc).__name__)
+        cause = type(exc.__cause__).__name__ if exc.__cause__ is not None else "-"       # the type only: a message could hold the key
+        log.warning("Query failed: %s (cause: %s)", type(exc).__name__, cause)
         if own_key and isinstance(exc, (anthropic.AuthenticationError, anthropic.PermissionDeniedError)):
             raise _api_error(401, "invalid_key", "Anthropic didn't accept that key.") from None
         if isinstance(exc, anthropic.RateLimitError):

@@ -13,6 +13,7 @@ these ask "is the answer about the right thing, and does it say the right thing 
   overclaiming             : "clearly" / "definitely" about braking in a section the data could not resolve
   team_attribution         : a driver is named together with the wrong team ("Haas's Hadjar")
   team_ranking             : "the fourth quickest team" must match the ranking of the teams' cars in the grid
+  blanket_claims           : "consistently quicker" / "in every corner" when the section tally shows the drivers split the lap
   name_consistency         : a first name or three-letter code attached to the wrong surname ("Isack Lindblad", "Bearman (BOR)")
   grid_start_claim         : "started from P17" when the data has only the qualifying classification, not the final grid after penalties
   tyre_claims              : blaming tyre compound or age for a gap when the evidence shows the same tyres (or none)
@@ -603,6 +604,30 @@ def name_consistency(answer: str, sources: list[dict] | None = None) -> CheckRes
     return CheckResult("name_consistency", "pass", 1.0, f"All {checked} name pairing(s) are consistent.")
 
 
+# ── blanket claims against the section tally ─────────────────────────────────
+
+_BLANKET = re.compile(r"\bconsistently\b|\b(?:in|at|through) every (?:corner|section|straight|sector)\b|\bevery (?:corner|section)\b|"
+                      r"\ball (?:the )?(?:corners|sections)\b|\beverywhere\b|\bthroughout the lap\b|\bacross the whole lap\b", re.I)
+_ADVANTAGE = re.compile(r"\b(?:faster|quicker|gain\w*|ahead|advantage|lost|losing|outpac\w*|dominat\w*)\b", re.I)
+
+
+def blanket_claims(answer: str, sources: list[dict], deltas: dict | None = None) -> CheckResult:
+    """A claim that one driver was quicker 'consistently' or 'in every corner' must fit the section tally."""
+    sections = (deltas or {}).get("sections") or []
+    if len(sections) < 4:
+        return CheckResult("blanket_claims", "n/a", None, "No section tally to compare a blanket claim with.")
+    hits = [sent.strip() for sent in cc._sentences(cc._norm(answer)) if _BLANKET.search(sent) and _ADVANTAGE.search(sent)]
+    if not hits:
+        return CheckResult("blanket_claims", "n/a", None, "The answer makes no claim that one driver was quicker everywhere.")
+    wins_a = sum(x["gain_s"] > 0 for x in sections)
+    wins_b = sum(x["gain_s"] < 0 for x in sections)
+    if max(wins_a, wins_b) / len(sections) < 0.85:
+        return CheckResult("blanket_claims", "fail", 0.0,
+                           f"The answer claims a lap-wide pattern, but the sections are split {wins_a} to {wins_b} of {len(sections)}: "
+                           + hits[0][:120], hits)
+    return CheckResult("blanket_claims", "pass", 1.0, f"The blanket claim fits the tally ({wins_a} to {wins_b} of {len(sections)}).")
+
+
 def run_all(answer: str, sources: list[dict], deltas: dict | None = None, question: str | None = None,
             session: str | None = None) -> list[CheckResult]:
     return [reversed_winner(answer, sources, deltas),
@@ -614,6 +639,7 @@ def run_all(answer: str, sources: list[dict], deltas: dict | None = None, questi
             tyre_claims(answer, sources),
             grid_start_claim(answer, sources),
             name_consistency(answer, sources),
+            blanket_claims(answer, sources, deltas),
             completeness(answer, sources, deltas, question),
             false_premise(answer, sources, question),
             overclaiming(answer, sources, question)]

@@ -322,3 +322,21 @@ def test_names_that_do_not_belong_together_are_flagged(text):
                                   "Carlos Sainz won the Williams battle.", "The Red Bull Racing team did well."])
 def test_consistent_names_pass_or_are_not_checked(text):
     assert cl.name_consistency(text).label in {"pass", "n/a"}
+
+
+# ── blanket claims ──
+
+SPLIT = {"sections": [{"section": f"T{i}", "gain_s": g} for i, g in enumerate([0.09, -0.12, 0.08, 0.07, -0.04, -0.03, 0.12, -0.08], 1)]}   # 4 to 4
+ONE_SIDED = {"sections": [{"section": f"T{i}", "gain_s": 0.1} for i in range(1, 9)]}
+
+
+@pytest.mark.parametrize("text", ["Russell was consistently quicker through the corners.", "Russell gained time in every corner.",
+                                  "Russell was faster everywhere on the lap."])
+def test_a_blanket_claim_fails_when_the_drivers_split_the_lap(text):
+    assert cl.blanket_claims(text, [], SPLIT).label == "fail"
+    assert cl.blanket_claims(text, [], ONE_SIDED).label == "pass"
+
+
+def test_no_blanket_claim_or_no_sections_is_not_checked():
+    assert cl.blanket_claims("Russell won T3 by 0.08s and Hamilton won T2 by 0.12s.", [], SPLIT).label == "n/a"
+    assert cl.blanket_claims("Russell was consistently quicker.", [], None).label == "n/a"
