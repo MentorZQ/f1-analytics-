@@ -255,10 +255,10 @@ def _like_for_like(a: str, b: str, ia: dict, ib: dict) -> list[str]:
     return lines
 
 
-ACCURACY_NOTE = ("Accuracy: the three sector times are exact timing. Section gaps and braking points come from position data whose "
-                 "distance is accurate to about 5 to 10 m between two laps (up to 0.15s in one corner and the opposite in the next), "
-                 "so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable differences: do not "
-                 "build the explanation on them.")
+ACCURACY_NOTE = ("Accuracy: the three sector times are exact timing. Section gaps and braking points come from position data: compared "
+                 "with the official sector gaps, the telemetry's cumulative gap is off by 0.02 to 0.10s on average (up to about 0.18s "
+                 "at Melbourne), so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable "
+                 "differences: do not build the explanation on them. Larger gaps (0.2s or more) are usually real.")
 
 
 def section_tally_lines(deltas: dict) -> list[str]:

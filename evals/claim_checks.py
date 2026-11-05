@@ -617,7 +617,12 @@ def blanket_claims(answer: str, sources: list[dict], deltas: dict | None = None)
     sections = (deltas or {}).get("sections") or []
     if len(sections) < 4:
         return CheckResult("blanket_claims", "n/a", None, "No section tally to compare a blanket claim with.")
-    hits = [sent.strip() for sent in cc._sentences(cc._norm(answer)) if _BLANKET.search(sent) and _ADVANTAGE.search(sent)]
+    def negated(sent: str) -> bool:                           # "Russell did not dominate everywhere" denies the blanket claim
+        m = _BLANKET.search(sent)
+        return bool(m and re.search(r"\b(?:not|never|no|rather than|instead of|without|hardly)\b|n't", sent[: m.start()][-60:], re.I))
+
+    hits = [sent.strip() for sent in cc._sentences(cc._norm(answer))
+            if _BLANKET.search(sent) and _ADVANTAGE.search(sent) and not negated(sent)]
     if not hits:
         return CheckResult("blanket_claims", "n/a", None, "The answer makes no claim that one driver was quicker everywhere.")
     wins_a = sum(x["gain_s"] > 0 for x in sections)

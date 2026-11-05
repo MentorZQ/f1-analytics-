@@ -349,22 +349,22 @@ So the checks catch roughly 5 of 12 real problems on questions they were not tun
 
 The decline wording is fixed in the scoring (`not on the entry list`, `did not take part`, `fall outside`). The writer's label for "why was Verstappen so slow" cannot be fixed by scoring: his data says he set no lap, so the system's answer is right and the label is wrong. Haiku's guess-first habit appears on questions Sonnet answers cleanly; the site uses Sonnet 4.6.
 
-### A measurement problem found by looking at one saved example: lap distance alignment
+### How accurate are the section gaps? (a correction that was tried, tested and removed)
 
-A visitor-style doubt ("were Antonelli and Russell really trading two tenths here and there over Melbourne?") turned out to be right in part. Each lap's distance axis comes from position data and is pinned to 0 at the start line and one lap length at the finish line, so its error builds up mid-lap. Against the field's median speed trace, the laps in all three sessions are off by 6 to 8 m (standard deviation) and up to 14 m; the first and second half of a lap agree within a few metres, so the offsets are real, not driving differences. At 250 km/h, 10 m is 0.15 s, and the error changes sign around each braking zone, so it showed up as section gaps of 0.1 to 0.2 s that cancelled in the next section. The sections still summed to the exact lap gap (0.292 s against 0.293 s), which is why it was not obvious.
+A visitor-style doubt ("were Antonelli and Russell really trading two tenths here and there over Melbourne?") led to a look at how accurate the corner-by-corner gaps are. **I first reported a fix that was wrong; this section records what the tests showed.**
 
-Evidence on the two examples (positive = Russell quicker):
+What I did first: matching each driver's speed trace to the field's median trace suggested every lap's distance axis was off by 6 to 8 m, and a one-parameter correction (a bulge, zero at the start and finish line) moved several section gaps a lot (Barcelona T4 from -0.122 s to +0.026 s, Melbourne T3 from +0.164 s to -0.036 s) while keeping the lap total. That looked convincing, and it was shipped.
 
-| Section | Raw | After alignment |
+Why it was wrong: speed-trace matching cannot tell an axis error from a real driving difference (a car that brakes later or carries more speed also needs a "shift" to match the median). I then tested it against data it had not been fitted on: the **official sector times**. The timing loops sit at fixed places on the track, so at the moment each car's clock reaches its official S1 and S1+S2 times, the telemetry's cumulative gap to another car should equal the official sector gap.
+
+| Session (vs one reference driver) | Mean error of the cumulative gap at the S1 loop / S2 loop, raw | after my correction |
 |---|---|---|
-| Barcelona T4 (was "Hamilton 0.122 s quicker") | -0.122 | +0.026 |
-| Barcelona T1-T2 | -0.092 | -0.025 |
-| Barcelona T12 | +0.125 | +0.075 |
-| Melbourne T3 (was "Russell 0.164 s quicker") | +0.164 | -0.036 |
-| Melbourne T13 | -0.213 | -0.215 |
-| Melbourne T8-T9 straight | +0.214 | +0.199 |
+| Melbourne | 0.103 s / 0.058 s | 0.089 s / 0.148 s |
+| Barcelona | 0.062 s / 0.066 s | 0.113 s / 0.094 s |
+| Monza | 0.031 s / 0.018 s | 0.061 s / 0.062 s |
 
-A first attempt, a constant shift per lap, was wrong: it broke the totals (Barcelona 0.064 s became 0.165 s). The fix is one parameter per lap, a bulge that is zero at both ends and +a metres at mid-lap, chosen to match the lap's speed trace to the field median (`snapshot.align_distance`, applied when a snapshot is loaded; the raw distance is kept as `DistanceRaw`). Both ends stay fixed, so the totals are unchanged (checked: 0.293 s and 0.064 s before and after). Real differences (Melbourne T13, the T8-T9 straight) survive; artifacts (Barcelona T4, Melbourne T3) shrink to nothing. Limits: it assumes the error is smooth over the lap (a localised error would not be fixed), it uses the field median as the reference, and the stored one-driver corner chunks in the Chroma store were built on the raw distance (their braking and apex positions are not corrected).
+The correction made the gap at the loops worse in 5 of 6 comparisons, and the raw positions at the loops already agreed to 2 to 6 m (standard deviation). A second idea, stretching each lap's clock to hit the official sector times, was tested the same way (anchor at S1, test at S2) and was mixed: better at Barcelona (0.066 s to 0.042 s), worse at Melbourne (0.058 s to 0.075 s), neutral at Monza. So **no correction is reliably better than the raw numbers, and the alignment code was removed**.
 
-Also changed: two braking points count as different only when more than 15 m apart (was 2 m, well inside the error); the context carries an accuracy note (sector times are exact timing; section gaps under about 0.1 s and braking points under 15 m are not reliable differences); a `braking_precision` check flags "braked 8m later"; the chart shows the exact lap gap; the saved examples were regenerated on the aligned data and must pass all checks in the test suite; data-generated set v6 (seed 20261108) replaces v5 because its corner-winner answers are computed on the aligned laps. All earlier results that quote section gaps (the spot-check and independent-batch sections above) were measured on the raw distance.
+What stays true, measured on the official timing: the telemetry's cumulative gap is off by about 0.02 to 0.10 s on average (90th percentile 0.04 to 0.18 s; Melbourne is the noisiest). A section gap is a difference of two such errors, so gaps under about 0.1 s are noise, gaps of 0.2 s or more are usually real, and the three sector times are exact. Two braking points count as different only if more than 15 m apart (the old limit was 2 m). The context now carries this accuracy note, a `braking_precision` check flags "braked 8m later", the chart shows the exact lap gap, and the saved examples must pass all checks in the test suite. Sector gaps are the safest numbers to quote: Antonelli vs Russell at Melbourne is 0.058 s, 0.156 s and 0.079 s (S1, S2, S3), exact.
 
+Data-generated set v7 (seed 20261109) replaces v5 and v6 (v6 was computed on the removed correction). All earlier results that quote section gaps were measured on the raw distance, which is what the system uses again.

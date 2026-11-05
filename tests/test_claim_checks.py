@@ -352,3 +352,9 @@ def test_a_braking_difference_under_the_distance_accuracy_is_flagged(text):
                                   "Braking points within 8m of each other are level.", "Hamilton was 0.092s quicker through T1-T2."])
 def test_larger_or_hedged_braking_differences_are_not_flagged(text):
     assert cl.braking_precision(text).label == "pass"
+
+
+@pytest.mark.parametrize("text", ["Russell did not dominate everywhere.", "He was not consistently quicker through the corners.",
+                                  "Hamilton wasn't faster in every corner, only in a few."])
+def test_a_negated_blanket_phrase_is_not_a_blanket_claim(text):
+    assert cl.blanket_claims(text, [], SPLIT).label == "n/a"

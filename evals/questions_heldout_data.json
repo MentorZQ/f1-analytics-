@@ -1,126 +1,126 @@
 [
  {
   "id": "d01",
-  "question": "What lap time did Russell set in qualifying at the Italian GP?",
+  "question": "How fast was Esteban in qualifying at the Italian GP?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_lap_time",
-  "expected_drivers": [
-   "RUS"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "1:19.440|79.440"
-  ],
-  "author": "generated",
-  "note": "RUS best lap 79.440s (driver lap summary)"
- },
- {
-  "id": "d02",
-  "question": "What was Norris's best qualifying lap at the Italian Grand Prix?",
-  "session": null,
-  "expected_session": "monza",
-  "kind": "data_lap_time",
-  "expected_drivers": [
-   "NOR"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "1:19.327|79.327"
-  ],
-  "author": "generated",
-  "note": "NOR best lap 79.327s (driver lap summary)"
- },
- {
-  "id": "d03",
-  "question": "What was Albon's best qualifying lap at Monza?",
-  "session": null,
-  "expected_session": "monza",
-  "kind": "data_lap_time",
-  "expected_drivers": [
-   "ALB"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "1:20.299|80.299"
-  ],
-  "author": "generated",
-  "note": "ALB best lap 80.299s (driver lap summary)"
- },
- {
-  "id": "d04",
-  "question": "Where did Carlos qualify at the Italian Grand Prix?",
-  "session": null,
-  "expected_session": "monza",
-  "kind": "data_position",
-  "expected_drivers": [
-   "SAI"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "re:\\bP5\\b|re:\\b5th\\b|re:\\bfifth\\b"
-  ],
-  "author": "generated",
-  "note": "SAI classified P5"
- },
- {
-  "id": "d05",
-  "question": "What was Ocon's grid position at the Italian GP?",
-  "session": null,
-  "expected_session": "monza",
-  "kind": "data_position",
   "expected_drivers": [
    "OCO"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:\\bP15\\b|re:\\b15th\\b|re:\\bfifteenth\\b"
+   "1:20.764|80.764"
   ],
   "author": "generated",
-  "note": "OCO classified P15"
+  "note": "OCO best lap 80.764s (driver lap summary)"
+ },
+ {
+  "id": "d02",
+  "question": "What lap time did Bottas set in qualifying at the Italian GP?",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "data_lap_time",
+  "expected_drivers": [
+   "BOT"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "1:21.101|81.101"
+  ],
+  "author": "generated",
+  "note": "BOT best lap 81.101s (driver lap summary)"
+ },
+ {
+  "id": "d03",
+  "question": "What was Hülkenberg's best qualifying lap at the Italian GP?",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "data_lap_time",
+  "expected_drivers": [
+   "HUL"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "1:20.339|80.339"
+  ],
+  "author": "generated",
+  "note": "HUL best lap 80.339s (driver lap summary)"
+ },
+ {
+  "id": "d04",
+  "question": "Where did Daniel qualify at Monza?",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "data_position",
+  "expected_drivers": [
+   "RIC"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:\\bP12\\b|re:\\b12th\\b|re:\\btwelfth\\b"
+  ],
+  "author": "generated",
+  "note": "RIC classified P12"
+ },
+ {
+  "id": "d05",
+  "question": "What was Lance's grid position at the Italian GP?",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "data_position",
+  "expected_drivers": [
+   "STR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:\\bP17\\b|re:\\b17th\\b|re:\\bseventeenth\\b"
+  ],
+  "author": "generated",
+  "note": "STR classified P17"
  },
  {
   "id": "d06",
-  "question": "What was Perez's gap to pole in qualifying at Monza?",
+  "question": "How far off pole was Yuki at Monza?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_gap_to_pole",
   "expected_drivers": [
-   "PER"
+   "TSU"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "0.735"
+   "1.618"
   ],
   "author": "generated",
-  "note": "PER 80.062s vs pole 79.327s = 0.735s"
+  "note": "TSU 80.945s vs pole 79.327s = 1.618s"
  },
  {
   "id": "d07",
-  "question": "How far off pole was Magnussen at the Italian GP?",
+  "question": "How far off pole was Bottas at the Italian Grand Prix?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_gap_to_pole",
   "expected_drivers": [
-   "MAG"
+   "BOT"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "1.371"
+   "1.774"
   ],
   "author": "generated",
-  "note": "MAG 80.698s vs pole 79.327s = 1.371s"
+  "note": "BOT 81.101s vs pole 79.327s = 1.774s"
  },
  {
   "id": "d08",
-  "question": "Who recorded the highest speed trap reading in qualifying at the Italian Grand Prix?",
+  "question": "Who recorded the highest speed trap reading in qualifying at Monza?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_speed_trap",
@@ -139,154 +139,154 @@
  },
  {
   "id": "d09",
-  "question": "Who set the quickest sector 2 time in qualifying at the Italian Grand Prix?",
+  "question": "Who set the quickest sector 1 time in qualifying at the Italian GP?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_fastest_sector",
   "expected_drivers": [
-   "NOR"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "re:\\bnorris\\b|re:\\blando\\b|re:\\bNOR\\b",
-   "26.579"
-  ],
-  "author": "generated",
-  "note": "fastest sector 2: NOR 26.579s"
- },
- {
-  "id": "d10",
-  "question": "How far apart were Esteban and Stroll in qualifying at Monza?",
-  "session": null,
-  "expected_session": "monza",
-  "kind": "data_pair_gap",
-  "expected_drivers": [
-   "OCO",
-   "STR"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "0.249"
-  ],
-  "author": "generated",
-  "note": "OCO 80.764s, STR 81.013s; OCO quicker by 0.249s on the best laps"
- },
- {
-  "id": "d11",
-  "question": "How far apart were Tsunoda and Kmag in qualifying at the Italian GP?",
-  "session": null,
-  "expected_session": "monza",
-  "kind": "data_pair_gap",
-  "expected_drivers": [
-   "TSU",
-   "MAG"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "0.089"
-  ],
-  "author": "generated",
-  "note": "TSU 80.945s, MAG 80.698s; MAG quicker by 0.089s on the Q1 laps"
- },
- {
-  "id": "d12",
-  "question": "How far apart were Alonso and Sergio in qualifying at the Italian Grand Prix?",
-  "session": null,
-  "expected_session": "monza",
-  "kind": "data_pair_gap",
-  "expected_drivers": [
-   "ALO",
-   "PER"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "0.205"
-  ],
-  "author": "generated",
-  "note": "ALO 80.421s, PER 80.062s; PER quicker by 0.205s on the Q2 laps"
- },
- {
-  "id": "d13",
-  "question": "Albon or Stroll: who was quicker through T9 at Monza?",
-  "session": null,
-  "expected_session": "monza",
-  "kind": "data_corner_winner",
-  "expected_drivers": [
-   "ALB",
-   "STR"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "re:\\balbon\\b|re:\\bALB\\b",
-   "0.169"
-  ],
-  "author": "generated",
-  "note": "through T8-T9-T10 (turn 9): ALB quicker by 0.169s"
- },
- {
-  "id": "d14",
-  "question": "Carlos or Bottas: who was quicker through T9 at the Italian GP?",
-  "session": null,
-  "expected_session": "monza",
-  "kind": "data_corner_winner",
-  "expected_drivers": [
-   "SAI",
-   "BOT"
+   "SAI"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
    "re:\\bsainz\\b|re:\\bcarlos\\b|re:\\bSAI\\b",
-   "0.198"
+   "26.223"
   ],
   "author": "generated",
-  "note": "through T8-T9-T10 (turn 9): SAI quicker by 0.198s"
+  "note": "fastest sector 1: SAI 26.223s"
  },
  {
-  "id": "d15",
-  "question": "Perez or Franco: who was quicker through T11 at the Italian GP?",
+  "id": "d10",
+  "question": "How far apart were Zhou and Sergio in qualifying at Monza?",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "data_pair_gap",
+  "expected_drivers": [
+   "ZHO",
+   "PER"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "0.847"
+  ],
+  "author": "generated",
+  "note": "ZHO 81.445s, PER 80.062s; PER quicker by 0.847s on the Q1 laps"
+ },
+ {
+  "id": "d11",
+  "question": "How far apart were Stroll and K-Mag in qualifying at Monza?",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "data_pair_gap",
+  "expected_drivers": [
+   "STR",
+   "MAG"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "0.157"
+  ],
+  "author": "generated",
+  "note": "STR 81.013s, MAG 80.698s; MAG quicker by 0.157s on the Q1 laps"
+ },
+ {
+  "id": "d12",
+  "question": "How far apart were Carlos and Albon in qualifying at Monza?",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "data_pair_gap",
+  "expected_drivers": [
+   "SAI",
+   "ALB"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "0.832"
+  ],
+  "author": "generated",
+  "note": "SAI 79.467s, ALB 80.299s; SAI quicker by 0.832s on the best laps"
+ },
+ {
+  "id": "d13",
+  "question": "Stroll or Gasly: who was quicker through T11 at the Italian GP?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_corner_winner",
   "expected_drivers": [
-   "PER",
-   "COL"
+   "STR",
+   "GAS"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:\\bperez\\b|re:\\bsergio\\b|re:\\bPER\\b",
-   "0.122"
+   "re:\\bgasly\\b|re:\\bpierre\\b|re:\\bGAS\\b",
+   "0.069"
   ],
   "author": "generated",
-  "note": "through T11 (turn 11): PER quicker by 0.122s"
+  "note": "through T11 (turn 11): GAS quicker by 0.069s"
+ },
+ {
+  "id": "d14",
+  "question": "Yuki or Zhou: who was quicker through T5 at the Italian Grand Prix?",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "data_corner_winner",
+  "expected_drivers": [
+   "TSU",
+   "ZHO"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:\\bzhou\\b|re:\\bguanyu\\b|re:\\bZHO\\b",
+   "0.039"
+  ],
+  "author": "generated",
+  "note": "through T4-T5 (turn 5): ZHO quicker by 0.039s"
+ },
+ {
+  "id": "d15",
+  "question": "Guanyu or Alonso: who was quicker through T1 at the Italian GP?",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "data_corner_winner",
+  "expected_drivers": [
+   "ZHO",
+   "ALO"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:\\balonso\\b|re:\\bfernando\\b|re:\\bALO\\b",
+   "0.130"
+  ],
+  "author": "generated",
+  "note": "through T1-T2 (turn 1): ALO quicker by 0.130s"
  },
  {
   "id": "d16",
-  "question": "How far apart were the two Williams drivers in qualifying at the Italian Grand Prix?",
+  "question": "How far apart were the two Kick Sauber drivers in qualifying at the Italian GP?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_teammate_gap",
   "expected_drivers": [
-   "ALB",
-   "COL"
+   "BOT",
+   "ZHO"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "0.519"
+   "0.344"
   ],
   "author": "generated",
-  "note": "ALB 80.299s, COL 81.061s; gap on the Q1 laps"
+  "note": "BOT 81.101s, ZHO 81.445s; gap on the best laps"
  },
  {
   "id": "d17",
-  "question": "How far apart were the two Red Bull Racing drivers in qualifying at the Italian Grand Prix?",
+  "question": "How far apart were the two Red Bull Racing drivers in qualifying at Monza?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_teammate_gap",
@@ -304,29 +304,29 @@
  },
  {
   "id": "d18",
-  "question": "How far did Lance get in qualifying at the Italian Grand Prix: out in Q1, out in Q2, or into Q3?",
+  "question": "Did Gasly make it into Q3 at Monza, or was Gasly knocked out earlier?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_stage",
   "expected_drivers": [
-   "STR"
+   "GAS"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:eliminated[^.]{0,25}\\bq1\\b|re:knocked out[^.]{0,25}\\bq1\\b|re:dropped out[^.]{0,25}\\bq1\\b|re:\\bout in q1\\b|re:\\bend of q1\\b|re:\\bq1 elimination\\b|re:\\bq1 exit\\b"
+   "re:eliminated[^.]{0,25}\\bq2\\b|re:knocked out[^.]{0,25}\\bq2\\b|re:dropped out[^.]{0,25}\\bq2\\b|re:\\bout in q2\\b|re:\\bend of q2\\b|re:\\bq2 elimination\\b|re:\\bq2 exit\\b"
   ],
   "author": "generated",
-  "note": "STR progression: Q1 (driver lap summary)"
+  "note": "GAS progression: Q2 (driver lap summary)"
  },
  {
   "id": "d19",
-  "question": "Did Carlos make it into Q3 at the Italian Grand Prix, or was Carlos knocked out earlier?",
+  "question": "Did Albon make it into Q3 at the Italian GP, or was Albon knocked out earlier?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_stage",
   "expected_drivers": [
-   "SAI"
+   "ALB"
   ],
   "answerable": true,
   "false_premise": false,
@@ -334,11 +334,11 @@
    "re:qualified for q3|re:reached q3|re:advanced to q3|re:progressed to q3|re:through to q3|re:made it (?:in)?to q3|re:made q3|re:\\bin q3\\b|re:(?<!not )(?<!n't )\\bgot (?:in)?to q3"
   ],
   "author": "generated",
-  "note": "SAI progression: qualified for Q3 (driver lap summary)"
+  "note": "ALB progression: qualified for Q3 (driver lap summary)"
  },
  {
   "id": "d20",
-  "question": "Who was the last driver to get through to Q3 at Monza?",
+  "question": "Who was the last driver to get through to Q3 at the Italian GP?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_last_into_q3",
@@ -355,162 +355,162 @@
  },
  {
   "id": "d21",
-  "question": "Compare Lance and Perez in qualifying at Monza.",
-  "session": null,
-  "expected_session": "monza",
-  "kind": "data_like_for_like",
-  "expected_drivers": [
-   "STR",
-   "PER"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "0.415"
-  ],
-  "author": "generated",
-  "note": "STR out in Q1, PER reached Q3: like-for-like is Q1, STR 81.013s vs PER 80.598s = 0.415s"
- },
- {
-  "id": "d22",
-  "question": "Compare Tsunoda and Nico in qualifying at Monza.",
+  "question": "How did Tsunoda stack up against Perez in qualifying at the Italian GP?",
   "session": null,
   "expected_session": "monza",
   "kind": "data_like_for_like",
   "expected_drivers": [
    "TSU",
+   "PER"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "0.347"
+  ],
+  "author": "generated",
+  "note": "TSU out in Q1, PER reached Q3: like-for-like is Q1, TSU 80.945s vs PER 80.598s = 0.347s"
+ },
+ {
+  "id": "d22",
+  "question": "Compare Colapinto and Hülkenberg in qualifying at Monza.",
+  "session": null,
+  "expected_session": "monza",
+  "kind": "data_like_for_like",
+  "expected_drivers": [
+   "COL",
    "HUL"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "0.164"
+   "0.280"
   ],
   "author": "generated",
-  "note": "TSU out in Q1, HUL reached Q3: like-for-like is Q1, TSU 80.945s vs HUL 80.781s = 0.164s"
+  "note": "COL out in Q1, HUL reached Q3: like-for-like is Q1, COL 81.061s vs HUL 80.781s = 0.280s"
  },
  {
   "id": "d23",
-  "question": "What lap time did Lindblad set in qualifying at the Spanish Grand Prix?",
+  "question": "What was Sainz's best qualifying lap at the Spanish GP?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_lap_time",
   "expected_drivers": [
-   "LIN"
+   "SAI"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "1:15.840|75.840"
+   "1:16.881|76.881"
   ],
   "author": "generated",
-  "note": "LIN best lap 75.840s (driver lap summary)"
+  "note": "SAI best lap 76.881s (driver lap summary)"
  },
  {
   "id": "d24",
-  "question": "What was Stroll's best qualifying lap at the Spanish GP?",
+  "question": "What lap time did Perez set in qualifying at the Spanish Grand Prix?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_lap_time",
-  "expected_drivers": [
-   "STR"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "1:18.758|78.758"
-  ],
-  "author": "generated",
-  "note": "STR best lap 78.758s (driver lap summary)"
- },
- {
-  "id": "d25",
-  "question": "How fast was Franco in qualifying at Barcelona?",
-  "session": null,
-  "expected_session": "barcelona",
-  "kind": "data_lap_time",
-  "expected_drivers": [
-   "COL"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "1:16.191|76.191"
-  ],
-  "author": "generated",
-  "note": "COL best lap 76.191s (driver lap summary)"
- },
- {
-  "id": "d26",
-  "question": "Where did Isack qualify at the Spanish GP?",
-  "session": null,
-  "expected_session": "barcelona",
-  "kind": "data_position",
-  "expected_drivers": [
-   "HAD"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "re:\\bP6\\b|re:\\b6th\\b|re:\\bsixth\\b"
-  ],
-  "author": "generated",
-  "note": "HAD classified P6"
- },
- {
-  "id": "d27",
-  "question": "What was Bortoleto's grid position at the Spanish GP?",
-  "session": null,
-  "expected_session": "barcelona",
-  "kind": "data_position",
-  "expected_drivers": [
-   "BOR"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "re:\\bP12\\b|re:\\b12th\\b|re:\\btwelfth\\b"
-  ],
-  "author": "generated",
-  "note": "BOR classified P12"
- },
- {
-  "id": "d28",
-  "question": "What was Liam's gap to pole in qualifying at Barcelona?",
-  "session": null,
-  "expected_session": "barcelona",
-  "kind": "data_gap_to_pole",
-  "expected_drivers": [
-   "LAW"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "0.906"
-  ],
-  "author": "generated",
-  "note": "LAW 75.585s vs pole 74.679s = 0.906s"
- },
- {
-  "id": "d29",
-  "question": "What was Sergio's gap to pole in qualifying at the Spanish Grand Prix?",
-  "session": null,
-  "expected_session": "barcelona",
-  "kind": "data_gap_to_pole",
   "expected_drivers": [
    "PER"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "2.866"
+   "1:17.545|77.545"
   ],
   "author": "generated",
-  "note": "PER 77.545s vs pole 74.679s = 2.866s"
+  "note": "PER best lap 77.545s (driver lap summary)"
+ },
+ {
+  "id": "d25",
+  "question": "How fast was Hülkenberg in qualifying at the Spanish Grand Prix?",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "data_lap_time",
+  "expected_drivers": [
+   "HUL"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "1:15.768|75.768"
+  ],
+  "author": "generated",
+  "note": "HUL best lap 75.768s (driver lap summary)"
+ },
+ {
+  "id": "d26",
+  "question": "What was Bottas's grid position at the Spanish GP?",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "data_position",
+  "expected_drivers": [
+   "BOT"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:\\bP20\\b|re:\\b20th\\b|re:\\btwentieth\\b"
+  ],
+  "author": "generated",
+  "note": "BOT classified P20"
+ },
+ {
+  "id": "d27",
+  "question": "Where did Esteban qualify at Barcelona?",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "data_position",
+  "expected_drivers": [
+   "OCO"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:\\bP17\\b|re:\\b17th\\b|re:\\bseventeenth\\b"
+  ],
+  "author": "generated",
+  "note": "OCO classified P17"
+ },
+ {
+  "id": "d28",
+  "question": "What was Sainz's gap to pole in qualifying at the Spanish GP?",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "data_gap_to_pole",
+  "expected_drivers": [
+   "SAI"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "2.202"
+  ],
+  "author": "generated",
+  "note": "SAI 76.881s vs pole 74.679s = 2.202s"
+ },
+ {
+  "id": "d29",
+  "question": "How far off pole was Albon at the Spanish GP?",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "data_gap_to_pole",
+  "expected_drivers": [
+   "ALB"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "2.745"
+  ],
+  "author": "generated",
+  "note": "ALB 77.424s vs pole 74.679s = 2.745s"
  },
  {
   "id": "d30",
-  "question": "Who recorded the highest speed trap reading in qualifying at the Spanish GP?",
+  "question": "Who recorded the highest speed trap reading in qualifying at Barcelona?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_speed_trap",
@@ -528,189 +528,189 @@
  },
  {
   "id": "d31",
-  "question": "Who set the quickest sector 1 time in qualifying at Barcelona?",
+  "question": "Who set the quickest sector 3 time in qualifying at the Spanish GP?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_fastest_sector",
   "expected_drivers": [
-   "VER"
+   "RUS"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:\\bverstappen\\b|re:\\bVER\\b",
-   "21.828"
+   "re:\\brussell\\b|re:\\bgeorge\\b|re:\\bRUS\\b",
+   "22.715"
   ],
   "author": "generated",
-  "note": "fastest sector 1: VER 21.828s"
+  "note": "fastest sector 3: RUS 22.715s"
  },
  {
   "id": "d32",
-  "question": "How far apart were Bortoleto and Ocon in qualifying at the Spanish Grand Prix?",
+  "question": "How far apart were Albon and Nico in qualifying at the Spanish GP?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_pair_gap",
   "expected_drivers": [
-   "BOR",
-   "OCO"
+   "ALB",
+   "HUL"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "0.457"
+   "1.358"
   ],
   "author": "generated",
-  "note": "BOR 76.001s, OCO 77.073s; BOR quicker by 0.457s on the Q1 laps"
+  "note": "ALB 77.424s, HUL 75.768s; HUL quicker by 1.358s on the Q1 laps"
  },
  {
   "id": "d33",
-  "question": "How far apart were Stroll and Fernando in qualifying at the Spanish Grand Prix?",
+  "question": "How far apart were Bearman and Bortoleto in qualifying at the Spanish Grand Prix?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_pair_gap",
   "expected_drivers": [
-   "STR",
-   "ALO"
+   "BEA",
+   "BOR"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "0.057"
+   "0.388"
   ],
   "author": "generated",
-  "note": "STR 78.758s, ALO 78.815s; STR quicker by 0.057s on the best laps"
+  "note": "BEA 76.389s, BOR 76.001s; BOR quicker by 0.388s on the best laps"
  },
  {
   "id": "d34",
-  "question": "How far apart were Sergio and Pierre in qualifying at Barcelona?",
+  "question": "How far apart were Sainz and Lawson in qualifying at the Spanish GP?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_pair_gap",
   "expected_drivers": [
-   "PER",
-   "GAS"
+   "SAI",
+   "LAW"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "0.946"
+   "2.242"
   ],
   "author": "generated",
-  "note": "PER 77.545s, GAS 76.261s; GAS quicker by 0.946s on the Q1 laps"
+  "note": "SAI 76.881s, LAW 75.585s; LAW quicker by 2.242s on the Q2 laps"
  },
  {
   "id": "d35",
-  "question": "Who was faster through turn 13 at Barcelona, Verstappen or Alonso?",
+  "question": "Who was faster through turn 2 at Barcelona, Bortoleto or Carlos?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_corner_winner",
   "expected_drivers": [
-   "VER",
-   "ALO"
+   "BOR",
+   "SAI"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:\\bverstappen\\b|re:\\bVER\\b",
-   "0.054"
+   "re:\\bbortoleto\\b|re:\\bgabriel\\b|re:\\bBOR\\b",
+   "0.123"
   ],
   "author": "generated",
-  "note": "through T13 (turn 13): VER quicker by 0.054s"
+  "note": "through T1-T2 (turn 2): BOR quicker by 0.123s"
  },
  {
   "id": "d36",
-  "question": "Lawson or Albon: who was quicker through T3 at Barcelona?",
+  "question": "Hülkenberg or Gabriel: who was quicker through T3 at Barcelona?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_corner_winner",
   "expected_drivers": [
-   "LAW",
-   "ALB"
+   "HUL",
+   "BOR"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:\\blawson\\b|re:\\bliam\\b|re:\\bLAW\\b",
-   "0.057"
+   "re:\\bbortoleto\\b|re:\\bgabriel\\b|re:\\bBOR\\b",
+   "0.116"
   ],
   "author": "generated",
-  "note": "through T3 (turn 3): LAW quicker by 0.057s"
+  "note": "through T3 (turn 3): BOR quicker by 0.116s"
  },
  {
   "id": "d37",
-  "question": "Sainz or Lindblad: who was quicker through T1 at Barcelona?",
+  "question": "Hülkenberg or Gabriel: who was quicker through T1 at the Spanish Grand Prix?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_corner_winner",
   "expected_drivers": [
-   "SAI",
+   "HUL",
+   "BOR"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:\\bhulkenberg\\b|re:\\bhülkenberg\\b|re:\\bnico\\b|re:\\bHUL\\b",
+   "0.032"
+  ],
+  "author": "generated",
+  "note": "through T1-T2 (turn 1): HUL quicker by 0.032s"
+ },
+ {
+  "id": "d38",
+  "question": "How far apart were the two Racing Bulls drivers in qualifying at Barcelona?",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "data_teammate_gap",
+  "expected_drivers": [
+   "LAW",
    "LIN"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:\\blindblad\\b|re:\\barvid\\b|re:\\bLIN\\b",
-   "0.253"
+   "0.255"
   ],
   "author": "generated",
-  "note": "through T1-T2 (turn 1): LIN quicker by 0.253s"
- },
- {
-  "id": "d38",
-  "question": "How far apart were the two Cadillac drivers in qualifying at the Spanish GP?",
-  "session": null,
-  "expected_session": "barcelona",
-  "kind": "data_teammate_gap",
-  "expected_drivers": [
-   "BOT",
-   "PER"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "0.212"
-  ],
-  "author": "generated",
-  "note": "BOT 77.757s, PER 77.545s; gap on the best laps"
+  "note": "LAW 75.585s, LIN 75.840s; gap on the best laps"
  },
  {
   "id": "d39",
-  "question": "How far apart were the two Alpine drivers in qualifying at Barcelona?",
+  "question": "How far apart were the two Haas F1 Team drivers in qualifying at the Spanish Grand Prix?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_teammate_gap",
   "expected_drivers": [
-   "COL",
-   "GAS"
+   "BEA",
+   "OCO"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "0.070"
+   "0.502"
   ],
   "author": "generated",
-  "note": "COL 76.191s, GAS 76.261s; gap on the best laps"
+  "note": "BEA 76.389s, OCO 77.073s; gap on the Q1 laps"
  },
  {
   "id": "d40",
-  "question": "Did Albon make it into Q3 at the Spanish GP, or was Albon knocked out earlier?",
+  "question": "Did Leclerc make it into Q3 at the Spanish Grand Prix, or was Leclerc knocked out earlier?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_stage",
   "expected_drivers": [
-   "ALB"
+   "LEC"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:eliminated[^.]{0,25}\\bq1\\b|re:knocked out[^.]{0,25}\\bq1\\b|re:dropped out[^.]{0,25}\\bq1\\b|re:\\bout in q1\\b|re:\\bend of q1\\b|re:\\bq1 elimination\\b|re:\\bq1 exit\\b"
+   "re:qualified for q3|re:reached q3|re:advanced to q3|re:progressed to q3|re:through to q3|re:made it (?:in)?to q3|re:made q3|re:\\bin q3\\b|re:(?<!not )(?<!n't )\\bgot (?:in)?to q3"
   ],
   "author": "generated",
-  "note": "ALB progression: Q1 (driver lap summary)"
+  "note": "LEC progression: qualified for Q3 (driver lap summary)"
  },
  {
   "id": "d41",
-  "question": "How far did Gasly get in qualifying at the Spanish GP: out in Q1, out in Q2, or into Q3?",
+  "question": "Did Pierre make it into Q3 at the Spanish Grand Prix, or was Pierre knocked out earlier?",
   "session": null,
   "expected_session": "barcelona",
   "kind": "data_stage",
@@ -744,6 +744,24 @@
  },
  {
   "id": "d43",
+  "question": "Compare Bottas and Hülkenberg in qualifying at Barcelona.",
+  "session": null,
+  "expected_session": "barcelona",
+  "kind": "data_like_for_like",
+  "expected_drivers": [
+   "BOT",
+   "HUL"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "1.691"
+  ],
+  "author": "generated",
+  "note": "BOT out in Q1, HUL reached Q3: like-for-like is Q1, BOT 77.757s vs HUL 76.066s = 1.691s"
+ },
+ {
+  "id": "d44",
   "question": "Compare Valtteri and Liam in qualifying at the Spanish GP.",
   "session": null,
   "expected_session": "barcelona",
@@ -761,60 +779,25 @@
   "note": "BOT out in Q1, LAW reached Q3: like-for-like is Q1, BOT 77.757s vs LAW 76.673s = 1.084s"
  },
  {
-  "id": "d44",
-  "question": "How did Fernando stack up against Nico in qualifying at the Spanish Grand Prix?",
-  "session": null,
-  "expected_session": "barcelona",
-  "kind": "data_like_for_like",
-  "expected_drivers": [
-   "ALO",
-   "HUL"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "2.749"
-  ],
-  "author": "generated",
-  "note": "ALO out in Q1, HUL reached Q3: like-for-like is Q1, ALO 78.815s vs HUL 76.066s = 2.749s"
- },
- {
   "id": "d45",
-  "question": "What lap time did Ocon set in qualifying at Melbourne?",
+  "question": "What was Bearman's best qualifying lap at Albert Park?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_lap_time",
   "expected_drivers": [
-   "OCO"
+   "BEA"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "1:20.491|80.491"
+   "1:20.311|80.311"
   ],
   "author": "generated",
-  "note": "OCO best lap 80.491s (driver lap summary)"
+  "note": "BEA best lap 80.311s (driver lap summary)"
  },
  {
   "id": "d46",
-  "question": "What lap time did Bottas set in qualifying at the Australian GP?",
-  "session": null,
-  "expected_session": "melbourne",
-  "kind": "data_lap_time",
-  "expected_drivers": [
-   "BOT"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "1:23.244|83.244"
-  ],
-  "author": "generated",
-  "note": "BOT best lap 83.244s (driver lap summary)"
- },
- {
-  "id": "d47",
-  "question": "What lap time did Arvid set in qualifying at Melbourne?",
+  "question": "What lap time did Lindblad set in qualifying at Albert Park?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_lap_time",
@@ -830,76 +813,93 @@
   "note": "LIN best lap 79.971s (driver lap summary)"
  },
  {
-  "id": "d48",
-  "question": "What was Hamilton's grid position at Melbourne?",
+  "id": "d47",
+  "question": "How fast was Perez in qualifying at Albert Park?",
   "session": null,
   "expected_session": "melbourne",
-  "kind": "data_position",
+  "kind": "data_lap_time",
   "expected_drivers": [
-   "HAM"
+   "PER"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:\\bP7\\b|re:\\b7th\\b|re:\\bseventh\\b"
+   "1:22.605|82.605"
   ],
   "author": "generated",
-  "note": "HAM classified P7"
+  "note": "PER best lap 82.605s (driver lap summary)"
+ },
+ {
+  "id": "d48",
+  "question": "What was Albon's grid position at Albert Park?",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "data_position",
+  "expected_drivers": [
+   "ALB"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:\\bP15\\b|re:\\b15th\\b|re:\\bfifteenth\\b"
+  ],
+  "author": "generated",
+  "note": "ALB classified P15"
  },
  {
   "id": "d49",
-  "question": "Where did Lawson qualify at the Australian GP?",
+  "question": "What was Bearman's grid position at Melbourne?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_position",
   "expected_drivers": [
-   "LAW"
+   "BEA"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:\\bP8\\b|re:\\b8th\\b|re:\\beighth\\b"
+   "re:\\bP12\\b|re:\\b12th\\b|re:\\btwelfth\\b"
   ],
   "author": "generated",
-  "note": "LAW classified P8"
+  "note": "BEA classified P12"
  },
  {
   "id": "d50",
-  "question": "What was Bortoleto's gap to pole in qualifying at Melbourne?",
+  "question": "How far off pole was Sergio at Melbourne?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_gap_to_pole",
   "expected_drivers": [
-   "BOR"
+   "PER"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "1.703"
+   "4.087"
   ],
   "author": "generated",
-  "note": "BOR 80.221s vs pole 78.518s = 1.703s"
+  "note": "PER 82.605s vs pole 78.518s = 4.087s"
  },
  {
   "id": "d51",
-  "question": "What was Bottas's gap to pole in qualifying at Albert Park?",
+  "question": "How far off pole was Franco at Melbourne?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_gap_to_pole",
   "expected_drivers": [
-   "BOT"
+   "COL"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "4.726"
+   "2.682"
   ],
   "author": "generated",
-  "note": "BOT 83.244s vs pole 78.518s = 4.726s"
+  "note": "COL 81.200s vs pole 78.518s = 2.682s"
  },
  {
   "id": "d52",
-  "question": "Who recorded the highest speed trap reading in qualifying at Melbourne?",
+  "question": "Who recorded the highest speed trap reading in qualifying at the Australian GP?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_speed_trap",
@@ -917,7 +917,7 @@
  },
  {
   "id": "d53",
-  "question": "Who set the quickest sector 2 time in qualifying at Melbourne?",
+  "question": "Who set the quickest sector 3 time in qualifying at Melbourne?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_fastest_sector",
@@ -928,32 +928,32 @@
   "false_premise": false,
   "must_include": [
    "re:\\brussell\\b|re:\\bgeorge\\b|re:\\bRUS\\b",
-   "17.284"
+   "33.736"
   ],
   "author": "generated",
-  "note": "fastest sector 2: RUS 17.284s"
+  "note": "fastest sector 3: RUS 33.736s"
  },
  {
   "id": "d54",
-  "question": "How far apart were Ocon and Russell in qualifying at Albert Park?",
+  "question": "How far apart were Franco and Ocon in qualifying at the Australian GP?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_pair_gap",
   "expected_drivers": [
-   "OCO",
-   "RUS"
+   "COL",
+   "OCO"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "1.557"
+   "0.779"
   ],
   "author": "generated",
-  "note": "OCO 80.491s, RUS 78.518s; RUS quicker by 1.557s on the Q2 laps"
+  "note": "COL 81.200s, OCO 80.491s; OCO quicker by 0.779s on the Q2 laps"
  },
  {
   "id": "d55",
-  "question": "How far apart were Hülkenberg and Liam in qualifying at Melbourne?",
+  "question": "How far apart were Hülkenberg and Lawson in qualifying at the Australian GP?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_pair_gap",
@@ -971,100 +971,82 @@
  },
  {
   "id": "d56",
-  "question": "How far apart were Albon and Nico in qualifying at Melbourne?",
+  "question": "How far apart were Albon and Gasly in qualifying at Albert Park?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_pair_gap",
   "expected_drivers": [
    "ALB",
-   "HUL"
+   "GAS"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "0.638"
+   "0.440"
   ],
   "author": "generated",
-  "note": "ALB 80.941s, HUL 80.303s; HUL quicker by 0.638s on the best laps"
+  "note": "ALB 80.941s, GAS 80.501s; GAS quicker by 0.440s on the best laps"
  },
  {
   "id": "d57",
-  "question": "Who was faster through turn 11 at Melbourne, Perez or Alonso?",
+  "question": "Bearman or Hülkenberg: who was quicker through T10 at Melbourne?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_corner_winner",
   "expected_drivers": [
-   "PER",
-   "ALO"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "re:\\balonso\\b|re:\\bfernando\\b|re:\\bALO\\b",
-   "0.166"
-  ],
-  "author": "generated",
-  "note": "through T11 (turn 11): ALO quicker by 0.166s"
- },
- {
-  "id": "d58",
-  "question": "Albon or Alonso: who was quicker through T2 at Melbourne?",
-  "session": null,
-  "expected_session": "melbourne",
-  "kind": "data_corner_winner",
-  "expected_drivers": [
-   "ALB",
-   "ALO"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "re:\\balonso\\b|re:\\bfernando\\b|re:\\bALO\\b",
-   "0.217"
-  ],
-  "author": "generated",
-  "note": "through T1-T2 (turn 2): ALO quicker by 0.217s"
- },
- {
-  "id": "d59",
-  "question": "Alonso or Gabriel: who was quicker through T2 at the Australian GP?",
-  "session": null,
-  "expected_session": "melbourne",
-  "kind": "data_corner_winner",
-  "expected_drivers": [
-   "ALO",
-   "BOR"
-  ],
-  "answerable": true,
-  "false_premise": false,
-  "must_include": [
-   "re:\\balonso\\b|re:\\bfernando\\b|re:\\bALO\\b",
-   "0.175"
-  ],
-  "author": "generated",
-  "note": "through T1-T2 (turn 2): ALO quicker by 0.175s"
- },
- {
-  "id": "d60",
-  "question": "How far apart were the two Audi drivers in qualifying at the Australian GP?",
-  "session": null,
-  "expected_session": "melbourne",
-  "kind": "data_teammate_gap",
-  "expected_drivers": [
-   "BOR",
+   "BEA",
    "HUL"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "0.082"
+   "re:\\bbearman\\b|re:\\bBEA\\b",
+   "0.070"
   ],
   "author": "generated",
-  "note": "BOR 80.221s, HUL 80.303s; gap on the best laps"
+  "note": "through T9-T10 (turn 10): BEA quicker by 0.070s"
  },
  {
-  "id": "d61",
-  "question": "How far apart were the two McLaren drivers in qualifying at the Australian GP?",
+  "id": "d58",
+  "question": "Lawson or Hamilton: who was quicker through T12 at the Australian GP?",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "data_corner_winner",
+  "expected_drivers": [
+   "LAW",
+   "HAM"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:\\blawson\\b|re:\\bliam\\b|re:\\bLAW\\b",
+   "0.112"
+  ],
+  "author": "generated",
+  "note": "through T12 (turn 12): LAW quicker by 0.112s"
+ },
+ {
+  "id": "d59",
+  "question": "Who was faster through turn 7 at the Australian GP, Esteban or Franco?",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "data_corner_winner",
+  "expected_drivers": [
+   "OCO",
+   "COL"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:\\bocon\\b|re:\\besteban\\b|re:\\bOCO\\b",
+   "0.052"
+  ],
+  "author": "generated",
+  "note": "through T7-T8 (turn 7): OCO quicker by 0.052s"
+ },
+ {
+  "id": "d60",
+  "question": "How far apart were the two McLaren drivers in qualifying at Melbourne?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_teammate_gap",
@@ -1081,30 +1063,48 @@
   "note": "NOR 79.475s, PIA 79.380s; gap on the best laps"
  },
  {
-  "id": "d62",
-  "question": "How far did Ocon get in qualifying at Albert Park: out in Q1, out in Q2, or into Q3?",
+  "id": "d61",
+  "question": "How far apart were the two Ferrari drivers in qualifying at Melbourne?",
   "session": null,
   "expected_session": "melbourne",
-  "kind": "data_stage",
+  "kind": "data_teammate_gap",
   "expected_drivers": [
-   "OCO"
+   "HAM",
+   "LEC"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "re:eliminated[^.]{0,25}\\bq2\\b|re:knocked out[^.]{0,25}\\bq2\\b|re:dropped out[^.]{0,25}\\bq2\\b|re:\\bout in q2\\b|re:\\bend of q2\\b|re:\\bq2 elimination\\b|re:\\bq2 exit\\b"
+   "0.151"
   ],
   "author": "generated",
-  "note": "OCO progression: Q2 (driver lap summary)"
+  "note": "HAM 79.478s, LEC 79.327s; gap on the best laps"
  },
  {
-  "id": "d63",
-  "question": "How far did Perez get in qualifying at Albert Park: out in Q1, out in Q2, or into Q3?",
+  "id": "d62",
+  "question": "How far did Charles get in qualifying at the Australian GP: out in Q1, out in Q2, or into Q3?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_stage",
   "expected_drivers": [
-   "PER"
+   "LEC"
+  ],
+  "answerable": true,
+  "false_premise": false,
+  "must_include": [
+   "re:qualified for q3|re:reached q3|re:advanced to q3|re:progressed to q3|re:through to q3|re:made it (?:in)?to q3|re:made q3|re:\\bin q3\\b|re:(?<!not )(?<!n't )\\bgot (?:in)?to q3"
+  ],
+  "author": "generated",
+  "note": "LEC progression: qualified for Q3 (driver lap summary)"
+ },
+ {
+  "id": "d63",
+  "question": "How far did Bottas get in qualifying at Melbourne: out in Q1, out in Q2, or into Q3?",
+  "session": null,
+  "expected_session": "melbourne",
+  "kind": "data_stage",
+  "expected_drivers": [
+   "BOT"
   ],
   "answerable": true,
   "false_premise": false,
@@ -1112,11 +1112,11 @@
    "re:eliminated[^.]{0,25}\\bq1\\b|re:knocked out[^.]{0,25}\\bq1\\b|re:dropped out[^.]{0,25}\\bq1\\b|re:\\bout in q1\\b|re:\\bend of q1\\b|re:\\bq1 elimination\\b|re:\\bq1 exit\\b"
   ],
   "author": "generated",
-  "note": "PER progression: Q1 (driver lap summary)"
+  "note": "BOT progression: Q1 (driver lap summary)"
  },
  {
   "id": "d64",
-  "question": "Which driver only just made it into Q3 at Melbourne, getting through with the slowest Q2 time?",
+  "question": "Which driver only just made it into Q3 at the Australian GP, getting through with the slowest Q2 time?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_last_into_q3",
@@ -1133,38 +1133,38 @@
  },
  {
   "id": "d65",
-  "question": "Compare Bottas and Liam in qualifying at Albert Park.",
+  "question": "How did Alonso stack up against Gabriel in qualifying at Albert Park?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_like_for_like",
   "expected_drivers": [
-   "BOT",
-   "LAW"
+   "ALO",
+   "BOR"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "2.753"
+   "1.474"
   ],
   "author": "generated",
-  "note": "BOT out in Q1, LAW reached Q3: like-for-like is Q1, BOT 83.244s vs LAW 80.491s = 2.753s"
+  "note": "ALO out in Q1, BOR reached Q3: like-for-like is Q1, ALO 81.969s vs BOR 80.495s = 1.474s"
  },
  {
   "id": "d66",
-  "question": "Compare Sergio and Lindblad in qualifying at the Australian GP.",
+  "question": "How did Alonso stack up against Gabriel in qualifying at the Australian GP?",
   "session": null,
   "expected_session": "melbourne",
   "kind": "data_like_for_like",
   "expected_drivers": [
-   "PER",
-   "LIN"
+   "ALO",
+   "BOR"
   ],
   "answerable": true,
   "false_premise": false,
   "must_include": [
-   "2.196"
+   "1.474"
   ],
   "author": "generated",
-  "note": "PER out in Q1, LIN reached Q3: like-for-like is Q1, PER 82.605s vs LIN 80.409s = 2.196s"
+  "note": "ALO out in Q1, BOR reached Q3: like-for-like is Q1, ALO 81.969s vs BOR 80.495s = 1.474s"
  }
 ]

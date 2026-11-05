@@ -42,7 +42,7 @@ from events_and_chunking import session_snapshot as snap  # noqa: E402
 from rag_retrieval import _DRIVER_NAMES  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "questions_heldout_data.json"
-SEED = 20261108        # v5 20261107; v6: corner answers are computed on the distance-aligned laps (snapshot.align_distance)
+SEED = 20261109        # v6 (20261108) was computed on an alignment that was tried and removed; v7 uses the raw distance again
 
 SESSIONS = {
     "monza": ("f1_qualifying_2024_monza", ["Monza", "the Italian GP", "the Italian Grand Prix"]),

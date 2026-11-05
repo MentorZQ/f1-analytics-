@@ -29,7 +29,7 @@ def main() -> int:
     client = chromadb.PersistentClient(path=args.store)
     bad_total = 0
     for name in SESSIONS:
-        snapshot = snap.load_snapshot(ROOT / "RAG_data_layers" / "session_snapshots" / f"{name}.npz", align=False)
+        snapshot = snap.load_snapshot(ROOT / "RAG_data_layers" / "session_snapshots" / f"{name}.npz")
         stored = client.get_collection(name).get(where={"chunk_type": "head_to_head_event"}, include=["documents", "metadatas"])
         if not stored["ids"]:
             print(f"{name}: no stored pair chunks (the store is built without them); nothing to compare")

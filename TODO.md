@@ -54,5 +54,5 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [ ] "Fastest down the main straight" is answered by time through the section, not top speed; the speed ranking exists for corners and could be used for straights.
 - [ ] A check for wrong or missing evidence in lookup answers (roughly 7 of 12 real problems on the independent batch were content errors the checks could not see): for example compare the driver named in the answer with the driver the evidence ranks first.
 
-- [ ] Distance alignment: replace the one-parameter bulge with a proper warp if more accuracy is needed, and fix it at ingest (reingest is free, it uses OpenF1 only) so the stored one-driver corner chunks in the Chroma store are aligned too; measure how many section gaps move by more than 0.05 s across all pairs.
+- [ ] Section-gap accuracy: raw cumulative gaps are off by 0.02 to 0.10 s on average against the official sector gaps (METRICS.md). A speed-trace alignment and a clock-stretch to the sector times were both tried and neither reliably helped. A better source of position (or fusing the car's speed integral with the track map differently at ingest) is the next thing to try; reingest is free (OpenF1 only).
 - [ ] Re-run the independent batch and the spot-check on the aligned data (costs credits: use Haiku).

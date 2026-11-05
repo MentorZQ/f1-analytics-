@@ -123,9 +123,10 @@ def _max_speed(tel: pd.DataFrame) -> tuple[Optional[float], Optional[float]]:
 
 # If the last sample before the first braking sample is further back than this, the car data
 # has a hole where braking began and the brake-on point is only known as a range.
-# Two laps' distance axes (from position data) disagree by about 5 to 10 m: measured as the shift that best aligns each driver's
-# speed trace with the field's median trace, which was 5 to 6 m (standard deviation) and up to 13 m in the three sessions.
-# A braking point 2 m or 8 m "later" is inside that error, so two braking points count as different only beyond this.
+# Position-based distance is only as good as the timing loops show: at the official sector-split positions the cars' distances
+# spread by 2 to 6 m (standard deviation) and up to about 14 m either side (Melbourne is worst), so the difference between two
+# laps' braking points has an error of several metres. A braking point 2 m or 8 m "later" is inside that; two braking points
+# count as different only beyond this.
 BRAKE_SEPARATION_M = 15.0
 BRAKE_GAP_UNCERTAIN_M = 30.0
 

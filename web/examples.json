@@ -1,7 +1,7 @@
 [
   {
     "question": "Why did Russell take pole at Barcelona 2026?",
-    "answer": "Russell took pole at Barcelona 2026 with a best lap of 1:14.679, beating Hamilton's 1:14.743 by 0.064s.\n\nThe section tally shows HAM was actually quicker in more sections (9 to Russell's 7), so Russell's pole came from bigger gains in key areas outweighing Hamilton's more numerous but smaller advantages.\n\n**Russell's biggest wins:**\n\n- **Between T3-T4 (straight):** RUS faster by 0.085s. Russell carried 270 km/h entry speed vs Hamilton's 267 km/h, reached a top speed of 290 km/h vs 282 km/h, and exited at 288 km/h vs 278 km/h — a 10 km/h advantage at exit, with both drivers on full throttle and DRS closed.\n\n- **Main straight (finish, after final corner):** RUS faster by 0.085s. Russell had a 10 km/h entry speed advantage (267 vs 257 km/h), a 10 km/h top speed advantage (288 vs 278 km/h), and a 10 km/h exit speed advantage — again with DRS closed for both.\n\n- **T3:** RUS faster by 0.077s, with a higher entry speed (217.0 vs 212.2 km/h) and exit speed (269.0 vs 266.2 km/h), though Hamilton had a slightly higher apex speed (239.0 vs 235.8 km/h). No braking was detected for either driver.\n\n**Hamilton's biggest wins** came at Between T9-T10 (0.064s), T9 (0.049s), and T5-T6 (0.048s) — meaningful but not enough to overcome Russell's gains on the straights and at T3.",
+    "answer": "Russell took pole at Barcelona 2026 with a best lap of 1:14.679, 0.064s quicker than Hamilton's 1:14.743 (P2 for Ferrari).\n\nThe section tally across 16 sections was actually in Hamilton's favour — **HAM quicker in 9, RUS quicker in 7** — so Russell did not dominate everywhere. His pole came from winning the right sections by larger margins than he conceded.\n\n**Where Russell gained most:**\n\n- **T12** (+0.125s): Russell carried a 6 km/h higher entry speed (198 vs 192 km/h) and exited 5.5 km/h faster (225.5 vs 220.0 km/h). Apex speeds were equal at 120 km/h. This was Russell's biggest single-section win.\n- **Main straight (finish, after final corner)** (+0.113s): Russell was 10 km/h faster at both entry (267 vs 257 km/h) and top speed (288 vs 278 km/h), with DRS closed for both drivers. The speed advantage carried through the entire window.\n- **Between T3-T4** (+0.083s): Russell was quicker through this section as well.\n\n**Where Hamilton gained most:**\n\n- **T4** (+0.122s): Hamilton was 5 km/h faster at the apex (152 vs 147 km/h) and braked from 260 km/h, while a gap in Russell's car data means the braking comparison cannot be made firmly. This was Hamilton's biggest win and nearly cancelled Russell's T12 advantage.\n- **T1-T2** (+0.092s): Hamilton carried slightly higher entry and apex speeds and braked 22 m later than Russell. Russell recovered with a 9.6 km/h exit speed advantage (217 vs 207.4 km/h), but the section time still went to Hamilton.\n- **T10-T11** (+0.080s): Another section in Hamilton's favour.\n\nIn net terms, Russell's larger gains at T12 and the finish straight — both real, 0.1s-or-more advantages — outweighed Hamilton's wins through the T1-T2 and T4 complexes, delivering the 0.064s margin that secured pole.",
     "session": "barcelona",
     "sources": [
       {
@@ -11,34 +11,7 @@
           "RUS",
           "HAM"
         ],
-        "text": "Lap comparison: RUS vs HAM\nRUS: best lap 1:14.679, classified P1\nHAM: best lap 1:14.743, classified P2\nOver the lap RUS was 0.064s quicker than HAM.\nThe head-to-head sections below compare the two best laps.\nAccuracy: the three sector times are exact timing. Section gaps and braking points come from position data whose distance is accurate to about 5 to 10 m between two laps (up to 0.15s in one corner and the opposite in the next), so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable differences: do not build the explanation on them.\nSection tally over 16 sections: RUS quicker in 7, HAM quicker in 9, 0 level.\nRUS's biggest wins: Between T3-T4 0.085s, Main straight (finish, after final corner) 0.085s, T3 0.077s. HAM's biggest wins: Between T9-T10 0.064s, T9 0.049s, T5-T6 0.048s."
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "Between T3-T4",
-        "drivers": [
-          "RUS",
-          "HAM"
-        ],
-        "text": "Head-to-Head at Between T3-T4 (straight): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 1304m – 1517m\n\n  Time in section: RUS 2.742s | HAM 2.828s | RUS faster by 0.085s\n  Entry speed: RUS 270.0km/h | HAM 267.0km/h | advantage: RUS +3.0km/h\n  Top speed: RUS 290.0km/h | HAM 282.0km/h | advantage: RUS +8.0km/h\nDRS: RUS closed | HAM closed\nBraking point into next corner:\n  RUS: no braking within window\n  HAM: no braking within window\n  Exit speed: RUS 288.0km/h | HAM 278.0km/h | advantage: RUS +10.0km/h"
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "Main straight (finish, after final corner)",
-        "drivers": [
-          "RUS",
-          "HAM"
-        ],
-        "text": "Head-to-Head at Main straight (finish, after final corner) (straight): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 4393m – 4608m\n\n  Time in section: RUS 2.774s | HAM 2.859s | RUS faster by 0.085s\n  Entry speed: RUS 267.0km/h | HAM 257.0km/h | advantage: RUS +10.0km/h\n  Top speed: RUS 288.0km/h | HAM 278.0km/h | advantage: RUS +10.0km/h\nDRS: RUS closed | HAM closed\nBraking point into next corner:\n  RUS: no braking within window\n  HAM: no braking within window\n  Exit speed: RUS 288.0km/h | HAM 278.0km/h | advantage: RUS +10.0km/h"
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "T3",
-        "drivers": [
-          "RUS",
-          "HAM"
-        ],
-        "text": "Head-to-Head at T3 (corner): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 993m – 1304m\n\n  Time in section: RUS 4.607s | HAM 4.684s | RUS faster by 0.077s\n  Entry speed: RUS 217.0km/h | HAM 212.2km/h | advantage: RUS +4.8km/h\nApex speeds:\n      Apex 1 at ~1140m: RUS 235.8 km/h | HAM 239.0 km/h | advantage: HAM +3.2\nBraking (corner entry):\n  RUS: no braking detected\n  HAM: no braking detected\n  Exit speed: RUS 269.0km/h | HAM 266.2km/h | advantage: RUS +2.8km/h"
+        "text": "Lap comparison: RUS vs HAM\nRUS: best lap 1:14.679, classified P1\nHAM: best lap 1:14.743, classified P2\nOver the lap RUS was 0.064s quicker than HAM.\nThe head-to-head sections below compare the two best laps.\nAccuracy: the three sector times are exact timing. Section gaps and braking points come from position data: compared with the official sector gaps, the telemetry's cumulative gap is off by 0.02 to 0.10s on average (up to about 0.18s at Melbourne), so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable differences: do not build the explanation on them. Larger gaps (0.2s or more) are usually real.\nSection tally over 16 sections: RUS quicker in 7, HAM quicker in 9, 0 level.\nRUS's biggest wins: T12 0.125s, Main straight (finish, after final corner) 0.113s, Between T3-T4 0.083s. HAM's biggest wins: T4 0.122s, T1-T2 0.092s, T10-T11 0.080s."
       },
       {
         "chunk_type": "head_to_head_event",
@@ -47,7 +20,34 @@
           "RUS",
           "HAM"
         ],
-        "text": "Head-to-Head at T12 (corner): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 3599m – 3896m\n\n  Time in section: RUS 6.752s | HAM 6.826s | RUS faster by 0.075s\n  Entry speed: RUS 198.0km/h | HAM 192.0km/h | advantage: RUS +6.0km/h\nApex speeds:\n      Apex 1 at ~3706m: RUS 120.0 km/h | HAM 120.0 km/h | advantage: equal\nBraking (corner entry):\n  RUS: first brakes at 3636m from 201.0 km/h | braking distance to first apex 98m\n  HAM: first brakes at 3650m from 192.0 km/h | braking distance to first apex 76m\n  → Both drivers start braking at about the same point (within the ~15 m accuracy of the distance measurement)\n  → Braking distance to first apex: RUS 98m | HAM 76m (HAM shorter)\n  Exit speed: RUS 223.0km/h | HAM 220.0km/h | advantage: RUS +3.0km/h"
+        "text": "Head-to-Head at T12 (corner): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 3599m – 3896m\n\n  Time in section: RUS 6.706s | HAM 6.831s | RUS faster by 0.125s\n  Entry speed: RUS 198.0km/h | HAM 192.0km/h | advantage: RUS +6.0km/h\nApex speeds:\n      Apex 1 at ~3706m: RUS 120.0 km/h | HAM 120.0 km/h | advantage: equal\nBraking (corner entry):\n  RUS: first brakes at 3629m from 201.0 km/h | braking distance to first apex 98m\n  HAM: first brakes at 3651m from 192.0 km/h | braking distance to first apex 76m\n  → HAM brakes 22m later than RUS (later braking point = more aggressive entry)\n  → Braking distance to first apex: RUS 98m | HAM 76m (HAM shorter)\n  Exit speed: RUS 225.5km/h | HAM 220.0km/h | advantage: RUS +5.5km/h"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "T4",
+        "drivers": [
+          "RUS",
+          "HAM"
+        ],
+        "text": "Head-to-Head at T4 (corner): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 1517m – 2141m\n\n  Time in section: RUS 12.926s | HAM 12.803s | HAM faster by 0.122s\n  Entry speed: RUS 284.0km/h | HAM 276.8km/h | advantage: RUS +7.2km/h\nApex speeds:\n      Apex 1 at ~1706m: RUS 147.0 km/h | HAM 152.0 km/h | advantage: HAM +5.0\nBraking (corner entry):\n  RUS: first brakes between 1551m and 1616m (gap in the car data) | braking distance to first apex 81–147m\n  HAM: first brakes at 1593m from 260.0 km/h | braking distance to first apex 113m\n  → Brake-on points overlap within a gap in the car data: cannot tell who brakes later\n  Exit speed: RUS 149.0km/h | HAM 139.0km/h | advantage: RUS +10.0km/h"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "Main straight (finish, after final corner)",
+        "drivers": [
+          "RUS",
+          "HAM"
+        ],
+        "text": "Head-to-Head at Main straight (finish, after final corner) (straight): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 4393m – 4608m\n\n  Time in section: RUS 2.748s | HAM 2.861s | RUS faster by 0.113s\n  Entry speed: RUS 267.0km/h | HAM 257.0km/h | advantage: RUS +10.0km/h\n  Top speed: RUS 288.0km/h | HAM 278.0km/h | advantage: RUS +10.0km/h\nDRS: RUS closed | HAM closed\nBraking point into next corner:\n  RUS: no braking within window\n  HAM: no braking within window\n  Exit speed: RUS 288.0km/h | HAM 278.0km/h | advantage: RUS +10.0km/h"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "T1-T2",
+        "drivers": [
+          "RUS",
+          "HAM"
+        ],
+        "text": "Head-to-Head at T1-T2 (corner sequence): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 634m – 993m\n\n  Time in section: RUS 6.502s | HAM 6.410s | HAM faster by 0.092s\n  Entry speed: RUS 318.0km/h | HAM 320.0km/h | advantage: HAM +2.0km/h\nApex speeds:\n      Apex 1 at ~806m: RUS 150.0 km/h | HAM 152.0 km/h | advantage: HAM +2.0\n      Apex 2 at ~888m: RUS 151.0 km/h | HAM 152.0 km/h | advantage: HAM +1.0\nBraking (corner entry):\n  RUS: first brakes at 701m from 302.0 km/h | braking distance to first apex 122m\n  HAM: first brakes at 722m from 289.0 km/h | braking distance to first apex 111m\n  → HAM brakes 22m later than RUS (later braking point = more aggressive entry)\n  → Braking distance to first apex: RUS 122m | HAM 111m (HAM shorter)\n  Exit speed: RUS 217.0km/h | HAM 207.4km/h | advantage: RUS +9.6km/h"
       },
       {
         "chunk_type": "telemetry_straight_event",
@@ -69,13 +69,13 @@
     "deltas": {
       "driver_a": "RUS",
       "driver_b": "HAM",
-      "lap_gap_s": 0.065,
+      "lap_gap_s": 0.063,
       "lap_session": null,
       "sections": [
         {
           "section": "Main straight (start, before T1)",
           "type": "straight",
-          "gain_s": 0.025,
+          "gain_s": -0.037,
           "start_m": 0.0,
           "end_m": 634.0,
           "retrieved": false
@@ -83,39 +83,39 @@
         {
           "section": "T1-T2",
           "type": "corner_sequence",
-          "gain_s": -0.025,
+          "gain_s": -0.092,
           "start_m": 634.0,
           "end_m": 993.0,
-          "retrieved": false
+          "retrieved": true
         },
         {
           "section": "T3",
           "type": "corner",
-          "gain_s": 0.077,
+          "gain_s": 0.078,
           "start_m": 993.0,
           "end_m": 1304.0,
-          "retrieved": true
+          "retrieved": false
         },
         {
           "section": "Between T3-T4",
           "type": "straight",
-          "gain_s": 0.085,
+          "gain_s": 0.083,
           "start_m": 1304.0,
           "end_m": 1517.0,
-          "retrieved": true
+          "retrieved": false
         },
         {
           "section": "T4",
           "type": "corner",
-          "gain_s": 0.026,
+          "gain_s": -0.122,
           "start_m": 1517.0,
           "end_m": 2141.0,
-          "retrieved": false
+          "retrieved": true
         },
         {
           "section": "T5-T6",
           "type": "corner_sequence",
-          "gain_s": -0.048,
+          "gain_s": 0.07,
           "start_m": 2141.0,
           "end_m": 2347.0,
           "retrieved": false
@@ -123,7 +123,7 @@
         {
           "section": "T7-T8",
           "type": "corner_sequence",
-          "gain_s": -0.02,
+          "gain_s": -0.036,
           "start_m": 2347.0,
           "end_m": 2656.0,
           "retrieved": false
@@ -131,7 +131,7 @@
         {
           "section": "Between T8-T9",
           "type": "straight",
-          "gain_s": -0.02,
+          "gain_s": -0.002,
           "start_m": 2656.0,
           "end_m": 2742.0,
           "retrieved": false
@@ -139,7 +139,7 @@
         {
           "section": "T9",
           "type": "corner",
-          "gain_s": -0.049,
+          "gain_s": -0.036,
           "start_m": 2742.0,
           "end_m": 2978.0,
           "retrieved": false
@@ -147,7 +147,7 @@
         {
           "section": "Between T9-T10",
           "type": "straight",
-          "gain_s": -0.064,
+          "gain_s": -0.034,
           "start_m": 2978.0,
           "end_m": 3259.0,
           "retrieved": false
@@ -155,7 +155,7 @@
         {
           "section": "T10-T11",
           "type": "corner_sequence",
-          "gain_s": -0.045,
+          "gain_s": -0.08,
           "start_m": 3259.0,
           "end_m": 3599.0,
           "retrieved": false
@@ -163,7 +163,7 @@
         {
           "section": "T12",
           "type": "corner",
-          "gain_s": 0.075,
+          "gain_s": 0.125,
           "start_m": 3599.0,
           "end_m": 3896.0,
           "retrieved": true
@@ -171,7 +171,7 @@
         {
           "section": "T13",
           "type": "corner",
-          "gain_s": 0.001,
+          "gain_s": 0.035,
           "start_m": 3896.0,
           "end_m": 4074.0,
           "retrieved": false
@@ -179,7 +179,7 @@
         {
           "section": "Between T13-T14",
           "type": "straight",
-          "gain_s": -0.005,
+          "gain_s": 0.003,
           "start_m": 4074.0,
           "end_m": 4162.0,
           "retrieved": false
@@ -187,7 +187,7 @@
         {
           "section": "T14",
           "type": "corner",
-          "gain_s": -0.033,
+          "gain_s": -0.005,
           "start_m": 4162.0,
           "end_m": 4393.0,
           "retrieved": false
@@ -195,7 +195,7 @@
         {
           "section": "Main straight (finish, after final corner)",
           "type": "straight",
-          "gain_s": 0.085,
+          "gain_s": 0.113,
           "start_m": 4393.0,
           "end_m": 4608.0,
           "retrieved": true
@@ -204,19 +204,19 @@
       "lap_gap_exact_s": 0.064
     },
     "metrics": {
-      "retrieve_s": 0.316,
+      "retrieve_s": 0.264,
       "deltas_s": 0.0,
-      "llm_s": 10.169,
-      "total_s": 10.486,
-      "input_tokens": 2890,
-      "output_tokens": 435,
-      "prompt_chars": 5064,
+      "llm_s": 14.72,
+      "total_s": 14.985,
+      "input_tokens": 3116,
+      "output_tokens": 543,
+      "prompt_chars": 5618,
       "model": "claude-sonnet-4-6"
     }
   },
   {
     "question": "Where did Hamilton lose time to Russell?",
-    "answer": "Hamilton lost time to Russell across the lap, with Russell being 0.064s quicker overall. The section tally shows Russell quicker in 7 of 16 sections, Hamilton quicker in 9. Russell's biggest wins were:\n\n- **Between T3–T4** (straight): Russell faster by **0.085s** — entry speed 270 vs 267 km/h, top speed 290 vs 282 km/h, exit speed 288 vs 278 km/h.\n- **Main straight (after final corner)**: Russell faster by **0.085s** — entry speed 267 vs 257 km/h, top speed 288 vs 278 km/h throughout.\n- **T3**: Russell faster by **0.077s** — higher entry speed (217.0 vs 212.2 km/h) and exit speed (269.0 vs 266.2 km/h), though Hamilton held a slightly higher apex speed (239.0 vs 235.8 km/h).\n- **T12**: Russell faster by **0.075s** — entry speed 198 vs 192 km/h, with equal apex speeds and Russell edging exit speed 223 vs 220 km/h.\n\nBy sector, Russell took **Sector 1** (+0.037s) and **Sector 3** (+0.134s), while Hamilton won **Sector 2** by 0.107s. The straight-line sections between T3–T4 and the main straight were where Russell built the most significant chunks of his advantage.",
+    "answer": "Based on the Barcelona 2026 Qualifying data, Russell beat Hamilton by 0.064s overall (1:14.679 vs 1:14.743). The section tally shows RUS quicker in 7 sections, HAM quicker in 9 — so Hamilton was actually quicker in more sections, but Russell's wins came in higher-value areas. Here is where Hamilton lost time to Russell:\n\n**T12 — RUS quicker by 0.125s (biggest Russell win)**\nRussell carried a 6 km/h higher entry speed (198 vs 192 km/h) and exited 5.5 km/h faster (225.5 vs 220.0 km/h), despite braking earlier. Hamilton's later braking point did not translate into a time advantage here.\n\n**Main straight (after final corner) — RUS quicker by 0.113s**\nRussell was 10 km/h faster at both entry (267 vs 257 km/h) and top speed (288 vs 278 km/h), with both drivers running DRS closed.\n\n**Between T3-T4 — RUS quicker by 0.083s**\nThis was Russell's third-largest advantage across the lap.\n\nFor context, Hamilton offset these losses with his own gains elsewhere — most notably T4 (+0.122s to HAM), T1-T2 (+0.092s to HAM), and T10-T11 (+0.080s to HAM) — but those were not enough to overcome Russell's margins at T12 and the main straight.",
     "session": "barcelona",
     "sources": [
       {
@@ -226,34 +226,7 @@
           "RUS",
           "HAM"
         ],
-        "text": "Lap comparison: RUS vs HAM\nRUS: best lap 1:14.679, classified P1\nHAM: best lap 1:14.743, classified P2\nOver the lap RUS was 0.064s quicker than HAM.\nBoth best laps are from Q3.\nAccuracy: the three sector times are exact timing. Section gaps and braking points come from position data whose distance is accurate to about 5 to 10 m between two laps (up to 0.15s in one corner and the opposite in the next), so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable differences: do not build the explanation on them.\nSection tally over 16 sections: RUS quicker in 7, HAM quicker in 9, 0 level.\nRUS's biggest wins: Between T3-T4 0.085s, Main straight (finish, after final corner) 0.085s, T3 0.077s. HAM's biggest wins: Between T9-T10 0.064s, T9 0.049s, T5-T6 0.048s."
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "Between T3-T4",
-        "drivers": [
-          "RUS",
-          "HAM"
-        ],
-        "text": "Head-to-Head at Between T3-T4 (straight): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 1304m – 1517m\n\n  Time in section: RUS 2.742s | HAM 2.828s | RUS faster by 0.085s\n  Entry speed: RUS 270.0km/h | HAM 267.0km/h | advantage: RUS +3.0km/h\n  Top speed: RUS 290.0km/h | HAM 282.0km/h | advantage: RUS +8.0km/h\nDRS: RUS closed | HAM closed\nBraking point into next corner:\n  RUS: no braking within window\n  HAM: no braking within window\n  Exit speed: RUS 288.0km/h | HAM 278.0km/h | advantage: RUS +10.0km/h"
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "Main straight (finish, after final corner)",
-        "drivers": [
-          "RUS",
-          "HAM"
-        ],
-        "text": "Head-to-Head at Main straight (finish, after final corner) (straight): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 4393m – 4608m\n\n  Time in section: RUS 2.774s | HAM 2.859s | RUS faster by 0.085s\n  Entry speed: RUS 267.0km/h | HAM 257.0km/h | advantage: RUS +10.0km/h\n  Top speed: RUS 288.0km/h | HAM 278.0km/h | advantage: RUS +10.0km/h\nDRS: RUS closed | HAM closed\nBraking point into next corner:\n  RUS: no braking within window\n  HAM: no braking within window\n  Exit speed: RUS 288.0km/h | HAM 278.0km/h | advantage: RUS +10.0km/h"
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "T3",
-        "drivers": [
-          "RUS",
-          "HAM"
-        ],
-        "text": "Head-to-Head at T3 (corner): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 993m – 1304m\n\n  Time in section: RUS 4.607s | HAM 4.684s | RUS faster by 0.077s\n  Entry speed: RUS 217.0km/h | HAM 212.2km/h | advantage: RUS +4.8km/h\nApex speeds:\n      Apex 1 at ~1140m: RUS 235.8 km/h | HAM 239.0 km/h | advantage: HAM +3.2\nBraking (corner entry):\n  RUS: no braking detected\n  HAM: no braking detected\n  Exit speed: RUS 269.0km/h | HAM 266.2km/h | advantage: RUS +2.8km/h"
+        "text": "Lap comparison: RUS vs HAM\nRUS: best lap 1:14.679, classified P1\nHAM: best lap 1:14.743, classified P2\nOver the lap RUS was 0.064s quicker than HAM.\nBoth best laps are from Q3.\nAccuracy: the three sector times are exact timing. Section gaps and braking points come from position data: compared with the official sector gaps, the telemetry's cumulative gap is off by 0.02 to 0.10s on average (up to about 0.18s at Melbourne), so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable differences: do not build the explanation on them. Larger gaps (0.2s or more) are usually real.\nSection tally over 16 sections: RUS quicker in 7, HAM quicker in 9, 0 level.\nRUS's biggest wins: T12 0.125s, Main straight (finish, after final corner) 0.113s, Between T3-T4 0.083s. HAM's biggest wins: T4 0.122s, T1-T2 0.092s, T10-T11 0.080s."
       },
       {
         "chunk_type": "head_to_head_event",
@@ -262,7 +235,34 @@
           "RUS",
           "HAM"
         ],
-        "text": "Head-to-Head at T12 (corner): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 3599m – 3896m\n\n  Time in section: RUS 6.752s | HAM 6.826s | RUS faster by 0.075s\n  Entry speed: RUS 198.0km/h | HAM 192.0km/h | advantage: RUS +6.0km/h\nApex speeds:\n      Apex 1 at ~3706m: RUS 120.0 km/h | HAM 120.0 km/h | advantage: equal\nBraking (corner entry):\n  RUS: first brakes at 3636m from 201.0 km/h | braking distance to first apex 98m\n  HAM: first brakes at 3650m from 192.0 km/h | braking distance to first apex 76m\n  → Both drivers start braking at about the same point (within the ~15 m accuracy of the distance measurement)\n  → Braking distance to first apex: RUS 98m | HAM 76m (HAM shorter)\n  Exit speed: RUS 223.0km/h | HAM 220.0km/h | advantage: RUS +3.0km/h"
+        "text": "Head-to-Head at T12 (corner): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 3599m – 3896m\n\n  Time in section: RUS 6.706s | HAM 6.831s | RUS faster by 0.125s\n  Entry speed: RUS 198.0km/h | HAM 192.0km/h | advantage: RUS +6.0km/h\nApex speeds:\n      Apex 1 at ~3706m: RUS 120.0 km/h | HAM 120.0 km/h | advantage: equal\nBraking (corner entry):\n  RUS: first brakes at 3629m from 201.0 km/h | braking distance to first apex 98m\n  HAM: first brakes at 3651m from 192.0 km/h | braking distance to first apex 76m\n  → HAM brakes 22m later than RUS (later braking point = more aggressive entry)\n  → Braking distance to first apex: RUS 98m | HAM 76m (HAM shorter)\n  Exit speed: RUS 225.5km/h | HAM 220.0km/h | advantage: RUS +5.5km/h"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "T4",
+        "drivers": [
+          "RUS",
+          "HAM"
+        ],
+        "text": "Head-to-Head at T4 (corner): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 1517m – 2141m\n\n  Time in section: RUS 12.926s | HAM 12.803s | HAM faster by 0.122s\n  Entry speed: RUS 284.0km/h | HAM 276.8km/h | advantage: RUS +7.2km/h\nApex speeds:\n      Apex 1 at ~1706m: RUS 147.0 km/h | HAM 152.0 km/h | advantage: HAM +5.0\nBraking (corner entry):\n  RUS: first brakes between 1551m and 1616m (gap in the car data) | braking distance to first apex 81–147m\n  HAM: first brakes at 1593m from 260.0 km/h | braking distance to first apex 113m\n  → Brake-on points overlap within a gap in the car data: cannot tell who brakes later\n  Exit speed: RUS 149.0km/h | HAM 139.0km/h | advantage: RUS +10.0km/h"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "Main straight (finish, after final corner)",
+        "drivers": [
+          "RUS",
+          "HAM"
+        ],
+        "text": "Head-to-Head at Main straight (finish, after final corner) (straight): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 4393m – 4608m\n\n  Time in section: RUS 2.748s | HAM 2.861s | RUS faster by 0.113s\n  Entry speed: RUS 267.0km/h | HAM 257.0km/h | advantage: RUS +10.0km/h\n  Top speed: RUS 288.0km/h | HAM 278.0km/h | advantage: RUS +10.0km/h\nDRS: RUS closed | HAM closed\nBraking point into next corner:\n  RUS: no braking within window\n  HAM: no braking within window\n  Exit speed: RUS 288.0km/h | HAM 278.0km/h | advantage: RUS +10.0km/h"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "T1-T2",
+        "drivers": [
+          "RUS",
+          "HAM"
+        ],
+        "text": "Head-to-Head at T1-T2 (corner sequence): RUS vs HAM\nEvent: Barcelona 2026 Qualifying\nRUS P1 (Mercedes) | HAM P2 (Ferrari)\nDistance window: 634m – 993m\n\n  Time in section: RUS 6.502s | HAM 6.410s | HAM faster by 0.092s\n  Entry speed: RUS 318.0km/h | HAM 320.0km/h | advantage: HAM +2.0km/h\nApex speeds:\n      Apex 1 at ~806m: RUS 150.0 km/h | HAM 152.0 km/h | advantage: HAM +2.0\n      Apex 2 at ~888m: RUS 151.0 km/h | HAM 152.0 km/h | advantage: HAM +1.0\nBraking (corner entry):\n  RUS: first brakes at 701m from 302.0 km/h | braking distance to first apex 122m\n  HAM: first brakes at 722m from 289.0 km/h | braking distance to first apex 111m\n  → HAM brakes 22m later than RUS (later braking point = more aggressive entry)\n  → Braking distance to first apex: RUS 122m | HAM 111m (HAM shorter)\n  Exit speed: RUS 217.0km/h | HAM 207.4km/h | advantage: RUS +9.6km/h"
       },
       {
         "chunk_type": "head_to_head",
@@ -285,13 +285,13 @@
     "deltas": {
       "driver_a": "RUS",
       "driver_b": "HAM",
-      "lap_gap_s": 0.065,
+      "lap_gap_s": 0.063,
       "lap_session": null,
       "sections": [
         {
           "section": "Main straight (start, before T1)",
           "type": "straight",
-          "gain_s": 0.025,
+          "gain_s": -0.037,
           "start_m": 0.0,
           "end_m": 634.0,
           "retrieved": false
@@ -299,39 +299,39 @@
         {
           "section": "T1-T2",
           "type": "corner_sequence",
-          "gain_s": -0.025,
+          "gain_s": -0.092,
           "start_m": 634.0,
           "end_m": 993.0,
-          "retrieved": false
+          "retrieved": true
         },
         {
           "section": "T3",
           "type": "corner",
-          "gain_s": 0.077,
+          "gain_s": 0.078,
           "start_m": 993.0,
           "end_m": 1304.0,
-          "retrieved": true
+          "retrieved": false
         },
         {
           "section": "Between T3-T4",
           "type": "straight",
-          "gain_s": 0.085,
+          "gain_s": 0.083,
           "start_m": 1304.0,
           "end_m": 1517.0,
-          "retrieved": true
+          "retrieved": false
         },
         {
           "section": "T4",
           "type": "corner",
-          "gain_s": 0.026,
+          "gain_s": -0.122,
           "start_m": 1517.0,
           "end_m": 2141.0,
-          "retrieved": false
+          "retrieved": true
         },
         {
           "section": "T5-T6",
           "type": "corner_sequence",
-          "gain_s": -0.048,
+          "gain_s": 0.07,
           "start_m": 2141.0,
           "end_m": 2347.0,
           "retrieved": false
@@ -339,7 +339,7 @@
         {
           "section": "T7-T8",
           "type": "corner_sequence",
-          "gain_s": -0.02,
+          "gain_s": -0.036,
           "start_m": 2347.0,
           "end_m": 2656.0,
           "retrieved": false
@@ -347,7 +347,7 @@
         {
           "section": "Between T8-T9",
           "type": "straight",
-          "gain_s": -0.02,
+          "gain_s": -0.002,
           "start_m": 2656.0,
           "end_m": 2742.0,
           "retrieved": false
@@ -355,7 +355,7 @@
         {
           "section": "T9",
           "type": "corner",
-          "gain_s": -0.049,
+          "gain_s": -0.036,
           "start_m": 2742.0,
           "end_m": 2978.0,
           "retrieved": false
@@ -363,7 +363,7 @@
         {
           "section": "Between T9-T10",
           "type": "straight",
-          "gain_s": -0.064,
+          "gain_s": -0.034,
           "start_m": 2978.0,
           "end_m": 3259.0,
           "retrieved": false
@@ -371,7 +371,7 @@
         {
           "section": "T10-T11",
           "type": "corner_sequence",
-          "gain_s": -0.045,
+          "gain_s": -0.08,
           "start_m": 3259.0,
           "end_m": 3599.0,
           "retrieved": false
@@ -379,7 +379,7 @@
         {
           "section": "T12",
           "type": "corner",
-          "gain_s": 0.075,
+          "gain_s": 0.125,
           "start_m": 3599.0,
           "end_m": 3896.0,
           "retrieved": true
@@ -387,7 +387,7 @@
         {
           "section": "T13",
           "type": "corner",
-          "gain_s": 0.001,
+          "gain_s": 0.035,
           "start_m": 3896.0,
           "end_m": 4074.0,
           "retrieved": false
@@ -395,7 +395,7 @@
         {
           "section": "Between T13-T14",
           "type": "straight",
-          "gain_s": -0.005,
+          "gain_s": 0.003,
           "start_m": 4074.0,
           "end_m": 4162.0,
           "retrieved": false
@@ -403,7 +403,7 @@
         {
           "section": "T14",
           "type": "corner",
-          "gain_s": -0.033,
+          "gain_s": -0.005,
           "start_m": 4162.0,
           "end_m": 4393.0,
           "retrieved": false
@@ -411,7 +411,7 @@
         {
           "section": "Main straight (finish, after final corner)",
           "type": "straight",
-          "gain_s": 0.085,
+          "gain_s": 0.113,
           "start_m": 4393.0,
           "end_m": 4608.0,
           "retrieved": true
@@ -420,19 +420,19 @@
       "lap_gap_exact_s": 0.064
     },
     "metrics": {
-      "retrieve_s": 0.031,
+      "retrieve_s": 0.028,
       "deltas_s": 0.0,
-      "llm_s": 8.055,
-      "total_s": 8.086,
-      "input_tokens": 2883,
-      "output_tokens": 365,
-      "prompt_chars": 4807,
+      "llm_s": 9.496,
+      "total_s": 9.524,
+      "input_tokens": 3109,
+      "output_tokens": 366,
+      "prompt_chars": 5361,
       "model": "claude-sonnet-4-6"
     }
   },
   {
     "question": "Where did Antonelli lose time to Russell?",
-    "answer": "## Where Antonelli Lost Time to Russell\n\nOver the lap, Russell was **0.293s quicker** than Antonelli, winning **9 of 16 sections** to Antonelli's 7. Russell's three biggest advantages were:\n\n---\n\n### Between T8–T9 (straight): RUS quicker by **0.199s**\nRussell reached a top speed of **327.0 km/h** vs Antonelli's **324.0 km/h**, and carried significantly more exit speed into the following section — **278.0 km/h vs 271.2 km/h** — a gap of **6.8 km/h**. Entry speeds were about level (294.8 vs 295.0 km/h).\n\n---\n\n### T14 (corner): RUS quicker by **0.172s**\nRussell arrived at T14 with a large entry speed advantage — **164.0 km/h vs 149.0 km/h**. No braking was detected for either driver, but Russell applied the throttle earlier (**105 m** from the apex vs Antonelli's **116 m**), and carried a slight apex speed advantage (**171.0 vs 168.2 km/h**).\n\n---\n\n### T1–T2: RUS quicker by **0.118s**\n(Section-level data; no detailed corner breakdown is available in the context.)\n\n---\n\n### Sector-level picture\nRussell was faster in all three sectors: **S1 by 0.058s**, **S2 by 0.156s**, and **S3 by 0.079s** — with the largest deficit for Antonelli coming in Sector 2.\n\n---\n\n### Where Antonelli recovered time\nAntonelli was quicker in 7 sections, with his biggest wins at **T13 (+0.215s)**, **T4–T5 (+0.155s)**, and **Between T2–T3 (+0.070s)**, partially offsetting Russell's advantages elsewhere.",
+    "answer": "Russell was 0.293s quicker than Antonelli over the lap, winning 10 of 16 sections to Antonelli's 6. The key places where Antonelli lost time to Russell were:\n\n**T1-T2 (corners 1–2): RUS quicker by 0.199s**\nRussell carried a 6 km/h higher entry speed (297 vs 291 km/h) and held significantly higher apex speeds — 8 km/h up at apex 1 (175 vs 167 km/h) and 5 km/h up at apex 2 (175 vs 170 km/h). The brake-on points overlap within a gap in the car data, so cannot tell who braked later. Russell also edged Antonelli at the exit (248.0 vs 246.2 km/h).\n\n**Between T8-T9 (straight): RUS quicker by 0.214s**\nDespite Antonelli having a fractionally higher entry speed (295.8 vs 291.6 km/h), Russell reached a higher top speed (327.0 vs 324.0 km/h) and carried significantly more exit speed into the next section (278.0 vs 269.6 km/h, a gap of 8.4 km/h). No braking was detected for either driver within the window.\n\n**T3: RUS quicker by 0.164s** (no detailed section breakdown provided beyond the tally).\n\nFor context, Antonelli recovered time at **T4-T5** (+0.253s) and **T13** (+0.213s), which are his two biggest wins and partially offset Russell's advantages elsewhere.",
     "session": "melbourne",
     "sources": [
       {
@@ -442,34 +442,7 @@
           "RUS",
           "ANT"
         ],
-        "text": "Lap comparison: RUS vs ANT\nRUS: best lap 1:18.518, classified P1\nANT: best lap 1:18.811, classified P2\nOver the lap RUS was 0.293s quicker than ANT.\nBoth best laps are from Q3.\nAccuracy: the three sector times are exact timing. Section gaps and braking points come from position data whose distance is accurate to about 5 to 10 m between two laps (up to 0.15s in one corner and the opposite in the next), so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable differences: do not build the explanation on them.\nSection tally over 16 sections: RUS quicker in 9, ANT quicker in 7, 0 level.\nRUS's biggest wins: Between T8-T9 0.199s, T14 0.172s, T1-T2 0.118s. ANT's biggest wins: T13 0.215s, T4-T5 0.155s, Between T2-T3 0.070s."
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "T13",
-        "drivers": [
-          "RUS",
-          "ANT"
-        ],
-        "text": "Head-to-Head at T13 (corner): RUS vs ANT\nEvent: Melbourne 2026 Qualifying\nRUS P1 (Mercedes) | ANT P2 (Mercedes)\nDistance window: 4355m – 4671m\n\n  Time in section: RUS 7.116s | ANT 6.901s | ANT faster by 0.215s\n  Entry speed: RUS 222.0km/h | ANT 219.0km/h | advantage: RUS +3.0km/h\nApex speeds:\n      Apex 1 at ~4596m: RUS 94.0 km/h | ANT 97.0 km/h | advantage: ANT +3.0\nBraking (corner entry):\n  RUS: first brakes at 4515m from 220.0 km/h | braking distance to first apex 105m\n  ANT: first brakes at 4525m from 229.0 km/h | braking distance to first apex 94m\n  → Both drivers start braking at about the same point (within the ~15 m accuracy of the distance measurement)\n  → Braking distance to first apex: RUS 105m | ANT 94m (ANT shorter)\n  Exit speed: RUS 156.0km/h | ANT 137.0km/h | advantage: RUS +19.0km/h"
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "Between T8-T9",
-        "drivers": [
-          "RUS",
-          "ANT"
-        ],
-        "text": "Head-to-Head at Between T8-T9 (straight): RUS vs ANT\nEvent: Melbourne 2026 Qualifying\nRUS P1 (Mercedes) | ANT P2 (Mercedes)\nDistance window: 2257m – 3167m\n\n  Time in section: RUS 10.393s | ANT 10.592s | RUS faster by 0.199s\n  Entry speed: RUS 294.8km/h | ANT 295.0km/h | advantage: ANT +0.2km/h\n  Top speed: RUS 327.0km/h | ANT 324.0km/h | advantage: RUS +3.0km/h\nDRS: RUS closed | ANT closed\nBraking point into next corner:\n  RUS: no braking within window\n  ANT: no braking within window\n  Exit speed: RUS 278.0km/h | ANT 271.2km/h | advantage: RUS +6.8km/h"
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "T14",
-        "drivers": [
-          "RUS",
-          "ANT"
-        ],
-        "text": "Head-to-Head at T14 (corner): RUS vs ANT\nEvent: Melbourne 2026 Qualifying\nRUS P1 (Mercedes) | ANT P2 (Mercedes)\nDistance window: 4671m – 4852m\n\n  Time in section: RUS 3.311s | ANT 3.483s | RUS faster by 0.172s\n  Entry speed: RUS 164.0km/h | ANT 149.0km/h | advantage: RUS +15.0km/h\nApex speeds:\n      Apex 1 at ~4759m: RUS 171.0 km/h | ANT 168.2 km/h | advantage: RUS +2.8\nBraking (corner entry):\n  RUS: no braking detected\n  ANT: no braking detected\nThrottle pickup: RUS at 105m | ANT at 116m | RUS gets on throttle earlier (better traction/exit)\n  Exit speed: RUS 227.0km/h | ANT 225.0km/h | advantage: RUS +2.0km/h"
+        "text": "Lap comparison: RUS vs ANT\nRUS: best lap 1:18.518, classified P1\nANT: best lap 1:18.811, classified P2\nOver the lap RUS was 0.293s quicker than ANT.\nBoth best laps are from Q3.\nAccuracy: the three sector times are exact timing. Section gaps and braking points come from position data: compared with the official sector gaps, the telemetry's cumulative gap is off by 0.02 to 0.10s on average (up to about 0.18s at Melbourne), so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable differences: do not build the explanation on them. Larger gaps (0.2s or more) are usually real.\nSection tally over 16 sections: RUS quicker in 10, ANT quicker in 6, 0 level.\nRUS's biggest wins: Between T8-T9 0.214s, T1-T2 0.199s, T3 0.164s. ANT's biggest wins: T4-T5 0.253s, T13 0.213s, T7-T8 0.064s."
       },
       {
         "chunk_type": "head_to_head_event",
@@ -478,7 +451,34 @@
           "RUS",
           "ANT"
         ],
-        "text": "Head-to-Head at T4-T5 (corner sequence): RUS vs ANT\nEvent: Melbourne 2026 Qualifying\nRUS P1 (Mercedes) | ANT P2 (Mercedes)\nDistance window: 1138m – 1500m\n\n  Time in section: RUS 6.438s | ANT 6.283s | ANT faster by 0.155s\n  Entry speed: RUS 141.0km/h | ANT 141.0km/h | advantage: equal\nApex speeds:\n      Apex 1 at ~1221m: RUS 162.0 km/h | ANT 160.7 km/h | advantage: RUS +1.3\n      Apex 2 at ~1421m: RUS 235.0 km/h | ANT 234.6 km/h | advantage: equal\nBraking (corner entry):\n  RUS: no braking detected\n  ANT: first brakes between 1149m and 1192m (gap in the car data) | braking distance to first apex 31–73m\nThrottle pickup: RUS at 134m | ANT at 116m | ANT gets on throttle earlier (better traction/exit)\n  Exit speed: RUS 251.0km/h | ANT 253.5km/h | advantage: ANT +2.5km/h"
+        "text": "Head-to-Head at T4-T5 (corner sequence): RUS vs ANT\nEvent: Melbourne 2026 Qualifying\nRUS P1 (Mercedes) | ANT P2 (Mercedes)\nDistance window: 1138m – 1500m\n\n  Time in section: RUS 6.496s | ANT 6.243s | ANT faster by 0.253s\n  Entry speed: RUS 131.0km/h | ANT 157.0km/h | advantage: ANT +26.0km/h\nApex speeds:\n      Apex 1 at ~1221m: RUS 157.4 km/h | ANT 163.0 km/h | advantage: ANT +5.6\n      Apex 2 at ~1421m: RUS 233.5 km/h | ANT 236.2 km/h | advantage: ANT +2.7\nBraking (corner entry):\n  RUS: no braking detected\n  ANT: first brakes between 1142m and 1185m (gap in the car data) | braking distance to first apex 30–73m\nThrottle pickup: RUS at 142m | ANT at 105m | ANT gets on throttle earlier (better traction/exit)\n  Exit speed: RUS 251.0km/h | ANT 254.5km/h | advantage: ANT +3.5km/h"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "Between T8-T9",
+        "drivers": [
+          "RUS",
+          "ANT"
+        ],
+        "text": "Head-to-Head at Between T8-T9 (straight): RUS vs ANT\nEvent: Melbourne 2026 Qualifying\nRUS P1 (Mercedes) | ANT P2 (Mercedes)\nDistance window: 2257m – 3167m\n\n  Time in section: RUS 10.390s | ANT 10.604s | RUS faster by 0.214s\n  Entry speed: RUS 291.6km/h | ANT 295.8km/h | advantage: ANT +4.1km/h\n  Top speed: RUS 327.0km/h | ANT 324.0km/h | advantage: RUS +3.0km/h\nDRS: RUS closed | ANT closed\nBraking point into next corner:\n  RUS: no braking within window\n  ANT: no braking within window\n  Exit speed: RUS 278.0km/h | ANT 269.6km/h | advantage: RUS +8.4km/h"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "T13",
+        "drivers": [
+          "RUS",
+          "ANT"
+        ],
+        "text": "Head-to-Head at T13 (corner): RUS vs ANT\nEvent: Melbourne 2026 Qualifying\nRUS P1 (Mercedes) | ANT P2 (Mercedes)\nDistance window: 4355m – 4671m\n\n  Time in section: RUS 7.116s | ANT 6.903s | ANT faster by 0.213s\n  Entry speed: RUS 222.0km/h | ANT 219.0km/h | advantage: RUS +3.0km/h\nApex speeds:\n      Apex 1 at ~4596m: RUS 94.0 km/h | ANT 97.0 km/h | advantage: ANT +3.0\nBraking (corner entry):\n  RUS: first brakes at 4520m from 220.0 km/h | braking distance to first apex 104m\n  ANT: first brakes at 4520m from 229.0 km/h | braking distance to first apex 94m\n  → Both drivers start braking at about the same point (within the ~15 m accuracy of the distance measurement)\n  → Braking distance to first apex: RUS 104m | ANT 94m (ANT shorter)\n  Exit speed: RUS 147.2km/h | ANT 149.0km/h | advantage: ANT +1.8km/h"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "T1-T2",
+        "drivers": [
+          "RUS",
+          "ANT"
+        ],
+        "text": "Head-to-Head at T1-T2 (corner sequence): RUS vs ANT\nEvent: Melbourne 2026 Qualifying\nRUS P1 (Mercedes) | ANT P2 (Mercedes)\nDistance window: 142m – 542m\n\n  Time in section: RUS 6.209s | ANT 6.409s | RUS faster by 0.199s\n  Entry speed: RUS 297.0km/h | ANT 291.0km/h | advantage: RUS +6.0km/h\nApex speeds:\n      Apex 1 at ~344m: RUS 175.0 km/h | ANT 167.0 km/h | advantage: RUS +8.0\n      Apex 2 at ~425m: RUS 175.0 km/h | ANT 170.0 km/h | advantage: RUS +5.0\nBraking (corner entry):\n  RUS: first brakes between 239m and 271m (gap in the car data) | braking distance to first apex 100–131m\n  ANT: first brakes at 249m from 279.0 km/h | braking distance to first apex 93m\n  → Brake-on points overlap within a gap in the car data: cannot tell who brakes later\n  Exit speed: RUS 248.0km/h | ANT 246.2km/h | advantage: RUS +1.8km/h"
       },
       {
         "chunk_type": "head_to_head",
@@ -501,13 +501,13 @@
     "deltas": {
       "driver_a": "RUS",
       "driver_b": "ANT",
-      "lap_gap_s": 0.295,
+      "lap_gap_s": 0.292,
       "lap_session": null,
       "sections": [
         {
           "section": "Main straight (start, before T1)",
           "type": "straight",
-          "gain_s": -0.012,
+          "gain_s": 0.015,
           "start_m": 0.0,
           "end_m": 142.0,
           "retrieved": false
@@ -515,15 +515,15 @@
         {
           "section": "T1-T2",
           "type": "corner_sequence",
-          "gain_s": 0.118,
+          "gain_s": 0.199,
           "start_m": 142.0,
           "end_m": 542.0,
-          "retrieved": false
+          "retrieved": true
         },
         {
           "section": "Between T2-T3",
           "type": "straight",
-          "gain_s": -0.07,
+          "gain_s": -0.046,
           "start_m": 542.0,
           "end_m": 835.0,
           "retrieved": false
@@ -531,7 +531,7 @@
         {
           "section": "T3",
           "type": "corner",
-          "gain_s": -0.036,
+          "gain_s": 0.164,
           "start_m": 835.0,
           "end_m": 1138.0,
           "retrieved": false
@@ -539,7 +539,7 @@
         {
           "section": "T4-T5",
           "type": "corner_sequence",
-          "gain_s": -0.155,
+          "gain_s": -0.253,
           "start_m": 1138.0,
           "end_m": 1500.0,
           "retrieved": true
@@ -547,7 +547,7 @@
         {
           "section": "Between T5-T6",
           "type": "straight",
-          "gain_s": 0.029,
+          "gain_s": 0.03,
           "start_m": 1500.0,
           "end_m": 1675.0,
           "retrieved": false
@@ -555,7 +555,7 @@
         {
           "section": "T6",
           "type": "corner",
-          "gain_s": -0.051,
+          "gain_s": -0.001,
           "start_m": 1675.0,
           "end_m": 1934.0,
           "retrieved": false
@@ -563,7 +563,7 @@
         {
           "section": "T7-T8",
           "type": "corner_sequence",
-          "gain_s": -0.025,
+          "gain_s": -0.064,
           "start_m": 1934.0,
           "end_m": 2257.0,
           "retrieved": false
@@ -571,7 +571,7 @@
         {
           "section": "Between T8-T9",
           "type": "straight",
-          "gain_s": 0.199,
+          "gain_s": 0.214,
           "start_m": 2257.0,
           "end_m": 3167.0,
           "retrieved": true
@@ -579,7 +579,7 @@
         {
           "section": "T9-T10",
           "type": "corner_sequence",
-          "gain_s": 0.091,
+          "gain_s": 0.085,
           "start_m": 3167.0,
           "end_m": 3476.0,
           "retrieved": false
@@ -587,7 +587,7 @@
         {
           "section": "Between T10-T11",
           "type": "straight",
-          "gain_s": 0.117,
+          "gain_s": 0.049,
           "start_m": 3476.0,
           "end_m": 3898.0,
           "retrieved": false
@@ -595,7 +595,7 @@
         {
           "section": "T11",
           "type": "corner",
-          "gain_s": 0.031,
+          "gain_s": 0.068,
           "start_m": 3898.0,
           "end_m": 4212.0,
           "retrieved": false
@@ -603,7 +603,7 @@
         {
           "section": "T12",
           "type": "corner",
-          "gain_s": 0.049,
+          "gain_s": 0.008,
           "start_m": 4212.0,
           "end_m": 4355.0,
           "retrieved": false
@@ -611,7 +611,7 @@
         {
           "section": "T13",
           "type": "corner",
-          "gain_s": -0.215,
+          "gain_s": -0.213,
           "start_m": 4355.0,
           "end_m": 4671.0,
           "retrieved": true
@@ -619,15 +619,15 @@
         {
           "section": "T14",
           "type": "corner",
-          "gain_s": 0.172,
+          "gain_s": 0.072,
           "start_m": 4671.0,
           "end_m": 4852.0,
-          "retrieved": true
+          "retrieved": false
         },
         {
           "section": "Main straight (finish, after final corner)",
           "type": "straight",
-          "gain_s": 0.053,
+          "gain_s": -0.035,
           "start_m": 4852.0,
           "end_m": 5244.0,
           "retrieved": false
@@ -636,19 +636,19 @@
       "lap_gap_exact_s": 0.293
     },
     "metrics": {
-      "retrieve_s": 0.166,
+      "retrieve_s": 0.114,
       "deltas_s": 0.0,
-      "llm_s": 12.268,
-      "total_s": 12.435,
-      "input_tokens": 3003,
-      "output_tokens": 472,
-      "prompt_chars": 5007,
+      "llm_s": 8.903,
+      "total_s": 9.017,
+      "input_tokens": 3121,
+      "output_tokens": 396,
+      "prompt_chars": 5283,
       "model": "claude-sonnet-4-6"
     }
   },
   {
     "question": "How did Norris beat Piastri?",
-    "answer": "Norris beat Piastri by **0.109s** at Monza 2024 Qualifying, taking P1 with a 1:19.327 against Piastri's 1:19.436, both laps set in Q3 on Softs.\n\n**Sector picture:** Piastri was quicker in Sector 1 (26.407s vs 26.492s, +0.085s to Piastri), but Norris took Sector 2 (26.579s vs 26.643s, +0.064s) and built his biggest advantage in Sector 3 (26.256s vs 26.386s, +0.130s).\n\n**Section tally:** Over 15 sections, Norris was quicker in 8, Piastri in 7.\n\n**Norris's biggest wins:**\n- **Main straight (start, before T1):** +0.126s — Norris entered at 321 km/h vs Piastri's 320 km/h and hit a top speed of 347 km/h vs 346 km/h.\n- **T8–T9–T10:** +0.080s — Norris carried slightly more entry speed (336.5 vs 335.8 km/h) and was 3 km/h quicker at the first apex (194 vs 191 km/h). Who braked later cannot be determined due to a gap in the car data.\n- **Main straight (finish, after final corner):** +0.077s — driven by a 0.4 km/h entry speed advantage; top speed and exit speed were equal at 317 km/h.\n\n**Piastri's biggest wins:**\n- **Between T7–T8:** +0.081s — Piastri entered 4 km/h faster (230 vs 226 km/h).\n- **Between T2–T3:** +0.067s.\n- **T11:** +0.058s.\n\nThe net result was Norris's Sector 3 dominance — anchored by the two straights either side of the Lesmo/Ascari complex — outweighing Piastri's advantages in the first sector and middle sections.",
+    "answer": "Norris beat Piastri by **0.109s** at Monza 2024 Qualifying, taking P1 with a 1:19.327 against Piastri's 1:19.436, both on Softs in Q3.\n\n**Sector picture:** Piastri was quicker in Sector 1 (26.407s vs 26.492s, +0.085s to Piastri), but Norris took Sector 2 (26.579s vs 26.643s, +0.064s) and Sector 3 (26.256s vs 26.386s, +0.130s) to build the overall margin.\n\n**Section tally:** Over 15 sections, Piastri was actually quicker in more of them (8 vs Norris's 7), but Norris's wins came in higher-value sections:\n\n**Norris's biggest gains:**\n- **Main straight (start, before T1):** +0.103s — Norris carried slightly higher entry and top speed (347 vs 346 km/h), both with DRS open.\n- **Main straight (finish, after final corner):** +0.101s — entry speeds near-identical, top speeds equal; Norris simply moved through the section faster.\n- **T8-T9-T10:** +0.077s — Norris held higher apex speeds at all three apexes (up to +3.0 km/h at the first). Braking points cannot be separated due to a gap in Piastri's car data.\n\n**Piastri's biggest gains:**\n- **T4-T5:** +0.084s — Piastri carried +4 km/h more through both apexes (117 vs 113 km/h), despite Norris having the higher exit speed (+12.8 km/h). Braking points were about level.\n- **T1-T2:** +0.059s\n- **T11:** +0.055s\n\nNorris's advantage was concentrated on the straights and the Lesmo complex; Piastri clawed back time in the first chicane and the opening corners, but not enough to overcome Norris's straight-line and T8-T10 gains.",
     "session": "monza",
     "sources": [
       {
@@ -658,7 +658,7 @@
           "NOR",
           "PIA"
         ],
-        "text": "Lap comparison: NOR vs PIA\nNOR: best lap 1:19.327, classified P1\nPIA: best lap 1:19.436, classified P2\nOver the lap NOR was 0.109s quicker than PIA.\nBoth best laps are from Q3.\nAccuracy: the three sector times are exact timing. Section gaps and braking points come from position data whose distance is accurate to about 5 to 10 m between two laps (up to 0.15s in one corner and the opposite in the next), so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable differences: do not build the explanation on them.\nSection tally over 15 sections: NOR quicker in 8, PIA quicker in 7, 0 level.\nNOR's biggest wins: Main straight (start, before T1) 0.126s, T8-T9-T10 0.080s, Main straight (finish, after final corner) 0.077s. PIA's biggest wins: Between T7-T8 0.081s, Between T2-T3 0.067s, T11 0.058s."
+        "text": "Lap comparison: NOR vs PIA\nNOR: best lap 1:19.327, classified P1\nPIA: best lap 1:19.436, classified P2\nOver the lap NOR was 0.109s quicker than PIA.\nBoth best laps are from Q3.\nAccuracy: the three sector times are exact timing. Section gaps and braking points come from position data: compared with the official sector gaps, the telemetry's cumulative gap is off by 0.02 to 0.10s on average (up to about 0.18s at Melbourne), so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable differences: do not build the explanation on them. Larger gaps (0.2s or more) are usually real.\nSection tally over 15 sections: NOR quicker in 7, PIA quicker in 8, 0 level.\nNOR's biggest wins: Main straight (start, before T1) 0.103s, Main straight (finish, after final corner) 0.101s, T8-T9-T10 0.077s. PIA's biggest wins: T4-T5 0.084s, T1-T2 0.059s, T11 0.055s."
       },
       {
         "chunk_type": "head_to_head_event",
@@ -667,25 +667,7 @@
           "NOR",
           "PIA"
         ],
-        "text": "Head-to-Head at Main straight (start, before T1) (straight): NOR vs PIA\nEvent: Monza 2024 Qualifying\nNOR P1 (McLaren) | PIA P2 (McLaren)\nDistance window: 0m – 715m\n\n  Time in section: NOR 7.589s | PIA 7.715s | NOR faster by 0.126s\n  Entry speed: NOR 321.0km/h | PIA 320.0km/h | advantage: NOR +1.0km/h\n  Top speed: NOR 347.0km/h | PIA 346.0km/h | advantage: NOR +1.0km/h\nDRS: NOR open | PIA open\nBraking point into next corner:\n  NOR: no braking within window\n  PIA: no braking within window\n  Exit speed: NOR 345.0km/h | PIA 345.0km/h | advantage: equal"
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "Between T7-T8",
-        "drivers": [
-          "NOR",
-          "PIA"
-        ],
-        "text": "Head-to-Head at Between T7-T8 (straight): NOR vs PIA\nEvent: Monza 2024 Qualifying\nNOR P1 (McLaren) | PIA P2 (McLaren)\nDistance window: 2925m – 3752m\n\n  Time in section: NOR 9.803s | PIA 9.722s | PIA faster by 0.081s\n  Entry speed: NOR 226.0km/h | PIA 230.0km/h | advantage: PIA +4.0km/h\n  Top speed: NOR 338.0km/h | PIA 337.0km/h | advantage: NOR +1.0km/h\nDRS: NOR open | PIA open\nBraking point into next corner:\n  NOR: no braking within window\n  PIA: no braking within window\n  Exit speed: NOR 336.8km/h | PIA 336.0km/h | advantage: NOR +0.8km/h"
-      },
-      {
-        "chunk_type": "head_to_head_event",
-        "section": "T8-T9-T10",
-        "drivers": [
-          "NOR",
-          "PIA"
-        ],
-        "text": "Head-to-Head at T8-T9-T10 (corner sequence): NOR vs PIA\nEvent: Monza 2024 Qualifying\nNOR P1 (McLaren) | PIA P2 (McLaren)\nDistance window: 3752m – 4163m\n\n  Time in section: NOR 6.017s | PIA 6.098s | NOR faster by 0.080s\n  Entry speed: NOR 336.5km/h | PIA 335.8km/h | advantage: NOR +0.7km/h\nApex speeds:\n      Apex 1 at ~3898m: NOR 194.0 km/h | PIA 191.0 km/h | advantage: NOR +3.0\n      Apex 2 at ~3990m: NOR 195.0 km/h | PIA 195.7 km/h | advantage: PIA +0.7\n      Apex 3 at ~4091m: NOR 236.8 km/h | PIA 238.0 km/h | advantage: PIA +1.2\nBraking (corner entry):\n  NOR: first brakes at 3827m from 296.0 km/h | braking distance to first apex 94m\n  PIA: first brakes between 3785m and 3817m (gap in the car data) | braking distance to first apex 104–135m\n  → Brake-on points overlap within a gap in the car data: cannot tell who brakes later\n  Exit speed: NOR 267.0km/h | PIA 266.0km/h | advantage: NOR +1.0km/h"
+        "text": "Head-to-Head at Main straight (start, before T1) (straight): NOR vs PIA\nEvent: Monza 2024 Qualifying\nNOR P1 (McLaren) | PIA P2 (McLaren)\nDistance window: 0m – 715m\n\n  Time in section: NOR 7.584s | PIA 7.687s | NOR faster by 0.103s\n  Entry speed: NOR 321.0km/h | PIA 320.0km/h | advantage: NOR +1.0km/h\n  Top speed: NOR 347.0km/h | PIA 346.0km/h | advantage: NOR +1.0km/h\nDRS: NOR open | PIA open\nBraking point into next corner:\n  NOR: no braking within window\n  PIA: no braking within window\n  Exit speed: NOR 345.0km/h | PIA 345.0km/h | advantage: equal"
       },
       {
         "chunk_type": "head_to_head_event",
@@ -694,7 +676,25 @@
           "NOR",
           "PIA"
         ],
-        "text": "Head-to-Head at Main straight (finish, after final corner) (straight): NOR vs PIA\nEvent: Monza 2024 Qualifying\nNOR P1 (McLaren) | PIA P2 (McLaren)\nDistance window: 5245m – 5765m\n\n  Time in section: NOR 6.438s | PIA 6.515s | NOR faster by 0.077s\n  Entry speed: NOR 243.0km/h | PIA 242.6km/h | advantage: NOR +0.4km/h\n  Top speed: NOR 317.0km/h | PIA 317.0km/h | advantage: equal\nDRS: NOR closed | PIA closed\nBraking point into next corner:\n  NOR: no braking within window\n  PIA: no braking within window\n  Exit speed: NOR 317.0km/h | PIA 317.0km/h | advantage: equal"
+        "text": "Head-to-Head at Main straight (finish, after final corner) (straight): NOR vs PIA\nEvent: Monza 2024 Qualifying\nNOR P1 (McLaren) | PIA P2 (McLaren)\nDistance window: 5245m – 5765m\n\n  Time in section: NOR 6.442s | PIA 6.543s | NOR faster by 0.101s\n  Entry speed: NOR 243.0km/h | PIA 242.6km/h | advantage: NOR +0.4km/h\n  Top speed: NOR 317.0km/h | PIA 317.0km/h | advantage: equal\nDRS: NOR closed | PIA closed\nBraking point into next corner:\n  NOR: no braking within window\n  PIA: no braking within window\n  Exit speed: NOR 317.0km/h | PIA 317.0km/h | advantage: equal"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "T4-T5",
+        "drivers": [
+          "NOR",
+          "PIA"
+        ],
+        "text": "Head-to-Head at T4-T5 (corner sequence): NOR vs PIA\nEvent: Monza 2024 Qualifying\nNOR P1 (McLaren) | PIA P2 (McLaren)\nDistance window: 1931m – 2213m\n\n  Time in section: NOR 5.764s | PIA 5.680s | PIA faster by 0.084s\n  Entry speed: NOR 324.0km/h | PIA 322.0km/h | advantage: NOR +2.0km/h\nApex speeds:\n      Apex 1 at ~2098m: NOR 113.0 km/h | PIA 117.0 km/h | advantage: PIA +4.0\n      Apex 2 at ~2149m: NOR 113.0 km/h | PIA 117.0 km/h | advantage: PIA +4.0\nBraking (corner entry):\n  NOR: first brakes at 1994m from 317.0 km/h | braking distance to first apex 122m\n  PIA: first brakes at 2002m from 312.0 km/h | braking distance to first apex 112m\n  → Both drivers start braking at about the same point (within the ~15 m accuracy of the distance measurement)\n  → Braking distance to first apex: NOR 122m | PIA 112m (PIA shorter)\n  Exit speed: NOR 183.8km/h | PIA 171.0km/h | advantage: NOR +12.8km/h"
+      },
+      {
+        "chunk_type": "head_to_head_event",
+        "section": "T8-T9-T10",
+        "drivers": [
+          "NOR",
+          "PIA"
+        ],
+        "text": "Head-to-Head at T8-T9-T10 (corner sequence): NOR vs PIA\nEvent: Monza 2024 Qualifying\nNOR P1 (McLaren) | PIA P2 (McLaren)\nDistance window: 3752m – 4163m\n\n  Time in section: NOR 6.017s | PIA 6.093s | NOR faster by 0.077s\n  Entry speed: NOR 336.5km/h | PIA 335.8km/h | advantage: NOR +0.7km/h\nApex speeds:\n      Apex 1 at ~3898m: NOR 194.0 km/h | PIA 191.0 km/h | advantage: NOR +3.0\n      Apex 2 at ~3990m: NOR 195.0 km/h | PIA 193.3 km/h | advantage: NOR +1.7\n      Apex 3 at ~4091m: NOR 236.8 km/h | PIA 235.0 km/h | advantage: NOR +1.8\nBraking (corner entry):\n  NOR: first brakes at 3827m from 296.0 km/h | braking distance to first apex 94m\n  PIA: first brakes between 3790m and 3822m (gap in the car data) | braking distance to first apex 103–135m\n  → Brake-on points overlap within a gap in the car data: cannot tell who brakes later\n  Exit speed: NOR 267.0km/h | PIA 266.0km/h | advantage: NOR +1.0km/h"
       },
       {
         "chunk_type": "session_pace_evolution",
@@ -717,13 +717,13 @@
     "deltas": {
       "driver_a": "NOR",
       "driver_b": "PIA",
-      "lap_gap_s": 0.108,
+      "lap_gap_s": 0.109,
       "lap_session": null,
       "sections": [
         {
           "section": "Main straight (start, before T1)",
           "type": "straight",
-          "gain_s": 0.126,
+          "gain_s": 0.103,
           "start_m": 0.0,
           "end_m": 715.0,
           "retrieved": true
@@ -731,7 +731,7 @@
         {
           "section": "T1-T2",
           "type": "corner_sequence",
-          "gain_s": -0.023,
+          "gain_s": -0.059,
           "start_m": 715.0,
           "end_m": 1024.0,
           "retrieved": false
@@ -739,7 +739,7 @@
         {
           "section": "Between T2-T3",
           "type": "straight",
-          "gain_s": -0.067,
+          "gain_s": -0.052,
           "start_m": 1024.0,
           "end_m": 1383.0,
           "retrieved": false
@@ -747,7 +747,7 @@
         {
           "section": "T3",
           "type": "corner",
-          "gain_s": 0.015,
+          "gain_s": 0.012,
           "start_m": 1383.0,
           "end_m": 1534.0,
           "retrieved": false
@@ -755,7 +755,7 @@
         {
           "section": "Between T3-T4",
           "type": "straight",
-          "gain_s": -0.005,
+          "gain_s": -0.008,
           "start_m": 1534.0,
           "end_m": 1931.0,
           "retrieved": false
@@ -763,15 +763,15 @@
         {
           "section": "T4-T5",
           "type": "corner_sequence",
-          "gain_s": -0.042,
+          "gain_s": -0.084,
           "start_m": 1931.0,
           "end_m": 2213.0,
-          "retrieved": false
+          "retrieved": true
         },
         {
           "section": "Between T5-T6",
           "type": "straight",
-          "gain_s": 0.032,
+          "gain_s": 0.055,
           "start_m": 2213.0,
           "end_m": 2366.0,
           "retrieved": false
@@ -779,7 +779,7 @@
         {
           "section": "T6",
           "type": "corner",
-          "gain_s": 0.065,
+          "gain_s": 0.061,
           "start_m": 2366.0,
           "end_m": 2614.0,
           "retrieved": false
@@ -787,7 +787,7 @@
         {
           "section": "Between T6-T7",
           "type": "straight",
-          "gain_s": 0.01,
+          "gain_s": 0.014,
           "start_m": 2614.0,
           "end_m": 2706.0,
           "retrieved": false
@@ -795,7 +795,7 @@
         {
           "section": "T7",
           "type": "corner",
-          "gain_s": 0.007,
+          "gain_s": -0.002,
           "start_m": 2706.0,
           "end_m": 2925.0,
           "retrieved": false
@@ -803,15 +803,15 @@
         {
           "section": "Between T7-T8",
           "type": "straight",
-          "gain_s": -0.081,
+          "gain_s": -0.052,
           "start_m": 2925.0,
           "end_m": 3752.0,
-          "retrieved": true
+          "retrieved": false
         },
         {
           "section": "T8-T9-T10",
           "type": "corner_sequence",
-          "gain_s": 0.08,
+          "gain_s": 0.077,
           "start_m": 3752.0,
           "end_m": 4163.0,
           "retrieved": true
@@ -819,7 +819,7 @@
         {
           "section": "Between T10-T11",
           "type": "straight",
-          "gain_s": -0.028,
+          "gain_s": -0.002,
           "start_m": 4163.0,
           "end_m": 4944.0,
           "retrieved": false
@@ -827,7 +827,7 @@
         {
           "section": "T11",
           "type": "corner",
-          "gain_s": -0.058,
+          "gain_s": -0.055,
           "start_m": 4944.0,
           "end_m": 5245.0,
           "retrieved": false
@@ -835,7 +835,7 @@
         {
           "section": "Main straight (finish, after final corner)",
           "type": "straight",
-          "gain_s": 0.077,
+          "gain_s": 0.101,
           "start_m": 5245.0,
           "end_m": 5765.0,
           "retrieved": true
@@ -844,13 +844,13 @@
       "lap_gap_exact_s": 0.109
     },
     "metrics": {
-      "retrieve_s": 0.159,
+      "retrieve_s": 0.111,
       "deltas_s": 0.0,
-      "llm_s": 11.388,
-      "total_s": 11.548,
-      "input_tokens": 3149,
-      "output_tokens": 531,
-      "prompt_chars": 5325,
+      "llm_s": 11.671,
+      "total_s": 11.783,
+      "input_tokens": 3309,
+      "output_tokens": 534,
+      "prompt_chars": 5716,
       "model": "claude-sonnet-4-6"
     }
   }
