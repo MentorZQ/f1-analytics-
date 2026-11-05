@@ -75,6 +75,9 @@ def _field_lines(ctx: dict, rows: list) -> list[str]:
     if no_time:
         out.append(f"{len(no_time)} drivers set no timed lap and went out in Q1: "
                    + ", ".join(f"{c} ({i.get('team', '')}; {i.get('reason', 'no timed lap')})" for c, i in sorted(no_time.items())))
+    for code, items in sorted((ctx.get("no_lap_notes") or {}).items()):
+        for item in items:
+            out.append(f"Why {code} has no time in {item['segment']}: {item['text']}")
     # teams: who got both cars into Q3, and the gap between teammates
     members: dict[str, list[tuple[str, dict]]] = {}
     for code, info in rows:

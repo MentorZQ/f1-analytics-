@@ -19,6 +19,7 @@ Sessions available:
 
 import argparse
 import contextvars
+import json
 import os
 import re
 import sys
@@ -131,6 +132,14 @@ def load_session_context(collection) -> dict:
             reason = re.search(r"Reason:\s*([^|\n]+?)\.?(?:\s*\||\n|$)", doc or "")
             no_time[m.group(1)] = {"team": m.group(3).strip(), "reason": (reason.group(1).strip() if reason else "no timed lap").lower()}
 
+    # Why a driver set no time in a session he entered (a stop on track, no laps recorded): built from OpenF1 by
+    # scripts/build_no_lap_notes.py, because the lap summaries and the race-control messages do not say.
+    notes_path = ROOT / "RAG_data_layers" / "session_notes" / f"{getattr(collection, 'name', '')}.json"
+    try:
+        no_lap_notes = json.loads(notes_path.read_text()) if notes_path.exists() else {}
+    except (OSError, ValueError):
+        no_lap_notes = {}
+
     standings = sorted(drivers.items(), key=lambda x: x[1]["qualifying_position"] or 99)
 
     # The fastest time in each sector over the whole field (every driver's sector chunk states it).
@@ -156,6 +165,7 @@ def load_session_context(collection) -> dict:
     return {
         "drivers":      drivers,
         "no_time":      no_time,
+        "no_lap_notes": no_lap_notes,
         "entrants":     set(drivers) | set(no_time),
         "fastest_sector": fastest_sector,
         "standings":    [d for d, _ in standings],
@@ -397,6 +407,9 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None 
         "slower in another session; give the best-lap gap only when the question asks for the best laps or the gap to pole. "
         "Section gaps under about 0.1s and braking points less than 15 m apart are measurement error, not differences: do not state "
         "them as findings (say 'about level'), and prefer the exact sector times and the larger section gaps. "
+        "When the context says why a driver set no time (his car stopped on track, a red flag followed, no laps were recorded), give "
+        "it in one sentence using only those facts: say 'stopped on track', never 'crashed' or 'spun' unless the context says so, and "
+        "never imply he chose not to set a lap. "
         "Do not say which sector a corner or straight belongs to: the context gives no sector boundaries. "
         "When the context gives a section tally, use it: never say a driver was quicker 'consistently', 'everywhere' or 'in every "
         "corner' unless the tally says so, list a section under the driver who was quicker there, and end with the net result and "
@@ -605,6 +618,9 @@ def extra_context(question: str, session_key: str, session_ctx: dict) -> list[di
     asked = sq.plan(question, teams, no_driver_named=not question_drivers(question, session_ctx), circuit=_circuit(session_key))
     label = "{circuit} {year}".format(**snapshot.session_info) if snapshot is not None else ""
     out: list[dict] = []
+    for code in sorted(set(question_drivers(question, session_ctx)))[:3]:
+        for note in (session_ctx.get("no_lap_notes") or {}).get(code, []):
+            out.append(sq.make_chunk("driver_note", f"Why {code} has no time in {note['segment']}: {note['text']}", code, session_key))
     if asked["team_advantage"] and snapshot is not None:
         text = sq.team_advantage_text(snapshot, session_ctx)
         if text:

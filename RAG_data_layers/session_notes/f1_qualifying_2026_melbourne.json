@@ -1,0 +1,26 @@
+{
+ "STR": [
+  {
+   "segment": "Q1",
+   "text": "The data records no laps for him in Q1."
+  }
+ ],
+ "VER": [
+  {
+   "segment": "Q1",
+   "text": "His last lap in Q1 (started 05:10:10) was not completed. His car slowed to 0 km/h 5 s into the lap (at 05:10:15), after braking hard from 306 km/h, and it did not move again during the lap window: it stopped on track. A red flag was shown at 05:10:31, 15 s after it stopped. The data does not say why (a crash and a mechanical failure look the same in it)."
+  }
+ ],
+ "BOR": [
+  {
+   "segment": "Q3",
+   "text": "The data records no laps for him in Q3."
+  }
+ ],
+ "SAI": [
+  {
+   "segment": "Q1",
+   "text": "The data records no laps for him in Q1."
+  }
+ ]
+}
