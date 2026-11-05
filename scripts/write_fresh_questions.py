@@ -34,7 +34,7 @@ SESSIONS = {"monza": ("f1_qualifying_2024_monza", "the 2024 Italian Grand Prix a
 def rosters() -> str:
     parts = []
     for key, (name, label) in SESSIONS.items():
-        s = snap.load_snapshot(ROOT / "RAG_data_layers" / "session_snapshots" / f"{name}.npz")
+        s = snap.load_snapshot(ROOT / "RAG_data_layers" / "session_snapshots" / f"{name}.npz", align=False)
         rows = [f"{r['Driver']} ({DRIVER_SURNAMES.get(r['Driver'], r['Driver']).title()}, {r['Team']})" for _, r in s.fastest.iterrows()]
         parts.append(f"{label} [{key}]: " + "; ".join(sorted(rows)))
     return "\n".join(parts)

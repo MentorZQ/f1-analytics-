@@ -104,9 +104,11 @@ def test_lap_comparison_matches_known_pole_gap(client):
 
     assert (deltas["driver_a"], deltas["driver_b"]) == ("RUS", "HAM")
     assert deltas["lap_gap_s"] == pytest.approx(0.064, abs=0.002)
-    # From the stored text (OpenF1 data, official corners): "RUS faster by 0.125s" (T12), "HAM faster by 0.037s".
-    assert by_section["T12"]["gain_s"] == pytest.approx(0.125)
-    assert by_section["Main straight (start, before T1)"]["gain_s"] == pytest.approx(-0.037)
+    # After the distance alignment (snapshot.align_distance). On the raw distance these were T12 0.125 and the first straight
+    # -0.037; the correction moves them to 0.075 and +0.025 (the lap total is unchanged).
+    assert by_section["T12"]["gain_s"] == pytest.approx(0.075, abs=0.003)
+    assert by_section["Main straight (start, before T1)"]["gain_s"] == pytest.approx(0.025, abs=0.003)
+    assert deltas["lap_gap_exact_s"] == pytest.approx(0.064, abs=0.0005)
 
 
 def test_sections_are_in_lap_order(client):

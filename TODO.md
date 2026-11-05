@@ -53,3 +53,6 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [ ] Corner names exist only for Monza (first chicane, Lesmo, Ascari, Parabolica). Barcelona 2026 and Albert Park names are not written down, so a question that uses them without a number is not understood.
 - [ ] "Fastest down the main straight" is answered by time through the section, not top speed; the speed ranking exists for corners and could be used for straights.
 - [ ] A check for wrong or missing evidence in lookup answers (roughly 7 of 12 real problems on the independent batch were content errors the checks could not see): for example compare the driver named in the answer with the driver the evidence ranks first.
+
+- [ ] Distance alignment: replace the one-parameter bulge with a proper warp if more accuracy is needed, and fix it at ingest (reingest is free, it uses OpenF1 only) so the stored one-driver corner chunks in the Chroma store are aligned too; measure how many section gaps move by more than 0.05 s across all pairs.
+- [ ] Re-run the independent batch and the spot-check on the aligned data (costs credits: use Haiku).

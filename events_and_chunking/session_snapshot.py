@@ -51,6 +51,7 @@ class Snapshot:
     events: list                   # final sections, after normalising and labelling
     session_info: dict
     session_telemetry: dict = field(default_factory=dict)   # {"VER@Q1": DataFrame}: a driver's lap from a session other than his best
+    alignment_m: dict = field(default_factory=dict)         # the mid-lap distance correction applied to each lap, in metres
 
 
 # ── DataFrame <-> arrays, exactly ──
@@ -134,7 +135,7 @@ def _json_default(obj):
     return str(obj)
 
 
-def load_snapshot(path) -> Snapshot:
+def load_snapshot(path, align: bool = True) -> Snapshot:
     with np.load(Path(path), allow_pickle=False) as z:
         meta = json.loads(str(z["meta"]))
         if meta["version"] != FORMAT_VERSION:
@@ -143,8 +144,61 @@ def load_snapshot(path) -> Snapshot:
         fastest = _arrays_to_frame("fastest", z, layout)
         telemetry = {d: _arrays_to_frame(f"tel:{d}", z, layout) for d in meta["drivers"]}
         extra = {k: _arrays_to_frame(f"tel:{k}", z, layout) for k in meta.get("session_laps", [])}
-    return Snapshot(fastest=fastest, telemetry=telemetry, events=meta["events"], session_info=meta["session_info"],
-                    session_telemetry=extra)
+    snapshot = Snapshot(fastest=fastest, telemetry=telemetry, events=meta["events"], session_info=meta["session_info"],
+                        session_telemetry=extra)
+    return align_distance(snapshot) if align else snapshot
+
+
+# ── distance alignment ──
+#
+# Each lap's distance axis comes from position data and is pinned to 0 at the start line and to one lap length at the finish
+# line, so whatever error it has builds up mid-lap and returns to zero at both ends. Compared with the field's median speed
+# trace, the laps in all three sessions are off by 6 to 8 m (standard deviation) and up to 14 m, and at 250 km/h 10 m is
+# 0.15 s: it showed up as section gaps of 0.1 to 0.2 s that cancelled in the next section (a corner "won" by 0.164 s that was
+# level once aligned). One parameter per lap fixes the shape: a bulge, zero at both ends, +a metres at mid-lap, chosen to match
+# the lap's speed trace to the field median. Because both ends stay fixed the sections still add up to the exact lap gap.
+
+ALIGN_MAX_M = 25.0
+
+
+def _bulge(distance, length: float, amplitude: float):
+    return amplitude * 4.0 * distance * (length - distance) / (length * length)
+
+
+def _fit_amplitude(profile, grid, tel, length: float) -> float:
+    d, v = tel["Distance"].to_numpy(), tel["Speed"].to_numpy()
+    best = (float("inf"), 0.0)
+    for a in np.arange(-ALIGN_MAX_M, ALIGN_MAX_M + 0.25, 0.5):
+        mismatch = float(np.mean(np.abs(profile - np.interp(grid + _bulge(grid, length, a), d, v))))
+        if mismatch < best[0]:
+            best = (mismatch, float(a))
+    return best[1]
+
+
+def align_distance(snapshot: "Snapshot") -> "Snapshot":
+    """The same snapshot with every lap's Distance corrected by its fitted bulge (the original kept as DistanceRaw)."""
+    laps = {k: t for k, t in snapshot.telemetry.items() if t is not None and "Distance" in t.columns and "Speed" in t.columns}
+    if len(laps) < 5:
+        return snapshot                                     # too few cars for a median profile to mean anything
+    length = float(np.median([t["Distance"].iloc[-1] for t in laps.values()]))
+    grid = np.arange(0.0, length * 0.97, 10.0)
+    profile = np.median(np.vstack([np.interp(grid, t["Distance"].to_numpy(), t["Speed"].to_numpy()) for t in laps.values()]), axis=0)
+    applied: dict[str, float] = {}
+
+    def corrected(key: str, tel):
+        if tel is None or "Distance" not in tel.columns or "Speed" not in tel.columns:
+            return tel
+        a = _fit_amplitude(profile, grid, tel, length)
+        applied[key] = a
+        out = tel.copy()
+        out["DistanceRaw"] = tel["Distance"]
+        out["Distance"] = tel["Distance"] - _bulge(tel["Distance"].to_numpy(), float(tel["Distance"].iloc[-1]), a)
+        return out
+
+    snapshot.telemetry = {k: corrected(k, t) for k, t in snapshot.telemetry.items()}
+    snapshot.session_telemetry = {k: corrected(k, t) for k, t in snapshot.session_telemetry.items()}
+    snapshot.alignment_m = applied
+    return snapshot
 
 
 # ── on-demand comparison ──

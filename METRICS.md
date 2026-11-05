@@ -349,3 +349,22 @@ So the checks catch roughly 5 of 12 real problems on questions they were not tun
 
 The decline wording is fixed in the scoring (`not on the entry list`, `did not take part`, `fall outside`). The writer's label for "why was Verstappen so slow" cannot be fixed by scoring: his data says he set no lap, so the system's answer is right and the label is wrong. Haiku's guess-first habit appears on questions Sonnet answers cleanly; the site uses Sonnet 4.6.
 
+### A measurement problem found by looking at one saved example: lap distance alignment
+
+A visitor-style doubt ("were Antonelli and Russell really trading two tenths here and there over Melbourne?") turned out to be right in part. Each lap's distance axis comes from position data and is pinned to 0 at the start line and one lap length at the finish line, so its error builds up mid-lap. Against the field's median speed trace, the laps in all three sessions are off by 6 to 8 m (standard deviation) and up to 14 m; the first and second half of a lap agree within a few metres, so the offsets are real, not driving differences. At 250 km/h, 10 m is 0.15 s, and the error changes sign around each braking zone, so it showed up as section gaps of 0.1 to 0.2 s that cancelled in the next section. The sections still summed to the exact lap gap (0.292 s against 0.293 s), which is why it was not obvious.
+
+Evidence on the two examples (positive = Russell quicker):
+
+| Section | Raw | After alignment |
+|---|---|---|
+| Barcelona T4 (was "Hamilton 0.122 s quicker") | -0.122 | +0.026 |
+| Barcelona T1-T2 | -0.092 | -0.025 |
+| Barcelona T12 | +0.125 | +0.075 |
+| Melbourne T3 (was "Russell 0.164 s quicker") | +0.164 | -0.036 |
+| Melbourne T13 | -0.213 | -0.215 |
+| Melbourne T8-T9 straight | +0.214 | +0.199 |
+
+A first attempt, a constant shift per lap, was wrong: it broke the totals (Barcelona 0.064 s became 0.165 s). The fix is one parameter per lap, a bulge that is zero at both ends and +a metres at mid-lap, chosen to match the lap's speed trace to the field median (`snapshot.align_distance`, applied when a snapshot is loaded; the raw distance is kept as `DistanceRaw`). Both ends stay fixed, so the totals are unchanged (checked: 0.293 s and 0.064 s before and after). Real differences (Melbourne T13, the T8-T9 straight) survive; artifacts (Barcelona T4, Melbourne T3) shrink to nothing. Limits: it assumes the error is smooth over the lap (a localised error would not be fixed), it uses the field median as the reference, and the stored one-driver corner chunks in the Chroma store were built on the raw distance (their braking and apex positions are not corrected).
+
+Also changed: two braking points count as different only when more than 15 m apart (was 2 m, well inside the error); the context carries an accuracy note (sector times are exact timing; section gaps under about 0.1 s and braking points under 15 m are not reliable differences); a `braking_precision` check flags "braked 8m later"; the chart shows the exact lap gap; the saved examples were regenerated on the aligned data and must pass all checks in the test suite; data-generated set v6 (seed 20261108) replaces v5 because its corner-winner answers are computed on the aligned laps. All earlier results that quote section gaps (the spot-check and independent-batch sections above) were measured on the raw distance.
+

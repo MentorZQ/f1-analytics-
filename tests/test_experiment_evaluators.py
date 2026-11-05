@@ -20,7 +20,7 @@ OUT = {"answer": "Russell was 0.125s faster in T12.", "sources": [{"drivers": ["
 
 def test_every_evaluator_has_its_own_name():
     names = [f.__name__ for f in rx.build_evaluators()]
-    assert len(names) == len(set(names)) == 27
+    assert len(names) == len(set(names)) == 28
 
 
 def test_drivers_retrieved_passes_and_fails():

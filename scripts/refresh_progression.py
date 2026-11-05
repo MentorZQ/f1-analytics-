@@ -41,7 +41,7 @@ def main() -> None:
     for info in client.list_collections():
         name = info.name if hasattr(info, "name") else info
         col = client.get_collection(name)
-        snapshot = snap.load_snapshot(ROOT / "RAG_data_layers" / "session_snapshots" / f"{name}.npz")
+        snapshot = snap.load_snapshot(ROOT / "RAG_data_layers" / "session_snapshots" / f"{name}.npz", align=False)
         rows = {r["Driver"]: r for _, r in snapshot.fastest.iterrows()}
         got = col.get(where={"chunk_type": "driver_lap_summary"}, include=["documents", "metadatas"])
         ids, docs = [], []

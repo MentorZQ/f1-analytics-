@@ -175,7 +175,7 @@ def test_the_final_corner_is_pinned_into_the_pair_sections_on_the_real_melbourne
     top = query.top_pair_sections("melbourne", {"RUS", "ANT"}, k=4, pin=pinned)
     assert top[0]["metadata"]["event_id"] == "T14" and len(top) == 4
     by_gap = query.top_pair_sections("melbourne", {"RUS", "ANT"}, k=4)
-    assert "T14" not in [c["metadata"]["event_id"] for c in by_gap]                 # the old behaviour: T14 was left out
+    # (before the distance alignment, T14 was not among the four biggest gaps and was left out; it is the pinned section either way)
 
 
 def test_a_turn_inside_a_merged_section_pins_that_section():

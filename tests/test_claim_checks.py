@@ -340,3 +340,15 @@ def test_a_blanket_claim_fails_when_the_drivers_split_the_lap(text):
 def test_no_blanket_claim_or_no_sections_is_not_checked():
     assert cl.blanket_claims("Russell won T3 by 0.08s and Hamilton won T2 by 0.12s.", [], SPLIT).label == "n/a"
     assert cl.blanket_claims("Russell was consistently quicker.", [], None).label == "n/a"
+
+
+@pytest.mark.parametrize("text", ["Piastri was faster here, braking 8m later and carrying higher apex speeds.", "HAM braked 3m later than RUS at T1.",
+                                  "He braked 12m earlier than Norris."])
+def test_a_braking_difference_under_the_distance_accuracy_is_flagged(text):
+    assert cl.braking_precision(text).label == "fail"
+
+
+@pytest.mark.parametrize("text", ["HAM braked 22m later than RUS at T1-T2.", "The two drivers started braking at about the same point.",
+                                  "Braking points within 8m of each other are level.", "Hamilton was 0.092s quicker through T1-T2."])
+def test_larger_or_hedged_braking_differences_are_not_flagged(text):
+    assert cl.braking_precision(text).label == "pass"

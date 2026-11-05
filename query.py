@@ -255,6 +255,12 @@ def _like_for_like(a: str, b: str, ia: dict, ib: dict) -> list[str]:
     return lines
 
 
+ACCURACY_NOTE = ("Accuracy: the three sector times are exact timing. Section gaps and braking points come from position data whose "
+                 "distance is accurate to about 5 to 10 m between two laps (up to 0.15s in one corner and the opposite in the next), "
+                 "so a section gap under about 0.1s, or braking points less than 15 m apart, are not reliable differences: do not "
+                 "build the explanation on them.")
+
+
 def section_tally_lines(deltas: dict) -> list[str]:
     """How many sections each driver won, and each driver's three biggest wins: the facts a model needs not to generalise."""
     sections = deltas.get("sections") or []
@@ -264,7 +270,7 @@ def section_tally_lines(deltas: dict) -> list[str]:
     wins_a = sorted((x for x in sections if x["gain_s"] > 0), key=lambda x: -x["gain_s"])
     wins_b = sorted((x for x in sections if x["gain_s"] < 0), key=lambda x: x["gain_s"])
     top = lambda wins: ", ".join(f"{x['section']} {abs(x['gain_s']):.3f}s" for x in wins[:3]) or "none"       # noqa: E731
-    return [f"Section tally over {len(sections)} sections: {a} quicker in {len(wins_a)}, {b} quicker in {len(wins_b)}, "
+    return [ACCURACY_NOTE, f"Section tally over {len(sections)} sections: {a} quicker in {len(wins_a)}, {b} quicker in {len(wins_b)}, "
             f"{len(sections) - len(wins_a) - len(wins_b)} level.",
             f"{a}'s biggest wins: {top(wins_a)}. {b}'s biggest wins: {top(wins_b)}."]
 
@@ -389,6 +395,8 @@ def call_llm(prompt: str, model: str = "claude-sonnet-4-6", api_key: str | None 
         "as a sentence (for example 'Sainz's Q3 lap was 0.682s quicker than his Q1 lap'). "
         "When the context gives a like-for-like comparison, lead with it, then the sentence about the driver who improved or was "
         "slower in another session; give the best-lap gap only when the question asks for the best laps or the gap to pole. "
+        "Section gaps under about 0.1s and braking points less than 15 m apart are measurement error, not differences: do not state "
+        "them as findings (say 'about level'), and prefer the exact sector times and the larger section gaps. "
         "Do not say which sector a corner or straight belongs to: the context gives no sector boundaries. "
         "When the context gives a section tally, use it: never say a driver was quicker 'consistently', 'everywhere' or 'in every "
         "corner' unless the tally says so, list a section under the driver who was quicker there, and end with the net result and "

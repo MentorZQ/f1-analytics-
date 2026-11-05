@@ -14,6 +14,7 @@ these ask "is the answer about the right thing, and does it say the right thing 
   team_attribution         : a driver is named together with the wrong team ("Haas's Hadjar")
   team_ranking             : "the fourth quickest team" must match the ranking of the teams' cars in the grid
   blanket_claims           : "consistently quicker" / "in every corner" when the section tally shows the drivers split the lap
+  braking_precision        : "braked 8m later" stated as a difference although two laps' distances are only accurate to about 15 m
   name_consistency         : a first name or three-letter code attached to the wrong surname ("Isack Lindblad", "Bearman (BOR)")
   grid_start_claim         : "started from P17" when the data has only the qualifying classification, not the final grid after penalties
   tyre_claims              : blaming tyre compound or age for a gap when the evidence shows the same tyres (or none)
@@ -628,6 +629,29 @@ def blanket_claims(answer: str, sources: list[dict], deltas: dict | None = None)
     return CheckResult("blanket_claims", "pass", 1.0, f"The blanket claim fits the tally ({wins_a} to {wins_b} of {len(sections)}).")
 
 
+# ── braking claims finer than the distance accuracy ──────────────────────────
+
+from events_and_chunking.chunk_telemetry import BRAKE_SEPARATION_M  # noqa: E402
+
+_BRAKE_METRES = re.compile(r"\b(?:brak\w*|brake[- ]?(?:on|point)\w*)\b[^.\n]{0,60}?(\d+(?:\.\d+)?)\s*m\s+(?:later|earlier)\b|"
+                           r"(\d+(?:\.\d+)?)\s*m\s+(?:later|earlier)\b[^.\n]{0,40}\bbrak\w*", re.I)
+
+
+def braking_precision(answer: str, sources: list[dict] | None = None) -> CheckResult:
+    """Two laps' distances are accurate to about 15 m, so "braked 8m later" is noise presented as a finding."""
+    hits = []
+    for sent in cc._sentences(cc._norm(answer)):
+        for m in _BRAKE_METRES.finditer(sent):
+            value = float(m.group(1) or m.group(2))
+            if value < BRAKE_SEPARATION_M and not re.search(r"\b(?:about the same|within|level|similar|no (?:real )?difference)\b", sent, re.I):
+                hits.append(m.group(0)[:100])
+    if hits:
+        return CheckResult("braking_precision", "fail", 0.0,
+                           f"{len(hits)} braking-point difference(s) under {BRAKE_SEPARATION_M:.0f} m, which the distance measurement cannot resolve: "
+                           + "; ".join(repr(h) for h in hits[:2]), hits)
+    return CheckResult("braking_precision", "pass", 1.0, "No braking difference finer than the distance accuracy.")
+
+
 def run_all(answer: str, sources: list[dict], deltas: dict | None = None, question: str | None = None,
             session: str | None = None) -> list[CheckResult]:
     return [reversed_winner(answer, sources, deltas),
@@ -640,6 +664,7 @@ def run_all(answer: str, sources: list[dict], deltas: dict | None = None, questi
             grid_start_claim(answer, sources),
             name_consistency(answer, sources),
             blanket_claims(answer, sources, deltas),
+            braking_precision(answer, sources),
             completeness(answer, sources, deltas, question),
             false_premise(answer, sources, question),
             overclaiming(answer, sources, question)]

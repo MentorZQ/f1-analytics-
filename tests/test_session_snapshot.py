@@ -51,7 +51,7 @@ def built(tmp_path_factory):
     path = tmp_path_factory.mktemp("snap") / "s.npz"
     chunks = build_telemetry_chunks({"driver_fastest_laps": fastest, "telemetry": tel}, events, info,
                                     head_to_head_top_n=3, snapshot_path=str(path))
-    return chunks, snap.load_snapshot(path), fastest, tel
+    return chunks, snap.load_snapshot(path, align=False), fastest, tel
 
 
 def test_the_snapshot_round_trips_the_data_exactly(built):
@@ -132,7 +132,7 @@ def test_other_session_laps_round_trip_and_the_pair_is_compared_on_those_laps(tm
     path = tmp_path / "s.npz"
     build_telemetry_chunks({"driver_fastest_laps": fastest, "telemetry": tel, "session_telemetry": {"BBB@Q1": q1_lap}}, events,
                            {"year": 2026, "circuit": "Testland", "session": "Qualifying"}, head_to_head_top_n=3, snapshot_path=str(path))
-    loaded = snap.load_snapshot(path)
+    loaded = snap.load_snapshot(path, align=False)
     pd.testing.assert_frame_equal(loaded.session_telemetry["BBB@Q1"].reset_index(drop=True), q1_lap.reset_index(drop=True), check_dtype=True)
     best = snap.compare_drivers(loaded, "AAA", "BBB")
     like = snap.compare_drivers(loaded, "AAA", "BBB", session=1)
@@ -163,3 +163,35 @@ def test_a_like_for_like_comparison_uses_and_labels_the_other_session_laps(tmp_p
     assert like and len(like) == len(best)
     assert all("AAA and BBB Q1 laps" in c.text and c.metadata["lap_session"] == "Q1" for c in like)
     assert [c.text for c in like] != [c.text for c in best]
+
+
+# ── distance alignment ──
+
+def test_the_alignment_correction_is_zero_at_both_ends_and_largest_mid_lap():
+    assert abs(snap._bulge(0.0, 3000.0, 12.0)) < 1e-12 and abs(snap._bulge(3000.0, 3000.0, 12.0)) < 1e-12
+    assert snap._bulge(1500.0, 3000.0, 12.0) == pytest.approx(12.0)
+
+
+def test_a_lap_whose_distance_axis_is_offset_is_pulled_back_into_line(built):
+    import copy
+    _, loaded, _, _ = built
+    shifted = copy.deepcopy(loaded)
+    t = shifted.telemetry["AAA"].copy()
+    length = float(t["Distance"].iloc[-1])
+    t["Distance"] = t["Distance"] + snap._bulge(t["Distance"].to_numpy(), length, 14.0)         # an axis that runs 14 m late mid-lap
+    shifted.telemetry["AAA"] = t
+    aligned = snap.align_distance(shifted)
+    assert aligned.alignment_m["AAA"] > 5.0                                                       # the late axis is found (a weakly varying synthetic speed trace)
+    assert aligned.telemetry["AAA"]["Distance"].iloc[0] == pytest.approx(0.0) and aligned.telemetry["AAA"]["Distance"].iloc[-1] == pytest.approx(length)
+    assert "DistanceRaw" in aligned.telemetry["AAA"].columns
+
+
+def test_alignment_leaves_the_exact_lap_time_and_the_section_total_unchanged(built):
+    import copy
+    _, loaded, _, _ = built
+    aligned = snap.align_distance(copy.deepcopy(loaded))
+    a, b = "AAA", "CCC"
+    raw = snap.compare_drivers(loaded, a, b)
+    al = snap.compare_drivers(aligned, a, b)
+    total = lambda cs: sum(c.metadata["time_delta_s"] for c in cs if c.metadata.get("time_delta_s") is not None)   # noqa: E731
+    assert raw and al and total(raw) == pytest.approx(total(al), abs=0.0015)

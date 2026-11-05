@@ -123,6 +123,10 @@ def _max_speed(tel: pd.DataFrame) -> tuple[Optional[float], Optional[float]]:
 
 # If the last sample before the first braking sample is further back than this, the car data
 # has a hole where braking began and the brake-on point is only known as a range.
+# Two laps' distance axes (from position data) disagree by about 5 to 10 m: measured as the shift that best aligns each driver's
+# speed trace with the field's median trace, which was 5 to 6 m (standard deviation) and up to 13 m in the three sessions.
+# A braking point 2 m or 8 m "later" is inside that error, so two braking points count as different only beyond this.
+BRAKE_SEPARATION_M = 15.0
 BRAKE_GAP_UNCERTAIN_M = 30.0
 
 
@@ -699,7 +703,7 @@ def chunk_head_to_head_event(
             lo_a, lo_b = brake_a["brake_start_lo_m"], brake_b["brake_start_lo_m"]
             if not uncertain:
                 delta_bp = bp_a - bp_b
-                separated = abs(delta_bp) > 2
+                separated = abs(delta_bp) > BRAKE_SEPARATION_M
                 later_is_a = delta_bp > 0
             else:
                 separated = lo_a > bp_b or lo_b > bp_a
@@ -715,7 +719,7 @@ def chunk_head_to_head_event(
             elif uncertain:
                 lines.append("  → Brake-on points overlap within a gap in the car data: cannot tell who brakes later")
             else:
-                lines.append("  → Both drivers start braking at about the same point")
+                lines.append(f"  → Both drivers start braking at about the same point (within the ~{BRAKE_SEPARATION_M:.0f} m accuracy of the distance measurement)")
 
             bd_a = brake_a["brake_distance_m"]; bd_b = brake_b["brake_distance_m"]
             if not uncertain and abs(bd_a - bd_b) > 2:
