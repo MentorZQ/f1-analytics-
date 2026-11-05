@@ -368,3 +368,13 @@ The correction made the gap at the loops worse in 5 of 6 comparisons, and the ra
 What stays true, measured on the official timing: the telemetry's cumulative gap is off by about 0.02 to 0.10 s on average (90th percentile 0.04 to 0.18 s; Melbourne is the noisiest). A section gap is a difference of two such errors, so gaps under about 0.1 s are noise, gaps of 0.2 s or more are usually real, and the three sector times are exact. Two braking points count as different only if more than 15 m apart (the old limit was 2 m). The context now carries this accuracy note, a `braking_precision` check flags "braked 8m later", the chart shows the exact lap gap, and the saved examples must pass all checks in the test suite. Sector gaps are the safest numbers to quote: Antonelli vs Russell at Melbourne is 0.058 s, 0.156 s and 0.079 s (S1, S2, S3), exact.
 
 Data-generated set v7 (seed 20261109) replaces v5 and v6 (v6 was computed on the removed correction). All earlier results that quote section gaps were measured on the raw distance, which is what the system uses again.
+
+### Haiku 5.5 runs on the final code (raw distance, accuracy note, one-fact style)
+
+| Set | Expected facts | Flagged answers |
+|---|---|---|
+| Data-generated v7 (66 questions) | 66 / 66 | 5: 4 are the guess-first habit ("The last driver into Q3 was Hülkenberg... no, the context does not name him"), 1 a probable false positive in `reversed_winner` on a "T5-T6" / "T6" mention |
+| Independent batch (60 questions; no expected facts) | n/a | 6: 3 guess-first, 1 a hallucinated phrase ("Verstappen-era pole sitter NOR", caught), 1 "who topped Q1" answered wrongly (HAM was quickest, 1:15.625; the grid had no per-session leaders), 1 a braking claim "at least 6m later" from the data-gap branch, which did not use the 15 m threshold |
+
+Fixed afterwards: the grid now says who was quickest in each of Q1, Q2 and Q3, and the data-gap braking branch needs more than 15 m before saying "later". Haiku's guess-first habit accounts for 7 of the 11 flags across the two sets and does not appear on Sonnet 4.6, the model the site uses. Public results (published times) match the stored data for the Melbourne examples: pole 1:18.518, Antonelli 1:18.811 (0.293 s behind), Hadjar third at +0.785 s, Hamilton seventh about a second back, Verstappen out with no time.
+

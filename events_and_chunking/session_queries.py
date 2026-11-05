@@ -143,6 +143,13 @@ def grid_text(ctx: dict, session_label: str = "") -> str | None:
     if tight:
         lines.append("Cars separated by less than 0.100s in lap time: " + ", ".join(f"{a}/{b} {g:.3f}s" for g, a, b in tight))
     lines += _field_lines(ctx, rows)
+    per_session = {}
+    for code, info in rows:
+        for n, t in (info.get("session_times") or {}).items():
+            if n not in per_session or t < per_session[n][0]:
+                per_session[n] = (t, code)
+    if per_session:
+        lines.append("Quickest time in each session: " + ", ".join(f"Q{n} {code} {lap_text(t)}" for n, (t, code) in sorted(per_session.items())))
     fastest = ctx.get("fastest_sector") or {}
     if fastest:
         lines.append(f"Fastest sector times in the session, over all {len(rows)} drivers: "

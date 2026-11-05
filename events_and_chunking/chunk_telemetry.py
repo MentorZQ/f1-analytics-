@@ -707,7 +707,7 @@ def chunk_head_to_head_event(
                 separated = abs(delta_bp) > BRAKE_SEPARATION_M
                 later_is_a = delta_bp > 0
             else:
-                separated = lo_a > bp_b or lo_b > bp_a
+                separated = (lo_a - bp_b) > BRAKE_SEPARATION_M or (lo_b - bp_a) > BRAKE_SEPARATION_M
                 later_is_a = lo_a > bp_b
             if separated:
                 later   = drv_a if later_is_a else drv_b

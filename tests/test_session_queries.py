@@ -501,3 +501,14 @@ def test_the_exact_lap_gap_comes_from_the_laps_and_not_from_the_interpolated_sec
                        "HAM": {"lap_time_seconds": 74.743, "session_times": {3: 74.743}}}}
     assert query.exact_lap_gap({"driver_a": "RUS", "driver_b": "HAM", "lap_session": None}, ctx) == 0.064
     assert query.exact_lap_gap({"driver_a": "HAM", "driver_b": "RUS", "lap_session": "Q3"}, ctx) == -0.064
+
+
+def test_the_grid_names_who_was_quickest_in_each_session():
+    ctx = {"drivers": {"RUS": {"lap_time_seconds": 74.679, "qualifying_position": 1, "stage": "Q3", "session_times": {1: 75.717, 2: 75.228, 3: 74.679}},
+                       "HAM": {"lap_time_seconds": 74.743, "qualifying_position": 2, "stage": "Q3", "session_times": {1: 75.625, 2: 75.418, 3: 74.743}}}}
+    assert "Quickest time in each session: Q1 HAM 1:15.625, Q2 RUS 1:15.228, Q3 RUS 1:14.679" in sq.grid_text(ctx)
+
+
+def test_a_braking_gap_in_the_car_data_still_needs_more_than_the_distance_accuracy_to_say_later():
+    from events_and_chunking.chunk_telemetry import BRAKE_SEPARATION_M
+    assert BRAKE_SEPARATION_M == 15.0
