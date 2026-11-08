@@ -46,6 +46,7 @@ try:
     from events_and_chunking import session_queries as sq
 except Exception:                                    # pragma: no cover - a missing optional dependency must not break answering
     compare_drivers = load_snapshot = clean_metadata = sq = driver_row = focus_session = session_times_of = None
+from events_and_chunking import lookup_router
 
 
 # ── Session registry ──────────────────────────────────────────────────────────
@@ -65,14 +66,18 @@ _SESSION_KEYWORDS = {
 }
 
 
-def detect_session(question: str) -> str:
-    """Return the most likely session key based on keywords in the question."""
+def detect_session_or_none(question: str) -> str | None:
+    """The session the question names, or None when nothing in it says which one."""
     q = question.lower()
     scores = {name: sum(re.search(rf"(?<![a-z0-9]){re.escape(kw)}(?![a-z0-9])", q) is not None for kw in kws)
               for name, kws in _SESSION_KEYWORDS.items()}
     best = max(scores, key=scores.get)
-    # If nothing matched, default to the most recent session
-    return best if scores[best] > 0 else "barcelona"
+    return best if scores[best] > 0 else None
+
+
+def detect_session(question: str) -> str:
+    """Return the most likely session key based on keywords in the question (the most recent session when none matches)."""
+    return detect_session_or_none(question) or "barcelona"
 
 
 # ── Session context ───────────────────────────────────────────────────────────
@@ -809,7 +814,52 @@ def _answer_with_sources(question, session_key, n_chunks, model, api_key, verbos
     return result
 
 
+def _routed_result(routed, session_key: str, total_s: float) -> dict:
+    """The result for a question the router answered: the same shape as a model answer, with no tokens and no model."""
+    return {"answer": routed.answer, "session": session_key,
+            "sources": [{"chunk_type": "router_fact", "section": None, "drivers": routed.drivers, "text": routed.facts}],
+            "deltas": None,
+            "metrics": {"retrieve_s": 0.0, "deltas_s": 0.0, "llm_s": 0.0, "total_s": round(total_s, 4), "input_tokens": 0,
+                        "output_tokens": 0, "prompt_chars": 0, "model": None, "routed": routed.route}}
+
+
+ROUTER_ENABLED = os.environ.get("F1_ROUTER", "1") != "0"      # F1_ROUTER=0 sends every question to the model (for comparing)
+
+
+def route_question(question: str, session_key: str | None = None) -> dict | None:
+    """
+    Answer a one-fact question from the session data with no model call, or return None when the model is needed.
+
+    Only a session that is certain is used: the one passed in, or one the question names. A question that gave nothing
+    to go on is not answered from a guessed session. Anything the safety filter would change goes the normal way.
+    """
+    if not ROUTER_ENABLED or not question:
+        return None
+    t0 = time.perf_counter()
+    with tracing.span("f1.route", "TOOL", input_value=question) as sp:
+        clean, removed = safety.sanitize_question(question)
+        session = session_key or detect_session_or_none(clean or "")
+        routed = None
+        if clean and not removed and session in SESSIONS:
+            try:
+                ctx = _get_session_context(session)
+            except SessionError:
+                ctx = None
+            if ctx:
+                routed = lookup_router.route(clean, ctx, question_drivers(clean, ctx))
+        tracing.set_attrs(sp, **{"f1.routed": bool(routed), "f1.route": routed.route if routed else "model",
+                                 "output.value": routed.answer if routed else "needs the model"})
+    return _routed_result(routed, session, time.perf_counter() - t0) if routed else None
+
+
 def _answer_after_filter(question, session_key, n_chunks, model, api_key, verbose) -> dict:
+    # Before the session is defaulted: a question that says nothing about which session it means is not answered from a guess.
+    try:
+        routed = route_question(question, session_key)
+    except Exception:                                  # the router must never be the reason a question fails
+        routed = None
+    if routed:
+        return routed
     if session_key is None:
         session_key = detect_session(question)
 

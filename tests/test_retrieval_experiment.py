@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
@@ -68,6 +70,7 @@ def test_every_pipeline_stage_is_a_span_with_its_facts(monkeypatch):
 
     monkeypatch.setattr(tracing, "_tracer", FakeTracer())
     monkeypatch.setattr(tracing, "_initialised", True)
+    monkeypatch.setattr(query, "ROUTER_ENABLED", False)          # this tests the model path; the router would answer this question itself
     monkeypatch.setattr(query, "call_llm", lambda prompt, **kw: "First fact. Second fact. Third fact.")
     query.answer_with_sources("What was Bearman's best qualifying lap at Melbourne?", model="m")
     names = [s.name for s in recorded]
@@ -80,3 +83,51 @@ def test_every_pipeline_stage_is_a_span_with_its_facts(monkeypatch):
     assert "BEA" in by["f1.understand_question"]["f1.drivers_used"] and by["f1.understand_question"]["f1.one_fact_question"] is True
     assert by["f1.build_prompt"]["f1.answer_style"] == "one fact" and by["f1.limit_answer"]["f1.characters_cut"] > 0
     assert by["f1.generate"]["llm.model_name"] == "m"
+
+
+def _record_spans(monkeypatch):
+    import contextlib
+
+    import tracing
+
+    recorded = []
+
+    class FakeSpan:
+        def __init__(self, name):
+            self.name, self.attrs = name, {}
+            recorded.append(self)
+
+        def set_attribute(self, key, value):
+            self.attrs[key] = value
+
+    class FakeTracer:
+        @contextlib.contextmanager
+        def start_as_current_span(self, name):
+            yield FakeSpan(name)
+
+    monkeypatch.setattr(tracing, "_tracer", FakeTracer())
+    monkeypatch.setattr(tracing, "_initialised", True)
+    return recorded
+
+
+def test_a_routed_question_is_a_short_trace_with_no_model_span(monkeypatch):
+    import query
+
+    recorded = _record_spans(monkeypatch)
+    monkeypatch.setattr(query, "call_llm", lambda *a, **k: pytest.fail("the model must not be called for a routed question"))
+    result = query.answer_with_sources("What was Bearman's best qualifying lap at Melbourne?", model="m")
+    assert [s.name for s in recorded if s.name != "f1.query"] == ["f1.sanitize_question", "f1.route"]
+    route = next(s for s in recorded if s.name == "f1.route")
+    assert route.attrs["f1.routed"] is True and route.attrs["f1.route"] == "lap_time"
+    assert result["metrics"]["routed"] == "lap_time" and result["metrics"]["model"] is None and result["metrics"]["input_tokens"] == 0
+
+
+def test_a_question_the_router_declines_shows_the_decision_then_the_full_pipeline(monkeypatch):
+    import query
+
+    recorded = _record_spans(monkeypatch)
+    monkeypatch.setattr(query, "call_llm", lambda prompt, **kw: "An answer.")
+    query.answer_with_sources("Compare Russell and Hamilton at Barcelona.", model="m")
+    names = [s.name for s in recorded if s.name != "f1.query"]
+    assert names[:3] == ["f1.sanitize_question", "f1.route", "f1.understand_question"] and "f1.generate" in names
+    assert next(s for s in recorded if s.name == "f1.route").attrs["f1.route"] == "model"

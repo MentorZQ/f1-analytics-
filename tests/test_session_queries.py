@@ -384,6 +384,7 @@ def test_analysis_questions_keep_the_full_answer(question):
 
 
 def test_a_one_fact_question_asks_for_a_short_answer_and_a_small_token_budget(monkeypatch):
+    monkeypatch.setattr(query, "ROUTER_ENABLED", False)          # this tests the model path; the router would answer this question itself
     seen = {}
 
     def fake(prompt, **kw):
@@ -407,6 +408,7 @@ def test_a_one_fact_answer_is_cut_to_its_first_sentences():
 
 
 def test_the_cut_is_applied_to_one_fact_questions_only(monkeypatch):
+    monkeypatch.setattr(query, "ROUTER_ENABLED", False)          # this tests the model path; the router would answer this question itself
     long = "First fact. Second fact. Third fact. Fourth fact."
     monkeypatch.setattr(query, "call_llm", lambda prompt, **k: long)
     assert query.answer_with_sources("What was Bearman's best qualifying lap at Melbourne?", model="m")["answer"] == "First fact. Second fact."
@@ -431,6 +433,7 @@ def test_the_driver_who_got_quicker_in_a_later_session_is_said_to_have_improved(
 
 
 def test_grid_position_questions_say_qualified_before_penalties_and_get_one_sentence(monkeypatch):
+    monkeypatch.setattr(query, "ROUTER_ENABLED", False)          # this tests the model path; the router would answer this question itself
     assert query.lookup_sentence_limit("What was Ocon's grid position at the Spanish GP?") == 1
     assert query.lookup_sentence_limit("Who recorded the highest speed trap reading?") == 1
     assert query.lookup_sentence_limit("Which driver only just made it into Q3?") == 2

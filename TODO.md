@@ -56,3 +56,13 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 
 - [ ] Section-gap accuracy: raw cumulative gaps are off by 0.02 to 0.10 s on average against the official sector gaps (METRICS.md). A speed-trace alignment and a clock-stretch to the sector times were both tried and neither reliably helped. A better source of position (or fusing the car's speed integral with the track map differently at ingest) is the next thing to try; reingest is free (OpenF1 only).
 - [ ] Re-run the independent batch and the spot-check on the aligned data (costs credits: use Haiku).
+
+## Future: driver coaching
+- [ ] Tell a driver where they are losing time: braking position, throttle pickup, or timing (built on the corner braking/throttle data; keep the 15 m accuracy rule and no cause guesses).
+
+## Lookup router (built; follow-ups)
+- [x] Answer one-fact questions from the data with no model call (`events_and_chunking/lookup_router.py`, `scripts/eval_router.py`).
+- [ ] Measure it on a fresh, frozen question set run once (the current numbers were tuned on the sets it was built against).
+- [ ] Cover what it hands to the model today: a driver's sector time, top speed (telemetry, not the speed trap), tyre set.
+- [ ] Add routed vs model cost and latency to the Phoenix comparison (`evals/compare.py` already counts routed answers as zero tokens).
+

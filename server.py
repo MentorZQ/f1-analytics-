@@ -263,6 +263,15 @@ def run_query(
         refusal = query_module._refusal_result(req.session)
         return {**refusal, "paid_by": "none"}
 
+    # A one-fact question (best lap, grid position, pole, who made Q3) is answered from the data: no model, no key, no quota.
+    try:
+        routed = query_module.route_question(question, req.session)
+    except Exception as exc:                              # the router must never be the reason a question fails
+        log.warning("Router failed: %s", type(exc).__name__)
+        routed = None
+    if routed:
+        return {**routed, "paid_by": "router"}
+
     # Checked by hand: a declared validation rule would echo the key in its error.
     own_key = (x_anthropic_key or "").strip() or None
     if own_key and not _API_KEY_FORMAT.match(own_key):
@@ -308,6 +317,13 @@ def run_query(
                 "Anthropic returned an error for your key. Check its credit balance and try again.",
             ) from None
         raise _api_error(502, "upstream_error", "Something went wrong. Please try again.") from None
+
+    if (result.get("metrics") or {}).get("routed"):
+        # Answered from the data after the filter removed an instruction: no model ran, so it costs nothing.
+        if not own_key:
+            _release_free_question(ip)
+        result["paid_by"] = "router"
+        return result
 
     result["paid_by"] = "visitor" if own_key else "free"
     if not own_key:

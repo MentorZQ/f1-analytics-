@@ -403,3 +403,29 @@ The 13 hand-checked answers are the Phoenix dataset `spotcheck-v1` (`evals/spotc
 
 The traced pass now records one span per pipeline stage (sanitize, understand the question, session views, pair sections, retrieve, lap comparison, build the prompt, generate, limit the answer), each with the facts it decided (drivers used, views chosen, sections generated, prompt size, answer style), and attaches the context scores (drivers and facts in the evidence) to each question's trace as annotations. `python -m evals.run_retrieval_experiment --trace-only --only fresh,honesty` records traces without redoing the experiments; the model span in it is the stubbed call, and with a real key the Anthropic instrumentor's own span would nest inside `f1.generate`.
 
+
+---
+
+## Lookup router (one-fact questions answered with no model call)
+
+*Code: `events_and_chunking/lookup_router.py`, wired in `query.route_question`. Run: `venv/bin/python scripts/eval_router.py` (offline, no model call, uses a temporary copy of the store).*
+
+A question that asks for one fact from the stored classification ("what was Albon's grid position", "who was last into Q3", "how far off pole was Sergio") has one right answer in the data. The router answers those from the same figures the model would have been shown, and returns nothing for anything else, so the normal pipeline runs. It is built to be right or silent: it answers only when exactly one intent matches, the drivers it needs are named unambiguously and are in the data, the session is certain (given, or named in the question; never a guess), and the question mentions no topic it has no figures for (tyres, penalties, weather, red flags) and is not two questions in one.
+
+Intents: best lap (overall or in a named session), grid position, gap to pole (names the two sessions when the laps differ), did a driver make Q2/Q3 or how far he got, who got pole, who was in a given position, who was last into Q3 (from Q2 times, only when every Q3 driver has one), who was quickest in a session, speed trap (with ties), quickest sector.
+
+| Question set | Asked | Answered by the router | Contained every expected value |
+|---|---|---|---|
+| Held-out data questions (the seven one-fact kinds) | 36 | 36 | 36 |
+| Fresh independent batch, `fresh_lookup` | 14 | 11 | no expected values stored: all 11 read by hand and checked against the data |
+| Every other question in all eight files | 194 | 0 | n/a |
+
+Left to the model, correctly: top speed (not the speed trap), tyre set, a driver's sector time (not in the session context).
+
+**What building it found.** Two wrong answers came out of running it on the question sets, and both are now regression tests: "where was bearman strongest on his best lap" (an analysis question that contains "best lap") and "was leclerc on a new or used set for his final Q3 lap" (a tyre question that my own loose pattern read as a Q3 lap lookup). The fixes were a general rule (analysis wording and topics the router has no data for go to the model) and not a patch for each question.
+
+**What the cost looks like.** A routed answer is 0 input and 0 output tokens and takes milliseconds; it also skips the free-question quota and needs no key. The model path is unchanged for everything else (`F1_ROUTER=0` sends every question to the model, for comparing).
+
+**Honest limits.** The router was tuned after seeing these question sets, so these numbers are a check that it behaves, not an independent accuracy figure: that needs a fresh, frozen question set run once. It also depends on the stored classification being right (it reports the classification, "before any grid penalties", as the answer for grid questions). The trace for a routed answer is short: `f1.route` replaces the pipeline stages.
+
+**A mistake in verification, recorded.** While checking the router end to end I started the server with `env -u ANTHROPIC_API_KEY`, believing that meant no paid calls. The server loads `.env` at start-up, so two Sonnet 4.6 answers were made (two questions meant to confirm the router declines them). The safeguard is to start the server with an empty `ANTHROPIC_API_KEY=`, which I then did and confirmed: model questions fail with `no_server_key` and the server made zero model calls.

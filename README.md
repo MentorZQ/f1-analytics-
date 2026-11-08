@@ -89,6 +89,14 @@ Session is auto-detected from the question text. Mentions of "Melbourne", "Austr
 
 ## How it works
 
+### One-fact questions skip the model
+
+A question that asks for one fact ("what was Albon's grid position?", "who was last into Q3?", "how far off pole was Sergio?") has one
+right answer in the stored classification, so `events_and_chunking/lookup_router.py` answers it from the data: no model call, no key,
+no free-question quota, milliseconds. It is built to be right or silent: it answers only when exactly one intent matches and the
+drivers and session are certain, and anything else (a comparison, a "why", a topic it has no figures for) goes to the model.
+Measured offline with `scripts/eval_router.py`; results and limits are in [METRICS.md](METRICS.md).
+
 ### Architecture
 
 ```
