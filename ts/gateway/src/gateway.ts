@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyServerOptions } from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import {
@@ -21,8 +21,14 @@ export interface GatewayOptions {
   questionsPerMinute?: number;
   /** An answer takes 10-20 s, so the default leaves generous room. */
   upstreamTimeoutMs?: number;
-  /** Set when another proxy (such as Render's) sits in front of the gateway. */
-  trustProxy?: boolean;
+  /**
+   * Set when another proxy (such as Render's) sits in front of the gateway. A number is how many proxy hops to trust:
+   * 1 reads the address the nearest proxy saw, which a visitor can't forge. `true` would trust the leftmost entry,
+   * which a visitor can supply, so main.ts never uses it.
+   */
+  trustProxy?: boolean | number;
+  /** Shared with the Python server (GATEWAY_SECRET). Lets it use the visitor address below for its per-visitor quotas. */
+  gatewaySecret?: string;
   logger?: boolean;
 }
 
@@ -42,14 +48,17 @@ export function buildGateway(options: GatewayOptions): FastifyInstance {
     questionsPerMinute = 20,
     upstreamTimeoutMs = 120_000,
     trustProxy = false,
+    gatewaySecret,
     logger = false,
   } = options;
 
-  const app = Fastify({
-    trustProxy,
+  const serverOptions: FastifyServerOptions = {
+    // A number is a hop count: trust that many proxies in front of the gateway, nearest first.
+    trustProxy: typeof trustProxy === "number" ? (_address: string, hop: number) => hop < trustProxy : trustProxy,
     // A visitor's key must never reach a log line, even by accident.
     logger: logger ? { redact: ["req.headers.x-anthropic-key", "req.headers.authorization"] } : false,
-  });
+  };
+  const app = Fastify(serverOptions);
 
   app.register(rateLimit, {
     global: false,
@@ -60,6 +69,11 @@ export function buildGateway(options: GatewayOptions): FastifyInstance {
   });
 
   app.addHook("onSend", async (_req, reply) => {
+    // Visitors may type an API key into this page, so it loads only its own files. Same policy as the Python server.
+    reply.header(
+      "Content-Security-Policy",
+      "default-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    );
     reply.header("Referrer-Policy", "no-referrer");
     reply.header("X-Content-Type-Options", "nosniff");
   });
@@ -122,6 +136,11 @@ export function buildGateway(options: GatewayOptions): FastifyInstance {
           // to dodge its per-visitor quota.
           "x-forwarded-for": request.ip,
         };
+        if (gatewaySecret) {
+          // Python believes x-visitor-ip only with the matching secret, so its quotas are per visitor, not per gateway.
+          headers["x-gateway-secret"] = gatewaySecret;
+          headers["x-visitor-ip"] = request.ip;
+        }
         if (key) headers["x-anthropic-key"] = key;
 
         const result = await upstream("/query", {

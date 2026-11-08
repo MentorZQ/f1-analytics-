@@ -14,9 +14,7 @@
     "@fastify/rate-limit": "^10.1.0",
     "@fastify/static": "^8.0.0",
     "fastify": "^5.0.0",
+    "tsx": "^4.19.0",
     "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "tsx": "^4.19.0"
   }
 }

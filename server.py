@@ -27,11 +27,15 @@ Settings (environment variables):
     OWN_KEY_PER_IP_PER_HOUR  own-key questions per visitor per hour (default: 30)
     TRUST_PROXY           set to 1 behind a host's proxy so visitors are told apart
                           using X-Forwarded-For (default: off)
+    GATEWAY_SECRET        shared with the TypeScript gateway: when a request carries it in X-Gateway-Secret,
+                          the visitor address in X-Visitor-IP is used for quotas (default: off)
 
 Quotas live in memory, so a restart resets them. Keep a hard spend limit in the
 Anthropic console as well.
 """
 
+import hmac
+import ipaddress
 import json
 import logging
 import os
@@ -125,6 +129,17 @@ quotas = Quotas(
 
 
 def _client_ip(request: Request) -> str:
+    # The TypeScript gateway in front of this server sends the visitor's address in X-Visitor-IP. It is believed only when
+    # X-Gateway-Secret matches GATEWAY_SECRET (compared in constant time); otherwise anyone could name any address and
+    # dodge the per-visitor quota. Without this, every visitor would share the gateway's address.
+    secret = os.environ.get("GATEWAY_SECRET", "")
+    if secret:
+        given = request.headers.get("x-gateway-secret", "")
+        if given and hmac.compare_digest(given.encode(), secret.encode()):
+            try:
+                return str(ipaddress.ip_address(request.headers.get("x-visitor-ip", "").strip()))
+            except ValueError:
+                pass
     if os.environ.get("TRUST_PROXY") == "1":
         # The nearest proxy appends the address it saw. Entries further left are
         # supplied by the visitor and could be forged to dodge the quota.

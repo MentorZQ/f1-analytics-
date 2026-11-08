@@ -8,7 +8,9 @@ const app = buildGateway({
   upstreamUrl: process.env.UPSTREAM_URL ?? "http://localhost:8080",
   webDir: process.env.WEB_DIR ?? resolve(here, "../../web/dist"),
   questionsPerMinute: Number(process.env.QUESTIONS_PER_MINUTE ?? 20),
-  trustProxy: process.env.TRUST_PROXY === "1",
+  // One hop: the address Render's proxy saw. Never `true`, which would trust an address the visitor wrote.
+  trustProxy: process.env.TRUST_PROXY === "1" ? 1 : false,
+  gatewaySecret: process.env.GATEWAY_SECRET || undefined,
   logger: true,
 });
 

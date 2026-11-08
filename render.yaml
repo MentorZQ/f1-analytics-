@@ -1,6 +1,11 @@
 # Render blueprint: https://render.com/docs/blueprint-spec
-# Create a "Blueprint" service from this repo, then set ANTHROPIC_API_KEY in the dashboard
+# Create a "Blueprint" service from this repo, then set ANTHROPIC_API_KEY on f1-qualifying-rag in the dashboard
 # (leave it unset to serve only the saved examples and visitor-supplied keys).
+#
+#   visitor -> f1-rag-gateway (Node, TypeScript, serves the page) -> f1-qualifying-rag (Python, the pipeline)
+#
+# The gateway reaches Python over Render's private network. The two share GATEWAY_SECRET (generated once, on the gateway)
+# so Python can tell visitors apart by the address the gateway sends instead of seeing every visitor as the gateway.
 services:
   - type: web
     name: f1-qualifying-rag
@@ -10,3 +15,30 @@ services:
     envVars:
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: PORT                      # the Dockerfile serves on 8080; the gateway's UPSTREAM_URL names this port
+        value: "8080"
+      - key: TRUST_PROXY               # behind Render's proxy: tell visitors apart by the address it appends
+        value: "1"
+      - key: GATEWAY_SECRET
+        fromService:
+          type: web
+          name: f1-rag-gateway
+          envVarKey: GATEWAY_SECRET
+
+  - type: web
+    name: f1-rag-gateway
+    runtime: node
+    plan: starter
+    rootDir: ts
+    buildCommand: npm ci --include=dev && npm run build     # the build needs vite and typescript, even if NODE_ENV=production
+    startCommand: npm run start --workspace gateway
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: UPSTREAM_URL
+        value: http://f1-qualifying-rag:8080
+      - key: TRUST_PROXY               # one hop: the address Render's proxy saw
+        value: "1"
+      - key: GATEWAY_SECRET
+        generateValue: true

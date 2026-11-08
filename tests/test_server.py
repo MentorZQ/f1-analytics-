@@ -454,3 +454,44 @@ def test_a_lookup_with_an_instruction_in_it_is_answered_from_the_data_and_uses_n
     assert body["paid_by"] == "router" and "PWNED" not in body["answer"] and "left it out" in body["answer"]
     assert llm_calls == []
     assert post(client, ip="8.8.8.8").status_code == 200 and post(client, ip="8.8.8.8").status_code == 200   # both free questions left
+
+
+# ── the TypeScript gateway in front of this server ──
+
+GATEWAY_SECRET = "gateway-secret-abcdefghijklmnop"
+
+
+def via_gateway(client, visitor, secret=GATEWAY_SECRET, question=QUESTION):
+    headers = {"X-Gateway-Secret": secret, "X-Visitor-IP": visitor}
+    return client.post("/query", json={"question": question, "session": "barcelona"}, headers=headers)
+
+
+def test_visitors_behind_the_gateway_are_told_apart_by_the_address_it_sends(client, monkeypatch):
+    monkeypatch.setenv("GATEWAY_SECRET", GATEWAY_SECRET)
+    # the visitor limit is 2 per address: a different address behind the same gateway has its own two
+    assert [via_gateway(client, "1.1.1.1").status_code for _ in range(3)] == [200, 200, 429]
+    assert via_gateway(client, "2.2.2.2").status_code == 200
+
+
+def test_without_the_right_secret_the_visitor_address_header_is_ignored(client, monkeypatch):
+    monkeypatch.setenv("GATEWAY_SECRET", GATEWAY_SECRET)
+    # a wrong secret cannot name an address: all of these count against the same real one
+    assert [via_gateway(client, f"3.3.3.{i}", secret="not-the-secret").status_code for i in range(3)] == [200, 200, 429]
+
+
+def test_the_visitor_address_header_is_ignored_when_no_secret_is_configured(client, monkeypatch):
+    monkeypatch.delenv("GATEWAY_SECRET", raising=False)
+    assert [via_gateway(client, f"4.4.4.{i}", secret="anything").status_code for i in range(3)] == [200, 200, 429]
+
+
+def test_a_malformed_visitor_address_falls_back_to_the_real_one(client, monkeypatch):
+    monkeypatch.setenv("GATEWAY_SECRET", GATEWAY_SECRET)
+    assert [via_gateway(client, "not-an-address").status_code for _ in range(3)] == [200, 200, 429]
+
+
+def test_the_gateway_secret_never_reaches_a_response_or_a_log(client, monkeypatch, caplog):
+    monkeypatch.setenv("GATEWAY_SECRET", GATEWAY_SECRET)
+    with caplog.at_level(logging.DEBUG):
+        response = via_gateway(client, "5.5.5.5")
+    assert GATEWAY_SECRET not in response.text and GATEWAY_SECRET not in caplog.text
+    assert GATEWAY_SECRET not in str(dict(response.headers))

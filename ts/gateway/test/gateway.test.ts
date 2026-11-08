@@ -182,3 +182,65 @@ describe("GET /api/sessions and /health", () => {
     expect(res.headers["referrer-policy"]).toBe("no-referrer");
   });
 });
+
+describe("running behind another service", () => {
+  const headersOf = (fake: FakeFetch) => (fake.mock.calls[0]![1] as RequestInit).headers as Record<string, string>;
+
+  it("sends Python the shared secret and the visitor's address so its quotas stay per visitor", async () => {
+    const fake: FakeFetch = vi.fn(async () => reply(200, goodResponse));
+    app = gatewayWith(fake, { gatewaySecret: "shared-secret-value" });
+    await app.inject({ method: "POST", url: "/query", payload: { question: "hi" }, remoteAddress: "7.7.7.7" });
+    expect(headersOf(fake)["x-gateway-secret"]).toBe("shared-secret-value");
+    expect(headersOf(fake)["x-visitor-ip"]).toBe("7.7.7.7");
+  });
+
+  it("sends neither header when no secret is configured", async () => {
+    const fake: FakeFetch = vi.fn(async () => reply(200, goodResponse));
+    app = gatewayWith(fake);
+    await ask(app, { question: "hi" });
+    expect(headersOf(fake)).not.toHaveProperty("x-gateway-secret");
+    expect(headersOf(fake)).not.toHaveProperty("x-visitor-ip");
+  });
+
+  it("with one proxy hop trusted, the visitor is the address the proxy appended, not one the visitor wrote", async () => {
+    const fake: FakeFetch = vi.fn(async () => reply(200, goodResponse));
+    app = gatewayWith(fake, { trustProxy: 1, gatewaySecret: "s" });
+    await app.inject({
+      method: "POST",
+      url: "/query",
+      payload: { question: "hi" },
+      remoteAddress: "10.0.0.1",
+      headers: { "x-forwarded-for": "6.6.6.6, 9.9.9.9" },
+    });
+    expect(headersOf(fake)["x-visitor-ip"]).toBe("9.9.9.9");
+  });
+
+  it("without a trusted proxy, a forwarded address the visitor wrote is ignored", async () => {
+    const fake: FakeFetch = vi.fn(async () => reply(200, goodResponse));
+    app = gatewayWith(fake, { gatewaySecret: "s" });
+    await app.inject({
+      method: "POST",
+      url: "/query",
+      payload: { question: "hi" },
+      remoteAddress: "8.8.4.4",
+      headers: { "x-forwarded-for": "6.6.6.6" },
+    });
+    expect(headersOf(fake)["x-visitor-ip"]).toBe("8.8.4.4");
+  });
+
+  it("never puts the shared secret in a response", async () => {
+    const fake: FakeFetch = vi.fn(async () => reply(200, goodResponse));
+    app = gatewayWith(fake, { gatewaySecret: "shared-secret-value" });
+    const res = await ask(app, { question: "hi" });
+    expect(res.body).not.toContain("shared-secret-value");
+    expect(JSON.stringify(res.headers)).not.toContain("shared-secret-value");
+  });
+
+  it("sends the same content security policy as the Python server", async () => {
+    app = gatewayWith(vi.fn(async () => reply(200, { status: "ok" })));
+    const res = await app.inject({ method: "GET", url: "/health" });
+    expect(res.headers["content-security-policy"]).toBe(
+      "default-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    );
+  });
+});

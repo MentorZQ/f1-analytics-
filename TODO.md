@@ -66,3 +66,9 @@ Ordered roughly by value. Items marked (measured) came out of an experiment; the
 - [ ] Cover what it hands to the model today: a driver's sector time, top speed (telemetry, not the speed trap), tyre set.
 - [ ] Add routed vs model cost and latency to the Phoenix comparison (`evals/compare.py` already counts routed answers as zero tokens).
 
+## TypeScript layer in production
+- [x] Gateway, shared schemas and React frontend (`ts/`), Render blueprint with both services, trusted visitor address between them.
+- [ ] Push, sync the Render Blueprint, and open the gateway URL (see `ts/README.md`); check `/health` on it returns 200.
+- [ ] Decide whether the Python service becomes a private service once the gateway is live.
+- [ ] Token streaming: a streaming endpoint in `server.py` relayed by the gateway.
+
