@@ -232,3 +232,5 @@ tests/ragas_cache.json
 
 # Phoenix local trace store
 .phoenix/
+
+node_modules/

@@ -1,0 +1,22 @@
+{
+  "name": "f1rag-ts",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "gateway",
+    "web"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspace web",
+    "dev:gateway": "npm run dev --workspace gateway",
+    "dev:web": "npm run dev --workspace web"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "@types/node": "^22.0.0"
+  }
+}
